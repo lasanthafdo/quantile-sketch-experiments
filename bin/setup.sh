@@ -106,14 +106,24 @@ init_flink_from_github(){
 
      # Get Klink
      if [[ ! -d $KLINK_DIR ]]; then
-        git clone https://github.com/apache/klink.git $KLINK_DIR
+        git clone https://github.com/oibfarhat/klink.git $KLINK_DIR
      fi
 
-     # Build and install changes
-     maven_clean_install_no_tests $KLINK_DIR/flink-runtime
-     maven_clean_install_no_tests $KLINK_DIR/flink-streaming-java
-     maven_clean_install_no_tests $KLINK_DIR/flink-dist
-     mv $KLINK_DIR/build-target $FLINK_DIR
+     # Move klink changes
+     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
+        rm -r $FLINK_SRC_DIR/flink-runtime
+     fi
+
+     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
+        rm -r $FLINK_SRC_DIR/flink-streaming-java
+     fi
+
+     cp -r $KLINK_DIR/flink-runtime $FLINK_SRC_DIR/
+     cp -r $KLINK_DIR/flink-streaming-java $FLINK_SRC_DIR/
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
+     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
 }
 
 setup(){
