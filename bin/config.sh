@@ -2,7 +2,7 @@
 
 # Project Level
 PROJECT_DIR="$HOME/streaming-benchmarks"
-FLINK_PROJECT_DIR="$HOME/flink"
+KLINK_DIR="$HOME/klink"
 
 # Current Project Level
 BIN_DIR="$PROJECT_DIR/bin"
@@ -20,6 +20,7 @@ ZK_DIR="$BENCH_DIR/zk"
 REDIS_DIR="$BENCH_DIR/redis"
 KAFKA_DIR="$BENCH_DIR/kafka"
 FLINK_DIR="$BENCH_DIR/flink"
+FLINK_SRC_DIR="$BENCH_DIR/flink-src"
 
 # FILES
 WORKLOAD_PROCESSOR_JAR_FILE="$WORKLOAD_PROCESSOR_DIR/target/workload-processor-flink-0.5.0.jar"

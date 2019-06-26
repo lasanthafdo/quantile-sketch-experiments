@@ -97,18 +97,23 @@ init_flink_from_github(){
         rm -r $FLINK_DIR
     fi
 
-     # If flink is not built
-     if [[ ! -d $FLINK_PROJECT_DIR ]]; then
+     # If Apache Flink is not built
+     if [[ ! -d $FLINK_SRC_DIR ]]; then
         cd $HOME
-        git clone -b release-1.8-scheduler https://github.com/oibfarhat/flink.git $FLINK_PROJECT_DIR
-        maven_clean_install_no_tests $FLINK_PROJECT_DIR
-     else
-        # Build and install changes
-        maven_clean_install_no_tests $FLINK_PROJECT_DIR/flink-runtime
-        maven_clean_install_no_tests $FLINK_PROJECT_DIR/flink-streaming-java
-    fi
-    maven_clean_install_no_tests $FLINK_PROJECT_DIR/flink-dist
-    mv $FLINK_PROJECT_DIR/build-target $FLINK_DIR
+        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        maven_clean_install_no_tests $FLINK_SRC_DIR
+     fi
+
+     # Get Klink
+     if [[ ! -d $KLINK_DIR ]]; then
+        git clone https://github.com/apache/klink.git $KLINK_DIR
+     fi
+
+     # Build and install changes
+     maven_clean_install_no_tests $KLINK_DIR/flink-runtime
+     maven_clean_install_no_tests $KLINK_DIR/flink-streaming-java
+     maven_clean_install_no_tests $KLINK_DIR/flink-dist
+     mv $KLINK_DIR/build-target $FLINK_DIR
 }
 
 setup(){
