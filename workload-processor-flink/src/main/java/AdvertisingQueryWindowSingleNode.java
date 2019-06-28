@@ -41,7 +41,7 @@ public class AdvertisingQueryWindowSingleNode {
         // Setup flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.COUNT_BASED);
+        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.ALL_TASKS);
 
         env.getConfig().setGlobalJobParameters(setupParams);
         env.disableOperatorChaining();
