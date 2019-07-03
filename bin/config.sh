@@ -21,6 +21,7 @@ REDIS_DIR="$BENCH_DIR/redis"
 KAFKA_DIR="$BENCH_DIR/kafka"
 FLINK_DIR="$BENCH_DIR/flink"
 FLINK_SRC_DIR="$BENCH_DIR/flink-src"
+FLINK_CONF_FILE="$FLINK_DIR/conf/flink-conf.yaml"
 
 # FILES
 WORKLOAD_PROCESSOR_JAR_FILE="$WORKLOAD_PROCESSOR_DIR/target/workload-processor-flink-0.5.0.jar"

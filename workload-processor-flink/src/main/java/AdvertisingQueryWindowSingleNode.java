@@ -41,7 +41,7 @@ public class AdvertisingQueryWindowSingleNode {
         // Setup flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.ALL_TASKS);
+        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.LONGEST_QUEUE_FIRST);
 
         env.getConfig().setGlobalJobParameters(setupParams);
         env.disableOperatorChaining();
@@ -64,19 +64,19 @@ public class AdvertisingQueryWindowSingleNode {
 
         messageStream
                 // Parse the JSON string from Kafka as an ad
-                .map(new DeserializeAdsFromkafka())
+                .map(new DeserializeAdsFromkafka()).name("DeserializeInput (" + instance + ")")
                 // Filter ads
                 //.filter(new FilterAds())
                 // Assign timestamps and watermarks
-                .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
+                .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner()).name("TimeStamp (" + instance + ")")
                 // perform join with redis data
-                .map(new JoinAdWithRedis())
+                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + instance + ")")
                 // key by compaignId
                 //   .keyBy(0)
                 // Collect aggregates in event window of 10 seconds
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator())
+                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator()).name("Window (" + instance + ")")
                 // sink function
-                .addSink(new PrintCampaignAdClicks(instance));
+                .addSink(new PrintCampaignAdClicks(instance)).name("Sink(" + instance + ")");
 
     }
 
@@ -109,7 +109,7 @@ public class AdvertisingQueryWindowSingleNode {
             String watermarkTime = output.getField(7);
             String ingestionTime = output.getField(8);
             sb.append("Ingestion\t").append(user_id).append(",").append(ad_id).append("\t").append(ingestionTime).append("\t").append(watermarkTime).append("\n");
-            System.out.println(sb.toString().trim());
+        //    System.out.println(sb.toString().trim());
             return output;
         }
     }
@@ -124,7 +124,7 @@ public class AdvertisingQueryWindowSingleNode {
             String watermarkTime = ad.getField(7);
             String ingestionTime = ad.getField(8);
             sb.append("Filter\t").append(user_id).append(",").append(ad_id).append("\t").append(ingestionTime).append("\t").append(watermarkTime).append("\n");
-            System.out.println(sb.toString().trim());
+   //         System.out.println(sb.toString().trim());
             return ad.getField(4).equals("view");
         }
     }
@@ -145,7 +145,7 @@ public class AdvertisingQueryWindowSingleNode {
             String watermarkTime = element.getField(7);
             String ingestionTime = element.getField(8);
             sb.append("TimestampExtract\t").append(user_id).append(",").append(ad_id).append("\t").append(ingestionTime).append("\t").append(watermarkTime).append("\n");
-            System.out.println(sb.toString().trim());
+    //        System.out.println(sb.toString().trim());
             return Long.valueOf(element.getField(5));
         }
     }
@@ -172,7 +172,7 @@ public class AdvertisingQueryWindowSingleNode {
             String watermarkTime = input.getField(7);
             String ingestionTime = input.getField(8);
             sb.append("JoinRedis\t").append(user_id).append(",").append(ad_id).append("\t").append(ingestionTime).append("\t").append(watermarkTime).append("\n");
-            System.out.println(sb.toString().trim());
+   //         System.out.println(sb.toString().trim());
 
             return new Tuple5<>(
                     redisAdCampaignCache.execute(adId),
@@ -199,7 +199,7 @@ public class AdvertisingQueryWindowSingleNode {
 
             StringBuilder sb = new StringBuilder();
             sb.append("Aggregation\t").append(userIdAdId).append("\t").append(ingestionTime).append("\t").append(watermarkTime).append("\n");
-            System.out.println(sb.toString().trim());
+  //          System.out.println(sb.toString().trim());
 
 
             accumulator.f0 = value.f0;
@@ -228,8 +228,7 @@ public class AdvertisingQueryWindowSingleNode {
 
         @Override
         public void invoke(Tuple2<String, Integer> value, Context context) {
-            System.out.println("Sink\t" + context.currentWatermark());
+  //          System.out.println("Sink\t" + context.currentWatermark());
         }
     }
 }
-

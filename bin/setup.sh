@@ -124,6 +124,9 @@ init_flink_from_github(){
      maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
      maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
      mv $FLINK_SRC_DIR/build-target $FLINK_DIR
+
+     echo 'metrics.latency.history-size: 1024' >> $FLINK_CONF_FILE
+     echo 'metrics.latency.interval: 1000' >> $FLINK_CONF_FILE
 }
 
 setup(){
