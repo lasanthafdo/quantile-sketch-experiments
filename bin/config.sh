@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Project Level
-PROJECT_DIR="$HOME/streaming-benchmarks"
+PROJECT_DIR="$HOME/klink-benchmarks"
 KLINK_DIR="$HOME/klink"
 
 # Current Project Level
