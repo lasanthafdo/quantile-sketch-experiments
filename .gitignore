@@ -9,6 +9,7 @@ filter.properties
 logs.zip
 target
 target/*
+*/target/*
 tmp
 *.class
 *.iml

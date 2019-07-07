@@ -6,7 +6,7 @@ bin=`cd "$bin"; pwd`
 
 analyze_exp(){
     cd $WORKLOAD_ANALYZER_DIR
-    $MVN exec:java -Dexec.mainClass="WorkloadOutputAnalyzer" -Dexec.args="$1"
+    $MVN exec:java -Dexec.mainClass="WorkloadOutputAnalyzer" -Dexec.args="$EXPERIMENTS_DIR/$1"
 }
 
 if [[ $# -lt 1 ]];

@@ -7,14 +7,12 @@ import java.util.List;
 
 public class WorkloadOutputAnalyzer {
 
-    private static final String PATH_PREFIX = System.getProperty("user.home") + "/streaming-benchmarks/benchmark/experiments/";
-
     public static void main(String[] args) throws Exception {
         String[] parts;
 
         for (String expName : args) {
-            BufferedReader br = new BufferedReader(new FileReader(new File(PATH_PREFIX + expName + "_output.txt")));
-            PrintWriter pr = new PrintWriter(new File(PATH_PREFIX + expName + "_analysis.txt"));
+            BufferedReader br = new BufferedReader(new FileReader(new File(expName + "_output.txt")));
+            PrintWriter pr = new PrintWriter(new File(expName + "_analysis.txt"));
 
             List<Event> ingestionList = new ArrayList<>();
             List<Event> aggregationList = new ArrayList<>();
