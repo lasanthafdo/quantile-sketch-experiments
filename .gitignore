@@ -1,6 +1,7 @@
 .cache
 .classpath
 .idea
+.class
 .metadata
 .settings
 .project
@@ -9,8 +10,9 @@ filter.properties
 logs.zip
 target
 target/*
-*/target/*
-*/target/**
+workload-analyzer/target
+workload-generator/target
+workload-processor-flink/target
 tmp
 *.class
 *.iml
@@ -22,3 +24,4 @@ tmp
 .DS_Store
 benchmark
 benchmark/*
+dependency-reduced-pom.xml
