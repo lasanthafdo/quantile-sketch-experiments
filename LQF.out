@@ -1,0 +1,93 @@
+Experiment ran for 138674 ms
+Number of records processed	10122490
+Throughput	73351
+
+Scheduler: LONGEST_QUEUE_FIRST
+===============
+Number of cycles: 692
+Count		priorities of scheduled tasks: 1024
+Maximum		priorities of scheduled tasks: 2761
+Minimum		priorities of scheduled tasks: 362
+Average		priorities of scheduled tasks: 1566.5947265625
+Deviation		priorities of scheduled tasks: 338.033775883199
+
+Count		queue size: 1024
+Maximum		queue size: 2761
+Minimum		queue size: 0
+Average		queue size: 669.685546875
+Deviation		queue size: 737.4782060143423
+
+Count		scheduler overhead: 692
+Maximum		scheduler overhead: 16
+Minimum		scheduler overhead: 0
+Average		scheduler overhead: 0.1213872832369938
+Deviation		scheduler overhead: 0.6971136151922415
+
+Count		events processed per cycle: 692
+Maximum		events processed per cycle: 21445
+Minimum		events processed per cycle: 0
+Average		events processed per cycle: 12933.192196531782
+Deviation		events processed per cycle: 3661.3831991706516
+
+Count		events to process per cycle: 692
+Maximum		events to process per cycle: 15225
+Minimum		events to process per cycle: 0
+Average		events to process per cycle: 11756.33381502891
+Deviation		events to process per cycle: 2651.6944591909723
+
+Count		sleep duration per cycle: 692
+Maximum		sleep duration per cycle: 200
+Minimum		sleep duration per cycle: 200
+Average		sleep duration per cycle: 200.0
+Deviation		sleep duration per cycle: 0.0
+
+Operator: Sink: Sink(1)
+===============
+Count		Latency: 135
+Max		Latency: 3113
+Min		Latency: 215
+Avg		Latency: 875.3111111111111
+Devt		Latency: 377.76723202527756
+Count		Blocking Latency: 1024
+Max		Blocking Latency: 7926
+Min		Blocking Latency: 221
+Avg		Blocking Latency: 3448.625
+Devt		Blocking Latency: 2072.8774787799775
+
+Operator: Sink: Sink(4)
+===============
+Count		Latency: 10
+Max		Latency: 200
+Min		Latency: 126
+Avg		Latency: 152.8
+Devt		Latency: 24.760183090330063
+
+Operator: Sink: Sink(2)
+===============
+Count		Latency: 6
+Max		Latency: 266
+Min		Latency: 168
+Avg		Latency: 190.5
+Devt		Latency: 38.339274901854886
+
+Operator: Sink: Sink(5)
+===============
+Count		Latency: 137
+Max		Latency: 2143
+Min		Latency: 119
+Avg		Latency: 731.0802919708028
+Devt		Latency: 326.065765163531
+Count		Blocking Latency: 1024
+Max		Blocking Latency: 11715
+Min		Blocking Latency: 272
+Avg		Blocking Latency: 4730.8388671875
+Devt		Blocking Latency: 3332.4074208280595
+
+Operator: Sink: Sink(3)
+===============
+Count		Latency: 8
+Max		Latency: 114
+Min		Latency: 76
+Avg		Latency: 90.75
+Devt		Latency: 16.193032011154852
+
