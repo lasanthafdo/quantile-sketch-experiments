@@ -21,7 +21,7 @@ run_exp(){
     sleep $TEST_TIME
     ./stop.sh $1 10
     echo "Experiment $1 is being analyzed."
-    ./analyze.sh $1
+    # ./analyze.sh $1
     echo "$Experiment $1 is done."
 }
 

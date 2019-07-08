@@ -12,7 +12,7 @@ public class WorkloadOutputAnalyzer {
 
         for (String expName : args) {
             BufferedReader br = new BufferedReader(new FileReader(new File(expName + "_output.txt")));
-            PrintWriter pr = new PrintWriter(new File(expName + "_analysis.txt"));
+            //PrintWriter pr = new PrintWriter(new File(expName + "_analysis.txt"));
 
             List<Event> ingestionList = new ArrayList<>();
             List<Event> aggregationList = new ArrayList<>();
@@ -58,9 +58,9 @@ public class WorkloadOutputAnalyzer {
                 numOfMaterializations++;
             }
 
-            pr.println(expName + ":\t" + totalEvents + ":\t" + numOfMaterializations + "\t" + (numberOfUnecessaryEventsProcessedAfterWatermarkArrival / numOfMaterializations * 1.0));
-            pr.flush();
-            pr.close();
+            //pr.println(expName + ":\t" + totalEvents + ":\t" + numOfMaterializations + "\t" + (numberOfUnecessaryEventsProcessedAfterWatermarkArrival / numOfMaterializations * 1.0));
+            //pr.flush();
+            //pr.close();
         }
     }
 
