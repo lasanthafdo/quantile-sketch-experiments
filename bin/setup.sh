@@ -127,6 +127,20 @@ init_flink_from_github(){
 
      echo 'metrics.latency.history-size: 1024' >> $FLINK_CONF_FILE
      echo 'metrics.latency.interval: 1000' >> $FLINK_CONF_FILE
+
+     echo 'metrics.scope.jm: <host>.jobmanager' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.jm.job: <host>.jobmanager.<job_name>' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.tm: <host>.taskmanager.<tm_id>' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.tm.job: <host>.taskmanager.<tm_id>.<job_name>' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.task: <host>.taskmanager.<tm_id>.<job_name>.<task_name>.<subtask_index>' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.operator: <host>.taskmanager.<tm_id>.<job_name>.<task_name>.<operator_name>.<subtask_index>' >> $FLINK_CONF_FILE
+     echo 'metrics.scope.scheduler: <host>.<tm_id>.<scheduler_name>' >> $FLINK_CONF_FILE
+
+     echo 'metrics.reporters: prom' >> $FLINK_CONF_FILE
+     echo 'metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter' >> $FLINK_CONF_FILE
+     echo 'metrics.reporter.prom.host: IP_OF_THE_MASTER_NODE' >> $FLINK_CONF_FILE
+     echo 'metrics.reporter.prom.port: 9250-9260' >> $FLINK_CONF_FILE
+
 }
 
 setup(){
