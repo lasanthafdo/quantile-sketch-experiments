@@ -57,6 +57,8 @@ stop(){
         sleep $2
         pull_stdout $1
     fi
+    echo "Experiment $1 is being analyzed."
+    ./analyze.sh $1
     stop_flink_processing
     stop_flink
 
