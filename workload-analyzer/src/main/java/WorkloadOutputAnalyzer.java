@@ -24,6 +24,7 @@ public class WorkloadOutputAnalyzer {
             Materialization currMaterialization = null;
             long totalEvents = 0;
 
+            HttpRestClient.getStatistics(expName);
             while (true) {
                 String line = br.readLine();
                 if (line == null)
