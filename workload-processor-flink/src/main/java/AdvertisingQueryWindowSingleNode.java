@@ -41,10 +41,9 @@ public class AdvertisingQueryWindowSingleNode {
         // Setup flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.LONGEST_QUEUE_FIRST);
+        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.SEWPA);
 
         env.getConfig().setGlobalJobParameters(setupParams);
-        env.disableOperatorChaining();
 
         // Add queries
         for (int i = 1; i <= queryInstances; i++) {
@@ -60,7 +59,7 @@ public class AdvertisingQueryWindowSingleNode {
                 // Different topics for different query instances
                 setupParams.getRequired("topic") + "-" + instance,
                 new SimpleStringSchema(),
-                setupParams.getProperties()));
+                setupParams.getProperties())).name("Source (" + instance + ")").startNewChain();
 
         messageStream
                 // Parse the JSON string from Kafka as an ad
@@ -70,13 +69,18 @@ public class AdvertisingQueryWindowSingleNode {
                 // Assign timestamps and watermarks
                 .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner()).name("TimeStamp (" + instance + ")")
                 // perform join with redis data
-                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + instance + ")")
+                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + instance + ")").disableChaining()
                 // key by compaignId
+                .map(new NameToLowerCase()).name("IdenticalMap 1 (" + instance + ")").disableChaining()
+
+                .map(new NameToLowerCase()).name("IdenticalMap 2 (" + instance + ")").disableChaining()
+
+                .map(new NameToLowerCase()).name("IdenticalMap 3 (" + instance + ")").disableChaining()
                 //   .keyBy(0)
                 // Collect aggregates in event window of 10 seconds
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator()).name("Window (" + instance + ")")
+                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator()).name("Window (" + instance + ")").disableChaining()
                 // sink function
-                .addSink(new PrintCampaignAdClicks(instance)).name("Sink(" + instance + ")");
+                .addSink(new PrintCampaignAdClicks(instance)).name("Sink(" + instance + ")").disableChaining();
 
     }
 
@@ -180,6 +184,20 @@ public class AdvertisingQueryWindowSingleNode {
                     input.getField(5), // event time
                     input.getField(7), // watermark
                     input.getField(8) // ingestion
+            );
+        }
+    }
+
+    private static class NameToLowerCase extends RichMapFunction<Tuple5<String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
+
+        @Override
+        public Tuple5<String, String, String, String, String> map(Tuple5<String, String, String, String, String> input) throws Exception {
+            return new Tuple5<>(
+                    input.f0,
+                    input.f1,
+                    input.f2, // event time
+                    input.f3, // watermark
+                    input.f4 // ingestion
             );
         }
     }
