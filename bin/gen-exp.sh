@@ -20,7 +20,7 @@ gen_exp(){
     fi
     # experiment file
     echo 'experiment_name:' $1 > $exp_file
-    echo 'algorithm_name:' $2 > $exp_file
+    echo 'algorithm_name:' $2 >> $exp_file
     echo 'num_instances:' $3 >> $exp_file
     echo 'throughput:' $4 >> $exp_file
     echo 'watermark_frequency:' $5 >> $exp_file
@@ -31,5 +31,5 @@ if [[ $# -lt 5 ]];
 then
   echo "Invalid use: gen-exp.sh <experiment_name> <algorithm_index> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
 else
-    gen_exp $1 $2 $3 $4 $5
+    gen_exp $1 $2 $3 $4 $5 $6
 fi

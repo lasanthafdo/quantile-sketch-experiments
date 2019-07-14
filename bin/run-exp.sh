@@ -5,7 +5,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-120}
+TEST_TIME=${TEST_TIME:-240}
 
 run_exp(){
     # Verify first experiment exists
@@ -23,6 +23,7 @@ run_exp(){
     echo "Experiment $1 is being analyzed."
     # ./analyze.sh $1
     echo "$Experiment $1 is done."
+    sleep 15
 }
 
 
