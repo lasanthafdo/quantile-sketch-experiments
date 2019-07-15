@@ -49,6 +49,7 @@ pull_stdout() {
 stop_load(){
     stop_if_needed "WorkloadMain" "Workload Generator"
     cd $BIN_DIR
+    sleep 1m
     echo "Experiment $exp_name is being analyzed."
     ./analyze.sh $exp_name
 }
@@ -61,13 +62,13 @@ stop(){
         sleep $2
         pull_stdout $1
     fi
-    # stop_flink_processing
-    # stop_flink
+    stop_flink_processing
+    stop_flink
 
-    # local num_instances=$(yaml "$1.yaml" "['num_instances']")
-    # stop_kafka $num_instances
-    # stop_redis
-    # stop_zk
+    local num_instances=$(yaml "$1.yaml" "['num_instances']")
+    stop_kafka $num_instances
+    stop_redis
+    stop_zk
 }
 
 cd "$PROJECT_DIR"
