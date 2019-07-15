@@ -38,7 +38,7 @@ public  class RestStatAnalyzer {
 
     public static void getStatistics(String expName) throws Exception {
         final PrintWriter pr = new PrintWriter(new File(expName + "_statistics.txt"));
-        StringBuffer trial = get("");
+        StringBuffer refresh = get("");
 
         for (String metrics: metricsList) {
             switch(metrics) {
@@ -65,7 +65,6 @@ public  class RestStatAnalyzer {
                     break;
                 case "numOfCyclesCount":
                     StringBuffer content = get(metrics);
-                    System.out.println(content);
                     String jsonString = content.substring(1, content.length() - 1);
                     JSONObject json = new JSONObject(jsonString);
                     pr.println("numOfCyclesCount: " + json.get("avg"));
@@ -74,7 +73,6 @@ public  class RestStatAnalyzer {
             }
             for (String stat: statList) {
                 StringBuffer content = get(metrics + '_' + stat);
-                System.out.println(content);
                 String jsonString = content.substring(1, content.length() - 1);
                 JSONObject json = new JSONObject(jsonString);
                 pr.println(stat + ": " + json.get("avg"));
