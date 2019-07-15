@@ -49,7 +49,6 @@ pull_stdout() {
 stop_load(){
     stop_if_needed "WorkloadMain" "Workload Generator"
     cd $BIN_DIR
-    sleep 1m
     echo "Experiment $exp_name is being analyzed."
     ./analyze.sh $exp_name
 }

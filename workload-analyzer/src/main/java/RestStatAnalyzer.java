@@ -41,41 +41,21 @@ public  class RestStatAnalyzer {
         StringBuffer refresh = get("");
 
         for (String metrics: metricsList) {
-            switch(metrics) {
-                case "schedulerOverhead":
-                    pr.println("scheduler overhead:");
-                    break;
-                case "sleepDuration":
-                    pr.println("sleep duration per cycle:");
-                    break;
-                case "numOfEventsOfAllTasksHisto": 
-                    pr.println("num of events of all tasks per cycle:");
-                    break;
-                case "numberOfRunningTasks": 
-                    pr.println("num of scheduled tasks per cycle:");
-                    break;
-                case "numOfEventsOfScheduledTasksHisto": 
-                    pr.println("num of events of scheduled tasks per cycle:");
-                    break;
-                case "numOfEventsProcessedHisto": 
-                    pr.println("num of events of processed tasks per cycle:");
-                    break;
-                case "starvationHisto": 
-                    pr.println("starvation:");
-                    break;
-                case "numOfCyclesCount":
-                    StringBuffer content = get(metrics);
-                    String jsonString = content.substring(1, content.length() - 1);
-                    JSONObject json = new JSONObject(jsonString);
-                    pr.println("numOfCyclesCount: " + json.get("avg"));
-                    pr.println();
-                    continue;
-            }
-            for (String stat: statList) {
-                StringBuffer content = get(metrics + '_' + stat);
+            if(metrics.equals("numOfCyclesCount")) {
+                StringBuffer content = get(metrics);
                 String jsonString = content.substring(1, content.length() - 1);
                 JSONObject json = new JSONObject(jsonString);
-                pr.println(stat + ": " + json.get("avg"));
+                pr.println("numOfCyclesCount: " + json.get("avg"));
+                pr.println();
+                continue;
+            } else {
+                pr.println(metrics);
+                for (String stat: statList) {
+                    StringBuffer content = get(metrics + '_' + stat);
+                    String jsonString = content.substring(1, content.length() - 1);
+                    JSONObject json = new JSONObject(jsonString);
+                    pr.println(stat + ": " + json.get("avg"));
+                }
             }
             pr.println();
         }
