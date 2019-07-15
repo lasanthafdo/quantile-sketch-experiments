@@ -2,6 +2,7 @@
 
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
+exp_name=$1
 
 . "$bin"/config.sh
 
@@ -25,6 +26,10 @@ stop_kafka(){
 }
 
 stop_flink(){
+    sleep 60
+    cd $BIN_DIR
+    echo "Experiment $exp_name is being analyzed."
+    ./analyze.sh $exp_name
     $FLINK_DIR/bin/stop-cluster.sh
 }
 
@@ -57,8 +62,6 @@ stop(){
         sleep $2
         pull_stdout $1
     fi
-    echo "Experiment $1 is being analyzed."
-    ./analyze.sh $1
     stop_flink_processing
     stop_flink
 

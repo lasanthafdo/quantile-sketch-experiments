@@ -16,12 +16,11 @@ import java.lang.Thread;
 import org.json.JSONObject;
 
 
-public  class HttpRestClient {
+public  class RestStatAnalyzer {
+    static final ArrayList<String> statList = new ArrayList< >();
+    static final ArrayList<String> metricsList = new ArrayList< >();  
 
-    public static void getStatistics(String expName) throws Exception {
-        PrintWriter pr = new PrintWriter(new File(expName + "_statistics.txt"));
-        ArrayList<String> statList = new ArrayList( );
-        ArrayList<String> metricsList = new ArrayList( );
+    static {
         statList.add("count");
         statList.add("min");
         statList.add("max");
@@ -34,7 +33,12 @@ public  class HttpRestClient {
         metricsList.add("numOfEventsOfScheduledTasksHisto");
         metricsList.add("numOfEventsProcessedHisto");
         metricsList.add("starvationHisto");
+    }
 
+
+    public static void getStatistics(String expName) throws Exception {
+        final PrintWriter pr = new PrintWriter(new File(expName + "_statistics.txt"));
+        
         for (String metrics: metricsList) {
             switch(metrics) {
                 case "schedulerOverhead":
@@ -68,6 +72,7 @@ public  class HttpRestClient {
             }
             for (String stat: statList) {
                 StringBuffer content = get(metrics + '_' + stat);
+                System.out.println(content);
                 String jsonString = content.substring(1, content.length() - 1);
                 JSONObject json = new JSONObject(jsonString);
                 pr.println(stat + ": " + json.get("avg"));
