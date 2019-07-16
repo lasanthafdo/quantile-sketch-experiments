@@ -23,7 +23,7 @@ run_exp(){
     echo "Experiment $1 is being analyzed."
     # ./analyze.sh $1
     echo "$Experiment $1 is done."
-    sleep 15
+    sleep 60
 }
 
 
