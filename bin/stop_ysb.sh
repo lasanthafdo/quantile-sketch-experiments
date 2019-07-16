@@ -69,7 +69,7 @@ stop(){
 cd "$PROJECT_DIR"
 if [[ $# -lt 1 ]];
 then
-  echo "Invalid use: ./stop.sh <experiment_name>"
+  echo "Invalid use: ./stop_ysb.sh <experiment_name>"
 elif [[ $# -lt 2 ]];
 then
   stop "$EXPERIMENTS_DIR/$1"

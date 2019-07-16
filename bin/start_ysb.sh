@@ -32,7 +32,7 @@ create_kafka_topic() {
 }
 
 start_kafka(){
-    start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
+    start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start_ysb.sh" "$KAFKA_DIR/config/server.properties"
     create_kafka_topic $1
 }
 
@@ -69,7 +69,7 @@ start(){
 
 if [[ $# -lt 1 ]];
 then
-  echo "Invalid use: ./start.sh <experiment_name>"
+  echo "Invalid use: ./start_ysb.sh <experiment_name>"
 else
     cd "$PROJECT_DIR"
     start $1 # $1: experiment file

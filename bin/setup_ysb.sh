@@ -24,7 +24,6 @@ FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
 
 # Zookeeper download parameters
 ZK_VERSION=${ZK_VERSION:-"3.5.5"}
-ZK_CONF_FILE="zoo.cfg"
 
 init_setup_file(){
     # setup file
@@ -62,12 +61,18 @@ init_zk(){
         fetch_untar_file "$zk_tar_file" "$APACHE_MIRROR/zookeeper/zookeeper-$ZK_VERSION/$zk_tar_file"
         mv "$zk_file" "$ZK_DIR"
     fi
-    # Set zookeeper configurations
-    cd "$ZK_DIR/conf"
+
+    ## Set zookeeper configurations
     echo 'tickTime=2000' > $ZK_CONF_FILE
     echo "dataDir=$ZK_DIR/data" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
-    cd $BENCH_DIR
+    # zk multi-nodes
+    local counter=0
+    while read line
+    do
+       ((counter++))
+       echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+    done <${HOSTS_FILE}
 }
 
 init_kafka(){
@@ -78,6 +83,19 @@ init_kafka(){
         fetch_untar_file "$kafka_tar_file" "$APACHE_MIRROR/kafka/$KAFKA_VERSION/$kafka_tar_file"
         mv "$kafka_file" "$KAFKA_DIR"
     fi
+
+
+    ## Set Kafka configurations
+    echo 'tickTime=2000' > $ZK_CONF_FILE
+    echo "dataDir=$ZK_DIR/data" >> $ZK_CONF_FILE
+    echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
+    # zk multi-nodes
+    local counter=0
+    while read line
+    do
+       ((counter++))
+       echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+    done <${HOSTS_FILE}
 }
 
 init_flink(){
@@ -151,5 +169,4 @@ setup(){
     init_flink_from_github
 }
 
-cd $PROJECT_DIR
 setup
