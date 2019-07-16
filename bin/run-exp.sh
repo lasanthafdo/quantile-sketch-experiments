@@ -5,7 +5,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-120}
+TEST_TIME=${TEST_TIME:-240}
 
 run_exp(){
     # Verify first experiment exists
@@ -20,7 +20,13 @@ run_exp(){
     ./start.sh "$EXPERIMENTS_DIR/$1.yaml"
     sleep $TEST_TIME
     ./stop.sh $1 10
+<<<<<<< HEAD
+=======
+    echo "Experiment $1 is being analyzed."
+    # ./analyze.sh $1
+>>>>>>> master
     echo "$Experiment $1 is done."
+    sleep 60
 }
 
 
