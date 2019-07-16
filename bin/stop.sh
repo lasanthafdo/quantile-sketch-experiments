@@ -2,6 +2,7 @@
 
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
+exp_name=$1
 
 . "$bin"/config.sh
 
@@ -47,6 +48,9 @@ pull_stdout() {
 
 stop_load(){
     stop_if_needed "WorkloadMain" "Workload Generator"
+    cd $BIN_DIR
+    echo "Experiment $exp_name is being analyzed."
+    ./analyze.sh $exp_name
 }
 
 stop(){

@@ -20,8 +20,11 @@ run_exp(){
     ./start.sh "$EXPERIMENTS_DIR/$1.yaml"
     sleep $TEST_TIME
     ./stop.sh $1 10
+<<<<<<< HEAD
+=======
     echo "Experiment $1 is being analyzed."
     # ./analyze.sh $1
+>>>>>>> master
     echo "$Experiment $1 is done."
     sleep 60
 }
