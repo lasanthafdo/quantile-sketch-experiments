@@ -43,7 +43,7 @@ KAFKA_TOPIC_PREFIX="ad-events"
 # Commands
 MAKE=${MAKE:-make}
 GIT=${GIT:-git}
-MVN=${MVN:-mvn}
+MVN=${MVN:-sudo mvn}
 
 pid_match() {
    local VAL=`ps -aef | grep "$1" | grep -v grep | awk '{print $2}'`
@@ -121,7 +121,7 @@ maven_clean_install_no_tests(){
 }
 
 yaml() {
-    python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
+    sudo python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
 }
 
 hosts_lsv_list(){
