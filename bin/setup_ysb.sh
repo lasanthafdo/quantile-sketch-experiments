@@ -60,6 +60,8 @@ init_zk(){
     echo 'tickTime=2000' > $ZK_CONF_FILE
     echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
+    echo 'initLimit=5' >> $ZK_CONF_FILE
+    echo 'syncLimit=2' >> $ZK_CONF_FILE
 
     if [[ $HAS_HOSTS ]]; then
         local counter=0
@@ -137,12 +139,14 @@ init_flink_from_github(){
 
      # Move klink changes
      if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
-        rm -r $FLINK_SRC_DIR/flink-runtime
+        sudo rm -r $FLINK_SRC_DIR/flink-runtime
      fi
 
      if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
-        rm -r $FLINK_SRC_DIR/flink-streaming-java
+        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
      fi
+
+     sudo chmod -R 777 $PROJECT_DIR
 
      cp -r $KLINK_DIR/flink-runtime $FLINK_SRC_DIR/
      cp -r $KLINK_DIR/flink-streaming-java $FLINK_SRC_DIR/

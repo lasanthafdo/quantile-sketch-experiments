@@ -6,7 +6,16 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 stop_zk(){
-    $ZK_DIR/bin/zkServer.sh stop
+    if [[ $HAS_HOSTS ]];
+    then
+    	while read line
+	do
+		echo "Stopping ZK on $line"
+		ssh ${line} "$ZK_DIR/bin/zkServer.sh stop" </dev/null
+	done <${HOSTS_FILE}
+    else
+    	$ZK_DIR/bin/zkServer.sh stop
+    fi
 }
 
 stop_redis(){
