@@ -140,11 +140,23 @@ hosts_csv_list(){
    done <${HOSTS_FILE}
 }
 
+zk_connect(){
+    ZK_CONNECTION=""
+    while read line
+    do
+        ZK_CONNECTION="$ZK_CONNECTION$line:$ZK_PORT,"
+    done <${HOSTS_FILE}
+
+    ZK_CONNECTION=${ZK_CONNECTION::-1}
+    echo $ZK_CONNECTION
+}
+
 if [[ -e "$HOSTS_FILE" ]]; then
     ## Global variables
     HAS_HOSTS=1
     hosts_csv_list
     hosts_lsv_list
+    zk_connect
 else
     HAS_HOSTS=0
 fi

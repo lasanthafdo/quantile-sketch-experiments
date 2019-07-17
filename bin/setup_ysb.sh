@@ -87,14 +87,7 @@ init_kafka(){
 
     if [[ $HAS_HOSTS ]]; then
         # init Kafka properties
-        zk_connect=""
-        while read line
-        do
-           zk_connect="$zk_connect$line:$ZK_PORT,"
-        done <${HOSTS_FILE}
-        zk_connect=${zk_connect::-1}
-        echo $zk_connect
-        sed -i "s/zookeeper.connect=.*/zookeeper.connect=$zk_connect/g" $KAFKA_DIR/config/server.properties
+        sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties
     fi
 
 

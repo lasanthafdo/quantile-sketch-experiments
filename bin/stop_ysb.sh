@@ -35,7 +35,7 @@ stop_kafka(){
 			curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
 			ssh ${line} "
 				echo $curr_kafka_topic
-				$KAFKA_DIR/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
+				$KAFKA_DIR/bin/kafka-topics.sh --zookeeper $ZK_CONNECTION --delete --topic $curr_kafka_topic
 			" </dev/null
 		done
 		ssh ${line} "

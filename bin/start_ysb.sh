@@ -31,10 +31,10 @@ create_kafka_topic() {
     do
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
         echo $curr_kafka_topic
-        local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTIONS" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
+        local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
         if [[ "$count" = "0" ]];
         then
-            $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper "$ZK_CONNECTIONS" --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
+            $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper "$ZK_CONNECTION" --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
         else
             echo "Kafka topic $curr_kafka_topic already exists"
         fi
