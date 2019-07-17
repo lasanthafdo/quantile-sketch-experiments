@@ -60,50 +60,6 @@ init_zk(){
     echo 'tickTime=2000' > $ZK_CONF_FILE
     echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
-
-    # No need to install zookeeper on multiple machines.
-
-    # zk multi-nodes
-    if [[ $HAS_HOSTS ]]; then
-        local counter=0
-        while read line
-        do
-           ((counter++))
-           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-        done <${HOSTS_FILE}
-
-        local counter=0
-        while read line
-        do
-            ((counter++))
-            ${zk_conf_ssh_script}="
-            if [[ ! -d /tmp/data ]]; then
-                mkdir /tmp/data
-            fi
-
-            if [[ ! -d /tmp/data/zk ]]; then
-                mkdir /tmp/data/zk
-            fi
-
-            echo "$counter" > /tmp/data/zk/myid
-            "
-
-            echo "SSH-ing to $line..."
-            ssh -T ${line} "
-            if [[ ! -d /tmp/data ]]; then
-                mkdir /tmp/data
-            fi
-
-            if [[ ! -d /tmp/data/zk ]]; then
-                mkdir /tmp/data/zk
-            fi
-
-            echo $counter > /tmp/data/zk/myid
-            "
-            echo "Wrote myId=$counter to $line, leaving..."
-
-        done <${HOSTS_FILE}
-    fi
 }
 
 init_kafka(){
