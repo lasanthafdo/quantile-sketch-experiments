@@ -77,9 +77,7 @@ init_zk(){
         do
             ((counter++))
             echo "SSH-ing to $line..."
-            ssh -T $line
-
-            ## Create data directory
+            ${zk_conf_ssh_script}="
             if [[ ! -d /tmp/data ]]; then
                 mkdir /tmp/data
             fi
@@ -88,11 +86,12 @@ init_zk(){
                 mkdir /tmp/data/zk
             fi
 
-            # Print id to all zookeeper instances
             echo "$counter" > /tmp/data/zk/myid
-            # Write the id
+            "
+
+            ssh -T ${line} "${zk_conf_ssh_script}"
+
             echo "Wrote myId=$counter to $line, leaving..."
-            exit
         done <${HOSTS_FILE}
     fi
 }
