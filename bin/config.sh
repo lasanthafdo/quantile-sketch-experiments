@@ -6,7 +6,7 @@ KLINK_DIR="$HOME/klink"
 
 ## klink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
-BENCH_DIR="/tmp/benchmark"
+BENCH_DIR="$PROJECT_DIR/benchmark"
 WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator"
 WORKLOAD_PROCESSOR_DIR="$PROJECT_DIR/workload-processor-flink"
 WORKLOAD_ANALYZER_DIR="$PROJECT_DIR/workload-analyzer"
