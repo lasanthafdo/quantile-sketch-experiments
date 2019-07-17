@@ -12,13 +12,6 @@ init_zk_multinodes_conf(){
         local counter=0
         while read line
         do
-           ((counter++))
-           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-        done <${HOSTS_FILE}
-
-        local counter=0
-        while read line
-        do
             ((counter++))
             echo "SSH-ing to $line..."
             ssh -T ${line} "

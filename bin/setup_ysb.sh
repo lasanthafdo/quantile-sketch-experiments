@@ -60,6 +60,15 @@ init_zk(){
     echo 'tickTime=2000' > $ZK_CONF_FILE
     echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
+
+    if [[ $HAS_HOSTS ]]; then
+        local counter=0
+        while read line
+        do
+           ((counter++))
+           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+        done <${HOSTS_FILE}
+    fi
 }
 
 init_kafka(){
