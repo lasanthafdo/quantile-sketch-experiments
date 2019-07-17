@@ -72,23 +72,28 @@ init_zk(){
            echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
         done <${HOSTS_FILE}
 
-        ## Create data directory
-        if [[ ! -d /tmp/data ]]; then
-            mkdir /tmp/data
-        fi
-
-        if [[ ! -d /tmp/data/zk ]]; then
-            mkdir /tmp/data/zk
-        fi
-
-        # Print id to all zookeeper instances
         local counter=0
         while read line
         do
-           # Write the id
-           ssh -T $line
-           echo "$counter" > /tmp/data/zk/myid
-           ((counter++))
+            ((counter++))
+            echo "SSH-ing to $line..."
+            ssh -T $line
+
+            ## Create data directory
+            if [[ ! -d /tmp/data ]]; then
+                mkdir /tmp/data
+            fi
+
+            if [[ ! -d /tmp/data/zk ]]; then
+                mkdir /tmp/data/zk
+            fi
+
+            # Print id to all zookeeper instances
+            local counter=0
+            # Write the id
+            echo "$counter" > /tmp/data/zk/myid
+            echo "Wrote myId=$counter to $line, leaving..."
+            exit
         done <${HOSTS_FILE}
     fi
 }

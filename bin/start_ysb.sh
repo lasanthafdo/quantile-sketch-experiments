@@ -7,9 +7,6 @@ bin=`cd "$bin"; pwd`
 
 start_zk(){
   $ZK_DIR/bin/zkServer.sh start
-
-  java -cp zookeeper-3.4.13.jar:lib/log4j-1.2.17.jar:lib/slf4j-log4j12-1.7.25.jar:lib/slf4j-api-1.7.25.jar:conf org.apache.zookeeper.server.quorum.QuorumPeerMain conf/zoo.cfg
-
 }
 
 start_redis(){
