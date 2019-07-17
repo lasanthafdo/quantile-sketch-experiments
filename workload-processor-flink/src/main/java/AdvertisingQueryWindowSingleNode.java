@@ -37,7 +37,7 @@ public class AdvertisingQueryWindowSingleNode {
         Map experimentMap = Utils.findAndReadConfigFile(parameterTool.getRequired("experiment"));
         int queryInstances = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
         int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
-        int algorithmIndex = ((Integer) experimentMap.getOrDefault("algorithm_name", 0)).intValue();
+        int algorithmIndex = ((Integer) experimentMap.getOrDefault("algorithm_index", 0)).intValue();
 
         // Setup flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
