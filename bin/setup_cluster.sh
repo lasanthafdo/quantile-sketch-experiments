@@ -14,17 +14,24 @@ init_zk_multinodes_conf(){
         do
             ((counter++))
             echo "SSH-ing to $line..."
-            ssh -T ${line} "
-            if [[ ! -d /tmp/data ]]; then
-                mkdir /tmp/data
+
+
+            if ssh ${line} "
+
+                if [[ ! -d /tmp/data ]]; then
+                    mkdir /tmp/data
+                fi
+
+                if [[ ! -d /tmp/data/zk ]]; then
+                    mkdir /tmp/data/zk
+                fi
+                echo $counter > /tmp/data/zk/myid"
+            < /dev/null; then
+                echo "SUCCESS"
+            else
+                echo "FAIL"
             fi
 
-            if [[ ! -d /tmp/data/zk ]]; then
-                mkdir /tmp/data/zk
-            fi
-
-            echo $counter > /tmp/data/zk/myid
-            "
             echo "Wrote myId=$counter to $line, leaving..."
         done <${HOSTS_FILE}
     fi
