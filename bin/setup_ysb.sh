@@ -76,7 +76,6 @@ init_zk(){
         while read line
         do
             ((counter++))
-            echo "SSH-ing to $line..."
             ${zk_conf_ssh_script}="
             if [[ ! -d /tmp/data ]]; then
                 mkdir /tmp/data
@@ -89,9 +88,20 @@ init_zk(){
             echo "$counter" > /tmp/data/zk/myid
             "
 
-            ssh -T ${line} "${zk_conf_ssh_script}"
+            echo "SSH-ing to $line..."
+            ssh -T ${line} "
+            if [[ ! -d /tmp/data ]]; then
+                mkdir /tmp/data
+            fi
 
+            if [[ ! -d /tmp/data/zk ]]; then
+                mkdir /tmp/data/zk
+            fi
+
+            echo $counter > /tmp/data/zk/myid
+            "
             echo "Wrote myId=$counter to $line, leaving..."
+
         done <${HOSTS_FILE}
     fi
 }
