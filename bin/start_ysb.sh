@@ -11,7 +11,7 @@ start_zk(){
     while read line
 	do
         echo "Starting ZK on $line"
-        ssh ${line} "$ZK_DIR/bin/zkServer.sh start" </dev/null
+        ssh ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" </dev/null
     done <${HOSTS_FILE}
  else
     $ZK_DIR/bin/zkServer.sh start

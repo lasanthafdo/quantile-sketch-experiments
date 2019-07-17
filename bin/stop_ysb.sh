@@ -11,7 +11,7 @@ stop_zk(){
     	while read line
 	do
 		echo "Stopping ZK on $line"
-		ssh ${line} "$ZK_DIR/bin/zkServer.sh stop" </dev/null
+		ssh ${line} "$ZK_DIR/bin/zkServer.sh stop /tmp/data/zk/zoo.cfg" </dev/null
 	done <${HOSTS_FILE}
     else
     	$ZK_DIR/bin/zkServer.sh stop

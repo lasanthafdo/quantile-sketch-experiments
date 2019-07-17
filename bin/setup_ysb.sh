@@ -86,14 +86,6 @@ init_kafka(){
     echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
 
     if [[ $HAS_HOSTS ]]; then
-        # init ZK servers
-        local counter=0
-        while read line
-        do
-           ((counter++))
-           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-        done <${HOSTS_FILE}
-
         # init Kafka properties
         zk_connect=""
         while read line

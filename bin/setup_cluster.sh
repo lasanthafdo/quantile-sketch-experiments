@@ -27,7 +27,22 @@ init_zk_multinodes_conf(){
                 echo $counter > /tmp/data/zk/myid
 		"</dev/null
             echo "Wrote myId=$counter to $line, leaving..."
+    done <${HOSTS_FILE}
+
+
+    # Now copy these files to /tmp/
+    while read line
+	do
+        ((counter++))
+        echo "SSH-ing to $line..."
+
+        ssh ${line} "
+            mv $ZK_CONF_FILE /tmp/data/zk/zoo.cfg
+            sed -i "s/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g" /tmp/data/zk/zoo.cfg
+		 "</dev/null
+        echo "Moved zoo.cfg"
         done <${HOSTS_FILE}
+
     fi
 }
 
