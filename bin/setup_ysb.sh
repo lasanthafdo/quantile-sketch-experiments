@@ -98,6 +98,7 @@ init_kafka(){
         do
            zk_connect="$zk_connect$line:$ZK_PORT,"
         done <${HOSTS_FILE}
+        zk_connect=${zk_connect::-1}
         echo $zk_connect
         sed "s/zookeeper.connect=.*/zookeeper.connect=$zk_connect/g"
     fi
