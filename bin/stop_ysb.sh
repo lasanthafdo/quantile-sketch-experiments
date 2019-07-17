@@ -29,13 +29,18 @@ stop_kafka(){
         while read line
 	do
 		echo "Stopping Kafka on $line"
-		ssh ${line} "
-			for kafka_topic in `seq 1 $1`
-			do
-				local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
+		counter=0
+		for kafka_topic in `seq 1 $1`
+		do
+			curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
+			ssh ${line} "
+				echo $curr_kafka_topic
 				$KAFKA_DIR/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
-			done
+			" </dev/null
+		done
+		ssh ${line} "
 		$(declare -f stop_if_needed);
+		$(declare -f pid_match);
 		stop_if_needed kafka\.Kafka Kafka
 		rm -rf /tmp/kafka-logs/
 		" </dev/null
