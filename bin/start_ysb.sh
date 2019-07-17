@@ -6,10 +6,20 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 start_zk(){
-  $ZK_DIR/bin/zkServer.sh start
+ if [[ $HAS_HOSTS ]];
+ then
+    while read line
+	do
+        echo "Starting ZK on $line"
+        ssh ${line} "$ZK_DIR/bin/zkServer.sh start" </dev/null
+    done <${HOSTS_FILE}
+ else
+    $ZK_DIR/bin/zkServer.sh start
+ fi
 }
 
 start_redis(){
+    ## TODO(oibfarhat): Make it distributed, if that is even possible.
     start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
     cd $WORKLOAD_GENERATOR_DIR
     $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
@@ -32,8 +42,20 @@ create_kafka_topic() {
 }
 
 start_kafka(){
-    start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
-    create_kafka_topic $1
+    if [[ $HAS_HOSTS ]];
+    then
+        while read line
+	    do
+            echo "Starting ZK on $line"
+            ssh ${line} "
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '$KAFKA_DIR/config/server.properties'
+                create_kafka_topic $1
+                "
+        done
+    else
+        start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
+        create_kafka_topic $1
+    fi
 }
 
 start_flink(){

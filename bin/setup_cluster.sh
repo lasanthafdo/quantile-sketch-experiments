@@ -50,6 +50,7 @@ init_kafka_multinodes_conf(){
 }
 setup(){
     init_zk_multinodes_conf
+    init_kafka_multinodes_conf
 }
 
 setup
