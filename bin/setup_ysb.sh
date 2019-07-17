@@ -89,9 +89,8 @@ init_zk(){
             fi
 
             # Print id to all zookeeper instances
-            local counter=0
-            # Write the id
             echo "$counter" > /tmp/data/zk/myid
+            # Write the id
             echo "Wrote myId=$counter to $line, leaving..."
             exit
         done <${HOSTS_FILE}
