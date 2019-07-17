@@ -100,7 +100,7 @@ init_kafka(){
         done <${HOSTS_FILE}
         zk_connect=${zk_connect::-1}
         echo $zk_connect
-        sed "s/zookeeper.connect=.*/zookeeper.connect=$zk_connect/g"
+        sed -i "s/zookeeper.connect=.*/zookeeper.connect=$zk_connect/g" $KAFKA_DIR/config/server.properties
     fi
 
 
