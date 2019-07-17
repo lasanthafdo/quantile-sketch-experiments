@@ -42,16 +42,20 @@ create_kafka_topic() {
 }
 
 start_kafka(){
+    echo "Starting KAFKA"
     if [[ $HAS_HOSTS ]];
     then
         while read line
 	    do
-            echo "Starting ZK on $line"
+            echo "Starting Kafka on $line"
             ssh ${line} "
-                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '$KAFKA_DIR/config/server.properties'
+		$(declare -f start_if_needed);
+		$(declare -f create_kafka_topic);
+		$(declare -f pid_match);
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
                 create_kafka_topic $1
                 "
-        done
+        done <${HOSTS_FILE}
     else
         start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
         create_kafka_topic $1

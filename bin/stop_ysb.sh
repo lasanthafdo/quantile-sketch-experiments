@@ -24,13 +24,31 @@ stop_redis(){
 }
 
 stop_kafka(){
-    for kafka_topic in `seq 1 $1`
-    do
-        local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-        $KAFKA_DIR/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
-    done
-    stop_if_needed kafka\.Kafka Kafka
-    rm -rf /tmp/kafka-logs/
+    if [[ $HAS_HOSTS ]];
+    then
+        while read line
+	do
+		echo "Stopping Kafka on $line"
+		ssh ${line} "
+			for kafka_topic in `seq 1 $1`
+			do
+				local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
+				$KAFKA_DIR/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
+			done
+		$(declare -f stop_if_needed);
+		stop_if_needed kafka\.Kafka Kafka
+		rm -rf /tmp/kafka-logs/
+		" </dev/null
+	done <${HOSTS_FILE}
+    else
+	for kafka_topic in `seq 1 $1`
+    	do
+        	local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
+        	$KAFKA_DIR/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
+   	 done
+   	 stop_if_needed kafka\.Kafka Kafka
+   	 rm -rf /tmp/kafka-logs/
+    fi
 }
 
 stop_flink(){
