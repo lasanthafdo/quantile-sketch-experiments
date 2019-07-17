@@ -19,12 +19,6 @@ KAFKA_VERSION=${KAFKA_VERSION:-"2.2.0"}
 KAFKA_BROKERS="localhost"
 KAFKA_PARTITIONS=${KAFKA_PARTITIONS:-1}
 
-# Flink download parameters
-FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
-
-# Zookeeper download parameters
-ZK_VERSION=${ZK_VERSION:-"3.5.5"}
-
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
@@ -64,15 +58,39 @@ init_zk(){
 
     ## Set zookeeper configurations
     echo 'tickTime=2000' > $ZK_CONF_FILE
-    echo "dataDir=$ZK_DIR/data" >> $ZK_CONF_FILE
+    echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
+
+    # No need to install zookeeper on multiple machines.
+
     # zk multi-nodes
-    local counter=0
-    while read line
-    do
-       ((counter++))
-       echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-    done <${HOSTS_FILE}
+    if [[ $HAS_HOSTS ]]; then
+        local counter=0
+        while read line
+        do
+           ((counter++))
+           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+        done <${HOSTS_FILE}
+
+        ## Create data directory
+        if [[ ! -d /tmp/data ]]; then
+            mkdir /tmp/data
+        fi
+
+        if [[ ! -d /tmp/data/zk ]]; then
+            mkdir /tmp/data/zk
+        fi
+
+        # Print id to all zookeeper instances
+        local counter=0
+        while read line
+        do
+           # Write the id
+           ssh -T $line
+           echo "$counter" > /tmp/data/zk/myid
+           ((counter++))
+        done <${HOSTS_FILE}
+    fi
 }
 
 init_kafka(){
@@ -84,18 +102,9 @@ init_kafka(){
         mv "$kafka_file" "$KAFKA_DIR"
     fi
 
+    echo "dataDir=/tmp/data/zk" > $KAFKA_DIR/config/zookeeper.properties
+    echo "clientPort=2181" >>     $KAFKA_DIR/config/zookeeper.properties
 
-    ## Set Kafka configurations
-    echo 'tickTime=2000' > $ZK_CONF_FILE
-    echo "dataDir=$ZK_DIR/data" >> $ZK_CONF_FILE
-    echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
-    # zk multi-nodes
-    local counter=0
-    while read line
-    do
-       ((counter++))
-       echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-    done <${HOSTS_FILE}
 }
 
 init_flink(){

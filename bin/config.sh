@@ -22,12 +22,17 @@ FLINK_SRC_DIR="$BENCH_DIR/flink-src"
 
 ## klink-benchmarks files
 SETUP_FILE="$PROJECT_DIR/setup.yaml"
-HOSTS_FILE="$BIN_DIR/hosts.txt"
+HOSTS_FILE="$PROJECT_DIR/hosts.txt"
 ZK_CONF_FILE="$ZK_DIR/conf/zoo.cfg"
 KAFKA_CONF_FILE="$KAFKA_DIR/config/server.properties"
 FLINK_CONF_FILE="$FLINK_DIR/conf/flink-conf.yaml"
 
 WORKLOAD_PROCESSOR_JAR_FILE="$WORKLOAD_PROCESSOR_DIR/target/workload-processor-flink-0.5.0.jar"
+
+# Versions
+FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
+# Zookeeper download parameters
+ZK_VERSION=${ZK_VERSION:-"3.5.5"}
 
 # ZK Parameters
 ZK_PORT="2181"
@@ -135,15 +140,11 @@ hosts_csv_list(){
    done <${HOSTS_FILE}
 }
 
-if [[ ! -e "$HOSTS_FILE" ]];
-    then
-    echo "You need to specify the hosts in klink-benchmarks/bin/hosts.txt that this benchmark will run on.
-Example of hosts.txt:
-tem08
-tem10"
-    exit -1
+if [[ -e "$HOSTS_FILE" ]]; then
+    ## Global variables
+    HAS_HOSTS=1
+    hosts_csv_list
+    hosts_lsv_list
+else
+    HAS_HOSTS=0
 fi
-
-## Global variables
-hosts_csv_list
-hosts_lsv_list

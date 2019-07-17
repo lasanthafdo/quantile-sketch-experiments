@@ -32,5 +32,5 @@ if [[ $# -lt 5 ]];
 then
   echo "Invalid use: gen-exp.sh <experiment_name> <benchmark_name> <algorithm_index> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
 else
-    gen_exp $1 $2 $3 $4 $5 $6
+    gen_exp $1 $2 $3 $4 $5 $6 $7
 fi
