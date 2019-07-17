@@ -81,7 +81,27 @@ init_kafka(){
     fi
 
     echo "dataDir=/tmp/data/zk" > $KAFKA_DIR/config/zookeeper.properties
-    echo "clientPort=2181" >>     $KAFKA_DIR/config/zookeeper.properties
+    echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
+
+    if [[ $HAS_HOSTS ]]; then
+        # init ZK servers
+        local counter=0
+        while read line
+        do
+           ((counter++))
+           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+        done <${HOSTS_FILE}
+
+        # init Kafka properties
+        zk_connect=""
+        while read line
+        do
+           zk_connect="$zk_connect$line:$ZK_PORT,"
+        done <${HOSTS_FILE}
+        echo $zk_connect
+        sed "s/zookeeper.connect=.*/zookeeper.connect=$zk_connect/g"
+    fi
+
 
 }
 
