@@ -25,7 +25,7 @@ start_redis(){
         # Launch Redis on all instances
         while read line
         do
-            ssh -v -v -v -v ${line} "
+            ssh -t -n ${line} "
                 $(declare -f start_if_needed);
 		        $(declare -f pid_match);
                 start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" </dev/null
