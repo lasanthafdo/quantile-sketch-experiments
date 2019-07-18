@@ -33,6 +33,7 @@ start_redis(){
         while read line
         do
             first_node=$line
+            break
         done <${HOSTS_FILE}
 
         echo "Deploying Redis on $first_node"

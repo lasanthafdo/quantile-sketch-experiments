@@ -152,8 +152,9 @@ zk_connect(){
 
 ssh_connect() {
     # $1: host, $2 function, $3 sleep time
-    ssh -f $1 $2 </dev/null
-    sleep $3
+    ssh -f -n -t $1 $2 </dev/null
+    echo "Executing command on $1 and now sleeping for $3"
+    sleep "$3"
 }
 
 if [[ -e "$HOSTS_FILE" ]]; then
