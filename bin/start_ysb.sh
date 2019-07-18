@@ -25,10 +25,7 @@ start_redis(){
         # Launch Redis on all instances
         while read line
         do
-            ssh_connect ${line} "
-                $(declare -f start_if_needed);
-		        $(declare -f pid_match);
-                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" 15
+            ssh_connect ${line} "$(declare -f start_if_needed); $(declare -f pid_match); start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" 15
         done <${HOSTS_FILE}
 
        # Setup new campaigns on the first node
@@ -85,7 +82,8 @@ start_kafka(){
             ssh_connect ${line} "
 		        $(declare -f start_if_needed);
 		        $(declare -f pid_match);
-                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 20
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 30
+            echo "Creating topics now for $line"
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
     else
