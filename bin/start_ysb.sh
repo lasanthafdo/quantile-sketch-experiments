@@ -28,7 +28,7 @@ start_redis(){
             ssh ${line} "
                 $(declare -f start_if_needed);
 		        $(declare -f pid_match);
-                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server &" </dev/null
+                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" </dev/null
         done <${HOSTS_FILE}
 
        # Setup new campaigns on the first node
@@ -43,7 +43,7 @@ start_redis(){
             $(declare -f start_if_needed);
 		    $(declare -f pid_match);
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n &'
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'
             cd $PROJECT_DIR
             " </dev/null
     else
