@@ -11,7 +11,7 @@ start_zk(){
     while read line
 	do
         echo "Starting ZK on $line"
-        ssh_connect ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" 10
+        ssh_connect ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" 5
     done <${HOSTS_FILE}
  else
     $ZK_DIR/bin/zkServer.sh start
@@ -30,7 +30,7 @@ start_redis(){
             $(declare -f start_if_needed);
             $(declare -f pid_match);
             start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server"
-            sleep 10
+            sleep 5
         done <${HOSTS_FILE}
 
        # Setup new campaigns on the first node
@@ -82,7 +82,7 @@ start_kafka(){
                 $(declare -f start_if_needed);
                 $(declare -f pid_match);
                 start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'"
-            sleep 20
+            sleep 15
             echo "Creating topics now for $line"
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
