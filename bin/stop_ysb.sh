@@ -99,10 +99,12 @@ stop_flink_processing(){
         done <${HOSTS_FILE}
 
         ssh ${second_node} "
-            flink_id=\"$FLINK_DIR/bin/flink list | grep 'Flink Streaming Job' | awk '{print $4}'; true\"
-            echo $flink_id
-            if [[ ! $flink_id -eq 0 ]];
+            flink_id=`\"$FLINK_DIR/bin/flink\" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`
+            if [[ $flink_id == \"\" ]];
             then
+                echo "Could not find streaming job to kill"
+            else
+                echo $flink_id
                 $FLINK_DIR/bin/flink cancel $flink_id
             fi
         "</dev/null
