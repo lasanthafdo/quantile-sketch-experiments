@@ -120,8 +120,7 @@ start_flink_processing(){
 
         echo "Deploying Flink Client on $second_node"
 
-        ssh ${line}
-            "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
+        ssh ${line} "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
         sleep 10
     else
         echo "Deploying Flink Client"
@@ -143,11 +142,9 @@ start_load(){
 
         echo "Deploying Load on $first_node"
 
-        ssh ${first_node}
-            "
+        ssh ${first_node} "
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &
-            " </dev/null
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &" </dev/null
     else
         cd $WORKLOAD_GENERATOR_DIR
         $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
