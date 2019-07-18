@@ -26,7 +26,7 @@ start_redis(){
         while read line
         do
             echo "Launching redis on $line"
-            ssh -f -n -t ${line} "
+            ssh -f ${line} "
             $(declare -f start_if_needed);
             $(declare -f pid_match);
             start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server"
@@ -78,7 +78,11 @@ start_kafka(){
         while read line
 	    do
             echo "Starting Kafka on $line"
-            ssh_connect $line "$(declare -f start_if_needed); $(declare -f pid_match); start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 30
+            ssh -f ${line} "
+                $(declare -f start_if_needed);
+                $(declare -f pid_match);
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'"
+            sleep 30
             echo "Creating topics now for $line"
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
