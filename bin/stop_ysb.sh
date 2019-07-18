@@ -88,6 +88,17 @@ stop_flink(){
     fi
 }
 
+stop_flink_processing_local() {
+    local flink_id=`"$FLINK_DIR/bin/flink" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`
+    if [[ "$flink_id" == "" ]];
+    then
+        echo "Could not find streaming job to kill"
+    else
+        "$FLINK_DIR/bin/flink" cancel $flink_id
+         sleep 3
+    fi
+}
+
 stop_flink_processing(){
     # flink starts on the second node
     if [[ $HAS_HOSTS ]];
@@ -98,17 +109,12 @@ stop_flink_processing(){
             second_node=$line
         done <${HOSTS_FILE}
 
-        ssh ${second_node} "$FLINK_DIR/bin/flink cancel `\"$FLINK_DIR/bin/flink\" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`"</dev/null
+        ssh ${second_node} "
+            $(declare -f stop_flink_processing_local);
+            stop_flink_processing_local" </dev/null
         sleep 3
     else
-        local flink_id=`"$FLINK_DIR/bin/flink" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`
-        if [[ "$flink_id" == "" ]];
-        then
-          echo "Could not find streaming job to kill"
-        else
-          "$FLINK_DIR/bin/flink" cancel $flink_id
-          sleep 3
-        fi
+        stop_flink_processing_local
     fi
 }
 
