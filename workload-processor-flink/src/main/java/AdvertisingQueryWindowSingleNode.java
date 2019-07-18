@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 
+import static java.util.UUID.randomUUID;
+
 public class AdvertisingQueryWindowSingleNode {
 
 
@@ -37,7 +39,7 @@ public class AdvertisingQueryWindowSingleNode {
         Map experimentMap = Utils.findAndReadConfigFile(parameterTool.getRequired("experiment"));
         int queryInstances = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
         int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
-        int algorithmIndex = ((Integer) experimentMap.getOrDefault("algorithm_name", 0)).intValue();
+        int algorithmIndex = ((Integer) experimentMap.getOrDefault("algorithm_index", 0)).intValue();
 
         // Setup flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -150,7 +152,6 @@ public class AdvertisingQueryWindowSingleNode {
         public Tuple5<String, String, String, String, String> map(Tuple9<String, String, String, String, String, String, String, String, String> input) {
             String userId = input.getField(0);
             String adId = input.getField(2);
-
             return new Tuple5<>(
                     redisAdCampaignCache.execute(adId),
                     userId + "," + adId,

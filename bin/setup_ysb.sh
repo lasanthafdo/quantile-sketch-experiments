@@ -19,13 +19,6 @@ KAFKA_VERSION=${KAFKA_VERSION:-"2.2.0"}
 KAFKA_BROKERS="localhost"
 KAFKA_PARTITIONS=${KAFKA_PARTITIONS:-1}
 
-# Flink download parameters
-FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
-
-# Zookeeper download parameters
-ZK_VERSION=${ZK_VERSION:-"3.5.5"}
-ZK_CONF_FILE="zoo.cfg"
-
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
@@ -62,12 +55,22 @@ init_zk(){
         fetch_untar_file "$zk_tar_file" "$APACHE_MIRROR/zookeeper/zookeeper-$ZK_VERSION/$zk_tar_file"
         mv "$zk_file" "$ZK_DIR"
     fi
-    # Set zookeeper configurations
-    cd "$ZK_DIR/conf"
+
+    ## Set zookeeper configurations
     echo 'tickTime=2000' > $ZK_CONF_FILE
-    echo "dataDir=$ZK_DIR/data" >> $ZK_CONF_FILE
+    echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
     echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
-    cd $BENCH_DIR
+    echo 'initLimit=5' >> $ZK_CONF_FILE
+    echo 'syncLimit=2' >> $ZK_CONF_FILE
+
+    if [[ $HAS_HOSTS ]]; then
+        local counter=0
+        while read line
+        do
+           ((counter++))
+           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+        done <${HOSTS_FILE}
+    fi
 }
 
 init_kafka(){
@@ -78,6 +81,16 @@ init_kafka(){
         fetch_untar_file "$kafka_tar_file" "$APACHE_MIRROR/kafka/$KAFKA_VERSION/$kafka_tar_file"
         mv "$kafka_file" "$KAFKA_DIR"
     fi
+
+    echo "dataDir=/tmp/data/zk" > $KAFKA_DIR/config/zookeeper.properties
+    echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
+
+    if [[ $HAS_HOSTS ]]; then
+        # init Kafka properties
+        sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties
+    fi
+
+
 }
 
 init_flink(){
@@ -99,7 +112,7 @@ init_flink_from_github(){
 
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
-        cd $HOME
+        echo "Cloning Flink"
         git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
         maven_clean_install_no_tests $FLINK_SRC_DIR
      fi
@@ -111,12 +124,14 @@ init_flink_from_github(){
 
      # Move klink changes
      if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
-        rm -r $FLINK_SRC_DIR/flink-runtime
+        sudo rm -r $FLINK_SRC_DIR/flink-runtime
      fi
 
      if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
-        rm -r $FLINK_SRC_DIR/flink-streaming-java
+        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
      fi
+
+     sudo chmod -R 777 $PROJECT_DIR
 
      cp -r $KLINK_DIR/flink-runtime $FLINK_SRC_DIR/
      cp -r $KLINK_DIR/flink-streaming-java $FLINK_SRC_DIR/
@@ -124,6 +139,8 @@ init_flink_from_github(){
      maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
      maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
      mv $FLINK_SRC_DIR/build-target $FLINK_DIR
+
+     sudo chmod -R 777 $PROJECT_DIR
 
      echo 'metrics.latency.history-size: 65536' >> $FLINK_CONF_FILE
      echo 'metrics.latency.interval: 500' >> $FLINK_CONF_FILE
@@ -151,5 +168,4 @@ setup(){
     init_flink_from_github
 }
 
-cd $PROJECT_DIR
 setup

@@ -2,6 +2,8 @@ import redis.clients.jedis.Jedis;
 
 import java.util.HashMap;
 
+import static java.util.UUID.randomUUID;
+
 class RedisAdCampaignCache {
 
     private final HashMap<String, String> adToCompaign;
@@ -18,11 +20,11 @@ class RedisAdCampaignCache {
         if (compaignId == null) {
             compaignId = jedis.get(adId);
             if (compaignId == null) {
-                return null;
-            } else {
+                compaignId =  randomUUID().toString();
                 adToCompaign.put(adId, compaignId);
             }
         }
+        adToCompaign.put(adId, compaignId);
         return compaignId;
     }
 }

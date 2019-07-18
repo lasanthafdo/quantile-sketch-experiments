@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 
-# Project Level
+## Projects Directories
 PROJECT_DIR="$HOME/klink-benchmarks"
 KLINK_DIR="$HOME/klink"
 
-# Current Project Level
+## klink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
 BENCH_DIR="$PROJECT_DIR/benchmark"
-SETUP_FILE="$PROJECT_DIR/setup.yaml"
-
 WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator"
 WORKLOAD_PROCESSOR_DIR="$PROJECT_DIR/workload-processor-flink"
 WORKLOAD_ANALYZER_DIR="$PROJECT_DIR/workload-analyzer"
 
-# Benchmark Level
+## klink-benchmarks-benchmark directories
 EXPERIMENTS_DIR="$BENCH_DIR/experiments"
 DOWNLOAD_CACHE_DIR="$BENCH_DIR/download-cache"
 ZK_DIR="$BENCH_DIR/zk"
@@ -21,15 +19,23 @@ REDIS_DIR="$BENCH_DIR/redis"
 KAFKA_DIR="$BENCH_DIR/kafka"
 FLINK_DIR="$BENCH_DIR/flink"
 FLINK_SRC_DIR="$BENCH_DIR/flink-src"
+
+## klink-benchmarks files
+SETUP_FILE="$PROJECT_DIR/setup.yaml"
+HOSTS_FILE="$PROJECT_DIR/hosts.txt"
+ZK_CONF_FILE="$ZK_DIR/conf/zoo.cfg"
+KAFKA_CONF_FILE="$KAFKA_DIR/config/server.properties"
 FLINK_CONF_FILE="$FLINK_DIR/conf/flink-conf.yaml"
 
-# FILES
 WORKLOAD_PROCESSOR_JAR_FILE="$WORKLOAD_PROCESSOR_DIR/target/workload-processor-flink-0.5.0.jar"
 
+# Versions
+FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
+# Zookeeper download parameters
+ZK_VERSION=${ZK_VERSION:-"3.5.5"}
+
 # ZK Parameters
-ZK_HOST="localhost"
 ZK_PORT="2181"
-ZK_CONNECTIONS="$ZK_HOST:$ZK_PORT"
 
 # KAFKA Parameters
 KAFKA_TOPIC_PREFIX="ad-events"
@@ -37,7 +43,7 @@ KAFKA_TOPIC_PREFIX="ad-events"
 # Commands
 MAKE=${MAKE:-make}
 GIT=${GIT:-git}
-MVN=${MVN:-mvn}
+MVN=${MVN:-sudo mvn}
 
 pid_match() {
    local VAL=`ps -aef | grep "$1" | grep -v grep | awk '{print $2}'`
@@ -115,5 +121,47 @@ maven_clean_install_no_tests(){
 }
 
 yaml() {
-    python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
+    sudo python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
 }
+
+hosts_lsv_list(){
+   HOSTS_LSV_LIST=""
+   while read line
+   do
+       HOSTS_LSV_LIST="$HOSTS_LSV_LIST$line\n"
+   done <${HOSTS_FILE}
+}
+
+hosts_csv_list(){
+   HOSTS_CSV_LIST=""
+   while read line
+   do
+       HOSTS_CSV_LIST="$HOSTS_CSV_LIST$line,"
+   done <${HOSTS_FILE}
+}
+
+zk_connect(){
+    ZK_CONNECTION=""
+    while read line
+    do
+        ZK_CONNECTION="$ZK_CONNECTION$line:$ZK_PORT,"
+    done <${HOSTS_FILE}
+
+    ZK_CONNECTION=${ZK_CONNECTION::-1}
+}
+
+ssh_connect() {
+    # $1: host, $2 function, $3 sleep time
+    ssh -f $1 "$2" </dev/null
+    sleep "$3"
+}
+
+if [[ -e "$HOSTS_FILE" ]]; then
+    ## Global variables
+    HAS_HOSTS=1
+    hosts_csv_list
+    hosts_lsv_list
+    zk_connect
+else
+    HAS_HOSTS=0
+fi
