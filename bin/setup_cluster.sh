@@ -65,22 +65,6 @@ init_kafka_multinodes_conf(){
     fi
 }
 
-init_flink_multinodes(){
-    echo "Building Flink"
-    if [[ $HAS_HOSTS ]]; then
-	while read line
-	do
-        echo "SSH-ing to $line..."
-        ssh ${line} "
-                $(declare -f maven_clean_install_no_tests);
-                maven_clean_install_no_tests $FLINK_SRC_DIR
-		    "</dev/null
-        done <${HOSTS_FILE}
-    else
-        maven_clean_install_no_tests $FLINK_SRC_DIR
-    fi
-}
-
 setup(){
     init_zk_multinodes_conf
     init_kafka_multinodes_conf

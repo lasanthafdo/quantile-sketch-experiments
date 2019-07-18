@@ -84,7 +84,7 @@ start_kafka(){
             ssh ${line} "
 		$(declare -f start_if_needed);
 		$(declare -f pid_match);
-                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties &'
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
                 " </dev/null
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
