@@ -152,14 +152,8 @@ public class AdvertisingQueryWindowSingleNode {
         public Tuple5<String, String, String, String, String> map(Tuple9<String, String, String, String, String, String, String, String, String> input) {
             String userId = input.getField(0);
             String adId = input.getField(2);
-
-            String campaignId = redisAdCampaignCache.execute(adId);
-            if (campaignId == null) {
-                campaignId = randomUUID().toString();
-            }
-
             return new Tuple5<>(
-                    campaignId,
+                    redisAdCampaignCache.execute(adId),
                     userId + "," + adId,
                     input.getField(5), // event time
                     input.getField(7), // watermark
