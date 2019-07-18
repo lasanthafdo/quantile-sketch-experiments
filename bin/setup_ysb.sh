@@ -140,6 +140,8 @@ init_flink_from_github(){
      maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
      mv $FLINK_SRC_DIR/build-target $FLINK_DIR
 
+     sudo chmod -R 777 $PROJECT_DIR
+
      echo 'metrics.latency.history-size: 65536' >> $FLINK_CONF_FILE
      echo 'metrics.latency.interval: 500' >> $FLINK_CONF_FILE
 
