@@ -32,16 +32,8 @@ create_kafka_topic() {
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
         if [[ $HAS_HOSTS ]];
         then
-            ssh $2 "
-		$(declare -f start_if_needed);
-		$(declare -f pid_match);
-		    local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
-            if [[ $count -eq 0 ]];
-            then
-                $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
-            else
-                echo 'Kafka topic $curr_kafka_topic already exists'
-            fi" </dev/null
+	    echo "creating $curr_kafka_topic at $2"
+            ssh $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" </dev/null
         else
           local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
           if [[ "$count" = "0" ]];
