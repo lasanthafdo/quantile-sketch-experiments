@@ -21,21 +21,29 @@ start_zk(){
 start_redis(){
     if [[ $HAS_HOSTS ]];
     then
+
+        # Launch Redis on all instances
+        while read line
+        do
+            ssh ${line} "
+                $(declare -f start_if_needed);
+		        $(declare -f pid_match);
+                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" </dev/null
+        done <${HOSTS_FILE}
+
+       # Setup new campaigns on the first node
         first_node=""
         while read line
         do
             first_node=$line
-            break
         done <${HOSTS_FILE}
 
         echo "Deploying Redis on $first_node"
-
         ssh ${first_node} "
             $(declare -f start_if_needed);
 		    $(declare -f pid_match);
-            start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n &'
             cd $PROJECT_DIR
             " </dev/null
     else
@@ -76,7 +84,7 @@ start_kafka(){
             ssh ${line} "
 		$(declare -f start_if_needed);
 		$(declare -f pid_match);
-                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties &'
                 " </dev/null
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}

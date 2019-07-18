@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 
+import static java.util.UUID.randomUUID;
+
 public class AdvertisingQueryWindowSingleNode {
 
 
@@ -151,8 +153,13 @@ public class AdvertisingQueryWindowSingleNode {
             String userId = input.getField(0);
             String adId = input.getField(2);
 
+            String campaignId = redisAdCampaignCache.execute(adId);
+            if (campaignId == null) {
+                campaignId = randomUUID().toString();
+            }
+
             return new Tuple5<>(
-                    redisAdCampaignCache.execute(adId),
+                    campaignId,
                     userId + "," + adId,
                     input.getField(5), // event time
                     input.getField(7), // watermark
