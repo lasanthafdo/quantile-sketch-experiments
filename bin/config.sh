@@ -150,6 +150,12 @@ zk_connect(){
     ZK_CONNECTION=${ZK_CONNECTION::-1}
 }
 
+ssh_connect() {
+    # $1: host, $2 function, $3 sleep time
+    ssh -f $1 $2 </dev/null
+    sleep $3
+}
+
 if [[ -e "$HOSTS_FILE" ]]; then
     ## Global variables
     HAS_HOSTS=1

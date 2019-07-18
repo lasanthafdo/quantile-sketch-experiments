@@ -16,7 +16,7 @@ init_zk_multinodes_conf(){
             ((counter++))
             echo "ssh -f-ing to $line..."
 
-            ssh -f ${line} "
+            ssh_connect $line "
                 if [[ ! -d /tmp/data ]]; then
                     mkdir /tmp/data
                 fi
@@ -24,8 +24,7 @@ init_zk_multinodes_conf(){
                 if [[ ! -d /tmp/data/zk ]]; then
                     mkdir /tmp/data/zk
                 fi
-                echo $counter > /tmp/data/zk/myid
-		"</dev/null
+                echo $counter > /tmp/data/zk/myid" 5
             echo "Wrote myId=$counter to $line, leaving..."
     done <${HOSTS_FILE}
 
@@ -37,10 +36,9 @@ init_zk_multinodes_conf(){
         ((counter++))
         echo "ssh -f-ing to $line..."
 
-        ssh -f ${line} "
+        ssh_connect $line "
             cp $ZK_CONF_FILE /tmp/data/zk/zoo.cfg
-            sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg
-		 "</dev/null
+            sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg" 5
         echo "Moved zoo.cfg"
         done <${HOSTS_FILE}
 
@@ -56,11 +54,10 @@ init_kafka_multinodes_conf(){
 	do
             ((counter++))
             echo "ssh -f-ing to $line..."
-            ssh -f ${line} "
+            ssh_connect $line "
                 cp $HOME/klink-benchmarks/benchmark/kafka/config/server.properties /tmp/data/server.properties
-                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties
-		"</dev/null
-            echo "Changed broker.id=$counter to $line, leaving..."
+                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties" 5
+            echo "Changed broker.id= $counter to $line, leaving..."
         done <${HOSTS_FILE}
     fi
 }

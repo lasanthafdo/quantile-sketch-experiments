@@ -11,7 +11,7 @@ start_zk(){
     while read line
 	do
         echo "Starting ZK on $line"
-        ssh -f ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" </dev/null
+        ssh_connect ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" 10
     done <${HOSTS_FILE}
  else
     $ZK_DIR/bin/zkServer.sh start
@@ -25,10 +25,10 @@ start_redis(){
         # Launch Redis on all instances
         while read line
         do
-            ssh -f -f ${line} "
+            ssh_connect ${line} "
                 $(declare -f start_if_needed);
 		        $(declare -f pid_match);
-                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" </dev/null
+                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" 15
         done <${HOSTS_FILE}
 
        # Setup new campaigns on the first node
@@ -38,6 +38,7 @@ start_redis(){
             first_node=$line
         done <${HOSTS_FILE}
 
+        # TODO(oibfarhat): Fix this
         echo "Deploying Redis on $first_node"
         ssh -f ${first_node} "
             $(declare -f start_if_needed);
@@ -61,7 +62,7 @@ create_kafka_topic() {
         if [[ $HAS_HOSTS ]];
         then
 	    echo "creating $curr_kafka_topic at $2"
-            ssh -f $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" </dev/null
+            ssh_connect $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" 5
         else
           local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
           if [[ "$count" = "0" ]];
@@ -81,11 +82,10 @@ start_kafka(){
         while read line
 	    do
             echo "Starting Kafka on $line"
-            ssh -f ${line} "
-		$(declare -f start_if_needed);
-		$(declare -f pid_match);
-                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
-                " </dev/null
+            ssh_connect ${line} "
+		        $(declare -f start_if_needed);
+		        $(declare -f pid_match);
+                start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 20
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
     else
@@ -104,10 +104,10 @@ start_flink(){
             second_node=$line
         done <${HOSTS_FILE}
 
-        ssh -f ${second_node} "
+        ssh_connect ${second_node} "
             $(declare -f start_if_needed);
             $(declare -f pid_match);
-            start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh" </dev/null
+            start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh" 10
 
         sleep 10
     else
@@ -128,7 +128,7 @@ start_flink_processing(){
 
         echo "Deploying Flink Client on $second_node"
 
-        ssh -f ${second_node} "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
+        ssh_connect ${second_node} "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" 10
         sleep 10
     else
         echo "Deploying Flink Client"
@@ -150,9 +150,9 @@ start_load(){
 
         echo "Deploying Load on $first_node"
 
-        ssh -f ${first_node} "
+        ssh_connect ${first_node} "
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &" </dev/null
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &" 10
     else
         cd $WORKLOAD_GENERATOR_DIR
         $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
