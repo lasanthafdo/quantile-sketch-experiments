@@ -19,11 +19,32 @@ start_zk(){
 }
 
 start_redis(){
-    ## TODO(oibfarhat): Make it distributed, if that is even possible.
-    start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
-    cd $WORKLOAD_GENERATOR_DIR
-    $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
-    cd $PROJECT_DIR
+    if [[ $HAS_HOSTS ]];
+    then
+        first_node=""
+        while read line
+        do
+            first_node=$line
+            break
+        done <${HOSTS_FILE}
+
+        echo "Deploying Redis on $first_node"
+
+        ssh ${first_node}
+            "
+            $(declare -f start_if_needed);
+		    $(declare -f pid_match);
+            start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
+            cd $WORKLOAD_GENERATOR_DIR
+            $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+            cd $PROJECT_DIR
+            "
+    else
+        start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
+        cd $WORKLOAD_GENERATOR_DIR
+        $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+        cd $PROJECT_DIR
+    fi
 }
 
 create_kafka_topic() {
@@ -67,20 +88,72 @@ start_kafka(){
 }
 
 start_flink(){
-    start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh
-    sleep 5
+    # flink starts on the second node
+    if [[ $HAS_HOSTS ]];
+    then
+        second_node=""
+        while read line
+        do
+            second_node=$line
+        done <${HOSTS_FILE}
+
+        ssh ${second_node} "
+            $(declare -f start_if_needed);
+            $(declare -f pid_match);
+            start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh" </dev/null
+
+        sleep 10
+    else
+        start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh
+        sleep 5
+    fi
 }
 
 start_flink_processing(){
-    echo "Deploying Flink Client"
-    "$FLINK_DIR/bin/flink" run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &
-    sleep 5
+    # flink_processing starts on the second node
+    if [[ $HAS_HOSTS ]];
+    then
+        second_node=""
+        while read line
+        do
+            second_node=$line
+        done <${HOSTS_FILE}
+
+        echo "Deploying Flink Client on $second_node"
+
+        ssh ${line}
+            "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &"
+        sleep 10
+    else
+        echo "Deploying Flink Client"
+        "$FLINK_DIR/bin/flink" run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &
+        sleep 5
+    fi
 }
 
 start_load(){
-    cd $WORKLOAD_GENERATOR_DIR
-    $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
-    cd $PROJECT_DIR
+    # flink_load starts on the first node
+    if [[ $HAS_HOSTS ]];
+    then
+        first_node=""
+        while read line
+        do
+            first_node=$line
+            break
+        done <${HOSTS_FILE}
+
+        echo "Deploying Load on $first_node"
+
+        ssh ${first_node}
+            "
+            cd $WORKLOAD_GENERATOR_DIR
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &
+            "
+    else
+        cd $WORKLOAD_GENERATOR_DIR
+        $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
+        cd $PROJECT_DIR
+    fi
 }
 
 start(){

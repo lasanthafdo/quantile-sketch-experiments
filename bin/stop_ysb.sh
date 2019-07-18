@@ -57,7 +57,23 @@ stop_kafka(){
 }
 
 stop_flink(){
-    $FLINK_DIR/bin/stop-cluster.sh
+    # flink starts on the second node
+    if [[ $HAS_HOSTS ]];
+    then
+        second_node=""
+        while read line
+        do
+            second_node=$line
+        done <${HOSTS_FILE}
+
+        ssh ${line} "
+            $(declare -f start_if_needed);
+            $(declare -f pid_match);
+            $FLINK_DIR/bin/stop-cluster.sh" </dev/null
+
+    else
+        $FLINK_DIR/bin/stop-cluster.sh
+    fi
 }
 
 stop_flink_processing(){
