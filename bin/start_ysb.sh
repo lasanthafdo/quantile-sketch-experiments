@@ -42,7 +42,7 @@ start_redis(){
         done <${HOSTS_FILE}
 
         echo "Deploying Redis on $first_node"
-        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 20
+        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 10
     else
         start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
         cd $WORKLOAD_GENERATOR_DIR
@@ -82,7 +82,7 @@ start_kafka(){
                 $(declare -f start_if_needed);
                 $(declare -f pid_match);
                 start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'"
-            sleep 30
+            sleep 20
             echo "Creating topics now for $line"
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
