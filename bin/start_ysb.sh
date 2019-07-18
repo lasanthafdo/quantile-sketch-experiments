@@ -30,15 +30,14 @@ start_redis(){
 
         echo "Deploying Redis on $first_node"
 
-        ssh ${first_node}
-            "
+        ssh ${first_node} "
             $(declare -f start_if_needed);
 		    $(declare -f pid_match);
-            start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
+            start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'
             cd $PROJECT_DIR
-            "
+            " </dev/null
     else
         start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
         cd $WORKLOAD_GENERATOR_DIR
@@ -79,7 +78,7 @@ start_kafka(){
 		$(declare -f pid_match);
                 start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
                 " </dev/null
-                create_kafka_topic $1 $line
+            create_kafka_topic $1 $line
         done <${HOSTS_FILE}
     else
         start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
@@ -122,7 +121,7 @@ start_flink_processing(){
         echo "Deploying Flink Client on $second_node"
 
         ssh ${line}
-            "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &"
+            "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
         sleep 10
     else
         echo "Deploying Flink Client"
@@ -148,7 +147,7 @@ start_load(){
             "
             cd $WORKLOAD_GENERATOR_DIR
             $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &
-            "
+            " </dev/null
     else
         cd $WORKLOAD_GENERATOR_DIR
         $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
