@@ -100,7 +100,7 @@ stop_flink_processing(){
             second_node=$line
         done <${HOSTS_FILE}
 
-        local $flink_id=0
+        local flink_id=0
         ssh ${second_node} "
         flink_id=$FLINK_DIR/bin/flink list | grep 'Flink Streaming Job' | awk '{print $4}'; true"
         echo $flink_id
