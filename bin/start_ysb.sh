@@ -30,13 +30,26 @@ create_kafka_topic() {
     for kafka_topic in `seq 1 $1`
     do
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-        echo $curr_kafka_topic
-        local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
-        if [[ "$count" = "0" ]];
+        if [[ $HAS_HOSTS ]];
         then
-            $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper "$ZK_CONNECTION" --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
+            ssh $2 "
+		$(declare -f start_if_needed);
+		$(declare -f pid_match);
+		    local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
+            if [[ $count -eq 0 ]];
+            then
+                $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
+            else
+                echo 'Kafka topic $curr_kafka_topic already exists'
+            fi" </dev/null
         else
-            echo "Kafka topic $curr_kafka_topic already exists"
+          local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
+          if [[ "$count" = "0" ]];
+          then
+            $KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper "$ZK_CONNECTION" --replication-factor 1 --partitions 1 --topic $curr_kafka_topic
+            else
+                echo "Kafka topic $curr_kafka_topic already exists"
+            fi
         fi
     done
 }
@@ -50,11 +63,10 @@ start_kafka(){
             echo "Starting Kafka on $line"
             ssh ${line} "
 		$(declare -f start_if_needed);
-		$(declare -f create_kafka_topic);
 		$(declare -f pid_match);
                 start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'
-                create_kafka_topic $1
-                "
+                " </dev/null
+                create_kafka_topic $1 $line
         done <${HOSTS_FILE}
     else
         start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
