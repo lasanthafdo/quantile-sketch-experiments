@@ -28,7 +28,7 @@ start_redis(){
             ssh ${line} "
                 $(declare -f start_if_needed);
 		        $(declare -f pid_match);
-                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server" </dev/null
+                start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server &" </dev/null
         done <${HOSTS_FILE}
 
        # Setup new campaigns on the first node
