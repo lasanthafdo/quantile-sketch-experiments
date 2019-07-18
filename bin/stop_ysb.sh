@@ -11,7 +11,7 @@ stop_zk(){
     	while read line
 	    do
 		    echo "Stopping ZK on $line"
-		    ssh ${line} "$ZK_DIR/bin/zkServer.sh stop /tmp/data/zk/zoo.cfg" </dev/null
+		    ssh -f ${line} "$ZK_DIR/bin/zkServer.sh stop /tmp/data/zk/zoo.cfg" </dev/null
 	    done <${HOSTS_FILE}
     else
     	$ZK_DIR/bin/zkServer.sh stop
@@ -24,14 +24,12 @@ stop_redis(){
         first_node=""
         while read line
         do
-            first_node=$line
-            break
-        done <${HOSTS_FILE}
-        ssh ${first_node} "
+        ssh -f ${line} "
             $(declare -f stop_if_needed);
             $(declare -f pid_match);
             stop_if_needed redis-server Redis
             rm -f dump.rdb" </dev/null
+        done <${HOSTS_FILE}
     else
         stop_if_needed redis-server Redis
         rm -f dump.rdb
@@ -48,12 +46,12 @@ stop_kafka(){
 		for kafka_topic in `seq 1 $1`
 		do
 			curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-			ssh ${line} "
+			ssh -f ${line} "
 				echo $curr_kafka_topic
 				$KAFKA_DIR/bin/kafka-topics.sh --zookeeper $ZK_CONNECTION --delete --topic $curr_kafka_topic
 			" </dev/null
 		done
-		ssh ${line} "
+		ssh -f ${line} "
 		$(declare -f stop_if_needed);
 		$(declare -f pid_match);
 		stop_if_needed kafka\.Kafka Kafka
@@ -81,7 +79,7 @@ stop_flink(){
             second_node=$line
         done <${HOSTS_FILE}
 
-        ssh ${second_node} "
+        ssh -f ${second_node} "
             $(declare -f start_if_needed);
             $(declare -f pid_match);
             $FLINK_DIR/bin/stop-cluster.sh" </dev/null
@@ -101,7 +99,7 @@ stop_flink_processing(){
         done <${HOSTS_FILE}
 
         local flink_id=0
-        ssh ${second_node} "
+        ssh -f ${second_node} "
         flink_id=\"$FLINK_DIR/bin/flink list | grep 'Flink Streaming Job' | awk '{print $4}'; true\"
         echo $flink_id
         if [[ ! $flink_id -eq 0 ]];
@@ -137,7 +135,7 @@ stop_load(){
             first_node=$line
             break
         done <${HOSTS_FILE}
-        ssh ${first_node} "
+        ssh -f ${first_node} "
             $(declare -f stop_if_needed);
             $(declare -f pid_match);
             stop_if_needed 'WorkloadMain' 'Workload Generator'" </dev/null
