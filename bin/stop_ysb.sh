@@ -102,7 +102,7 @@ stop_flink_processing(){
 
         local flink_id=0
         ssh ${second_node} "
-        flink_id=$FLINK_DIR/bin/flink list | grep 'Flink Streaming Job' | awk '{print $4}'; true
+        flink_id=\"$FLINK_DIR/bin/flink list | grep 'Flink Streaming Job' | awk '{print $4}'; true\"
         echo $flink_id
         if [[ ! $flink_id -eq 0 ]];
         then
