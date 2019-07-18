@@ -120,7 +120,7 @@ start_flink_processing(){
 
         echo "Deploying Flink Client on $second_node"
 
-        ssh ${line} "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
+        ssh ${second_node} "$FLINK_DIR/bin/flink run $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &" </dev/null
         sleep 10
     else
         echo "Deploying Flink Client"

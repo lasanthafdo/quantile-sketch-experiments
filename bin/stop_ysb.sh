@@ -9,18 +9,33 @@ stop_zk(){
     if [[ $HAS_HOSTS ]];
     then
     	while read line
-	do
-		echo "Stopping ZK on $line"
-		ssh ${line} "$ZK_DIR/bin/zkServer.sh stop /tmp/data/zk/zoo.cfg" </dev/null
-	done <${HOSTS_FILE}
+	    do
+		    echo "Stopping ZK on $line"
+		    ssh ${line} "$ZK_DIR/bin/zkServer.sh stop /tmp/data/zk/zoo.cfg" </dev/null
+	    done <${HOSTS_FILE}
     else
     	$ZK_DIR/bin/zkServer.sh stop
     fi
 }
 
 stop_redis(){
-    stop_if_needed redis-server Redis
-    rm -f dump.rdb
+    if [[ $HAS_HOSTS ]];
+    then
+        first_node=""
+        while read line
+        do
+            first_node=$line
+            break
+        done <${HOSTS_FILE}
+        ssh ${first_node} "
+            $(declare -f stop_if_needed);
+            $(declare -f pid_match);
+            stop_if_needed redis-server Redis
+            rm -f dump.rdb" </dev/null
+    else
+        stop_if_needed redis-server Redis
+        rm -f dump.rdb
+    fi
 }
 
 stop_kafka(){
@@ -66,24 +81,34 @@ stop_flink(){
             second_node=$line
         done <${HOSTS_FILE}
 
-        ssh ${line} "
+        ssh ${second_node} "
             $(declare -f start_if_needed);
             $(declare -f pid_match);
             $FLINK_DIR/bin/stop-cluster.sh" </dev/null
-
     else
         $FLINK_DIR/bin/stop-cluster.sh
     fi
 }
 
 stop_flink_processing(){
-    local flink_id=`"$FLINK_DIR/bin/flink" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`
-    if [[ "$flink_id" == "" ]];
-	then
-	  echo "Could not find streaming job to kill"
+    # flink starts on the second node
+    if [[ $HAS_HOSTS ]];
+    then
+        second_node=""
+        while read line
+        do
+            second_node=$line
+        done <${HOSTS_FILE}
+        ssh ${second_node} "$FLINK_DIR/bin/flink cancel all" </dev/null
     else
-      "$FLINK_DIR/bin/flink" cancel $flink_id
-      sleep 3
+        local flink_id=`"$FLINK_DIR/bin/flink" list | grep 'Flink Streaming Job' | awk '{print $4}'; true`
+        if [[ "$flink_id" == "" ]];
+        then
+          echo "Could not find streaming job to kill"
+        else
+          "$FLINK_DIR/bin/flink" cancel $flink_id
+          sleep 3
+        fi
     fi
 }
 
@@ -94,7 +119,21 @@ pull_stdout() {
 }
 
 stop_load(){
-    stop_if_needed "WorkloadMain" "Workload Generator"
+    if [[ $HAS_HOSTS ]];
+    then
+        first_node=""
+        while read line
+        do
+            first_node=$line
+            break
+        done <${HOSTS_FILE}
+        ssh ${first_node} "
+            $(declare -f stop_if_needed);
+            $(declare -f pid_match);
+            stop_if_needed 'WorkloadMain' 'Workload Generator'" </dev/null
+    else
+        stop_if_needed "WorkloadMain" "Workload Generator"
+    fi
 }
 
 stop(){
