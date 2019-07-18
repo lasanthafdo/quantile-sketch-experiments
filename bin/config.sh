@@ -148,7 +148,6 @@ zk_connect(){
     done <${HOSTS_FILE}
 
     ZK_CONNECTION=${ZK_CONNECTION::-1}
-    echo $ZK_CONNECTION
 }
 
 if [[ -e "$HOSTS_FILE" ]]; then
