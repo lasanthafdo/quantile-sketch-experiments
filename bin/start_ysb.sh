@@ -35,15 +35,8 @@ start_redis(){
             first_node=$line
         done <${HOSTS_FILE}
 
-        # TODO(oibfarhat): Fix this
         echo "Deploying Redis on $first_node"
-        ssh -f ${first_node} "
-            $(declare -f start_if_needed);
-		    $(declare -f pid_match);
-            cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'
-            cd $PROJECT_DIR
-            " </dev/null
+        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 20
     else
         start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
         cd $WORKLOAD_GENERATOR_DIR
@@ -58,7 +51,7 @@ create_kafka_topic() {
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
         if [[ $HAS_HOSTS ]];
         then
-	    echo "creating $curr_kafka_topic at $2"
+	        echo "creating $curr_kafka_topic at $2"
             ssh_connect $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" 5
         else
           local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
@@ -79,7 +72,7 @@ start_kafka(){
         while read line
 	    do
             echo "Starting Kafka on $line"
-            ssh_connect ${line} "$(declare -f start_if_needed); $(declare -f pid_match); start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 30
+            ssh_connect $line "$(declare -f start_if_needed); $(declare -f pid_match); start_if_needed kafka\.Kafka Kafka 10 '$KAFKA_DIR/bin/kafka-server-start.sh' '/tmp/data/server.properties'" 30
             echo "Creating topics now for $line"
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
