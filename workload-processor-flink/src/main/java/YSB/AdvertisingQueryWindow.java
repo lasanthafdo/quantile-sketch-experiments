@@ -1,3 +1,5 @@
+package YSB;
+
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -22,86 +24,102 @@ import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
 import javax.annotation.Nullable;
-import java.text.SimpleDateFormat;
-import java.util.Map;
 
-import static java.util.UUID.randomUUID;
+public class AdvertisingQueryWindow implements Runnable {
 
-public class AdvertisingQueryWindowSingleNode {
+    /* The Kafka topic the source operators are pulling the results from */
+    private final String KAFKA_PREFIX_TOPIC = "ad-events";
+    /* The Job Parameters */
+    private final ParameterTool setupParams;
+    /* The scheduler policy */
+    private final StreamTaskSchedulerPolicy schedulerPolicy;
+    /* The num of queries */
+    private final int numQueries;
+    /* The window size */
+    private final int windowSize;
+
+    public AdvertisingQueryWindow(
+            ParameterTool setupParams, StreamTaskSchedulerPolicy schedulerPolicy, int numQueries, int windowSize) {
+        this.setupParams = setupParams;
+        this.schedulerPolicy = schedulerPolicy;
+        this.numQueries = numQueries;
+        this.windowSize = windowSize;
+    }
 
 
-    public static void main(String[] args) throws Exception {
-        // Setup parameters
-        ParameterTool parameterTool = ParameterTool.fromArgs(args);
-        Map setupMap = Utils.findAndReadConfigFile(parameterTool.getRequired("setup"));
-        ParameterTool setupParams = ParameterTool.fromMap(Utils.getFlinkConfs(setupMap));
-
-        Map experimentMap = Utils.findAndReadConfigFile(parameterTool.getRequired("experiment"));
-        int queryInstances = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
-        int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
-        int algorithmIndex = ((Integer) experimentMap.getOrDefault("algorithm_index", 0)).intValue();
-
-        // Setup flink
+    @Override
+    public void run() {
+        // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-
-        // Setup scheduling algorithm
-        env.setStreamTaskSchedulerPolicy(StreamTaskSchedulerPolicy.fromIndex(algorithmIndex));
-
+        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
 
         // Add queries
-        for (int i = 1; i <= queryInstances; i++) {
-            addQuery(env, setupParams, i, windowSize);
+        for (int i = 1; i <= numQueries; i++) {
+            addQuery(env, i);
         }
 
         // Execute queries
-        env.execute();
+        try {
+            env.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private static void addQuery(StreamExecutionEnvironment env, ParameterTool setupParams, int instance, int windowSize) {
-        DataStream<String> messageStream = env.addSource(new FlinkKafkaConsumer<>(
-                // Different topics for different query instances
-                setupParams.getRequired("topic") + "-" + instance,
-                new SimpleStringSchema(),
-                setupParams.getProperties())).name("Source (" + instance + ")").startNewChain();
+    private void addQuery(StreamExecutionEnvironment env, int queryInstance) {
+        DataStream<String> messageStream = env.addSource(
+                // Every source is a Kafka Consumer
+                new FlinkKafkaConsumer<>(
+                        // Different topics for different query queryInstances
+                        KAFKA_PREFIX_TOPIC + "-" + queryInstance,
+                        new SimpleStringSchema(),
+                        setupParams.getProperties()))
+                .name("Source (" + queryInstance + ")")
+                // Chain all operators before a watermark is emitted.
+                .startNewChain();
 
         messageStream
                 // Parse the JSON string from Kafka as an ad
-                .map(new DeserializeAdsFromkafka()).name("DeserializeInput (" + instance + ")")
+                .map(new DeserializeAdsFromkafka())
+                .name("DeserializeInput (" + queryInstance + ")")
                 // Filter ads
                 //.filter(new FilterAds())
                 // Assign timestamps and watermarks
-                .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner()).name("TimeStamp (" + instance + ")")
+                .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
+                .name("TimeStamp (" + queryInstance + ")")
                 // perform join with redis data
-                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + instance + ")").disableChaining()
-                // key by compaignId
-                .map(new NameToLowerCase()).name("IdenticalMap 1 (" + instance + ")").disableChaining()
-
-                .map(new NameToLowerCase()).name("IdenticalMap 2 (" + instance + ")").disableChaining()
-
-                .map(new NameToLowerCase()).name("IdenticalMap 3 (" + instance + ")").disableChaining()
-                //   .keyBy(0)
-                // Collect aggregates in event window of 10 seconds
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator()).name("Window (" + instance + ")").disableChaining()
+                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + queryInstance + ")")
+                .disableChaining()
+                // Duplicate operator
+                .map(new NameToLowerCase())
+                .name("IdenticalMap 1 (" + queryInstance + ")")
+                .disableChaining()
+                // Duplicate operator
+                .map(new NameToLowerCase())
+                .name("IdenticalMap 2 (" + queryInstance + ")")
+                .disableChaining()
+                // Duplicate operator
+                .map(new NameToLowerCase())
+                .name("IdenticalMap 3 (" + queryInstance + ")")
+                .disableChaining()
+                // Collect aggregates in an event window
+                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator())
+                .name("Window (" + queryInstance + ")")
+                .disableChaining()
                 // sink function
-                .addSink(new PrintCampaignAdClicks(instance)).name("Sink(" + instance + ")").disableChaining();
-
+                .addSink(new PrintCampaignAdClicks())
+                .name("Sink(" + queryInstance + ")")
+                .disableChaining();
     }
 
-    private static String convertTimestamp(String timestampString) {
-        long timestamp = Long.valueOf(timestampString);
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
-        return formatter.format(timestamp);
-    }
-
-    private static class DeserializeAdsFromkafka implements MapFunction<String, Tuple9<String, String, String, String, String, String, String, String, String>> {
+    private class DeserializeAdsFromkafka implements MapFunction<String, Tuple9<String, String, String, String, String, String, String, String, String>> {
 
         @Override
         public Tuple9<String, String, String, String, String, String, String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
-
-            Tuple9<String, String, String, String, String, String, String, String, String> output = new Tuple9<>(
+            return new Tuple9<>(
                     obj.getString("user_id"),
                     obj.getString("page_id"),
                     obj.getString("ad_id"),
@@ -111,11 +129,10 @@ public class AdvertisingQueryWindowSingleNode {
                     obj.getString("ip_address"),
                     obj.getString("watermark_time"),
                     String.valueOf(System.currentTimeMillis())); // ingestion time
-            return output;
         }
     }
 
-    private static class FilterAds implements FilterFunction<Tuple9<String, String, String, String, String, String, String, String, String>> {
+    private class FilterAds implements FilterFunction<Tuple9<String, String, String, String, String, String, String, String, String>> {
 
         @Override
         public boolean filter(Tuple9<String, String, String, String, String, String, String, String, String> ad) {
@@ -123,7 +140,7 @@ public class AdvertisingQueryWindowSingleNode {
         }
     }
 
-    private static class AdsWatermarkAndTimeStampAssigner implements AssignerWithPunctuatedWatermarks<Tuple9<String, String, String, String, String, String, String, String, String>> {
+    private class AdsWatermarkAndTimeStampAssigner implements AssignerWithPunctuatedWatermarks<Tuple9<String, String, String, String, String, String, String, String, String>> {
         @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(Tuple9<String, String, String, String, String, String, String, String, String> lastElement, long extractedTimestamp) {
@@ -137,7 +154,7 @@ public class AdvertisingQueryWindowSingleNode {
         }
     }
 
-    private static class JoinAdWithRedis extends RichMapFunction<Tuple9<String, String, String, String, String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
+    private class JoinAdWithRedis extends RichMapFunction<Tuple9<String, String, String, String, String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
 
         private RedisAdCampaignCache redisAdCampaignCache;
 
@@ -162,7 +179,7 @@ public class AdvertisingQueryWindowSingleNode {
         }
     }
 
-    private static class NameToLowerCase extends RichMapFunction<Tuple5<String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
+    private class NameToLowerCase extends RichMapFunction<Tuple5<String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
 
         @Override
         public Tuple5<String, String, String, String, String> map(Tuple5<String, String, String, String, String> input) throws Exception {
@@ -176,7 +193,7 @@ public class AdvertisingQueryWindowSingleNode {
         }
     }
 
-    private static class WindowAdsAggregator implements AggregateFunction<Tuple5<String, String, String, String, String>, Tuple2<String, Integer>, Tuple2<String, Integer>> {
+    private class WindowAdsAggregator implements AggregateFunction<Tuple5<String, String, String, String, String>, Tuple2<String, Integer>, Tuple2<String, Integer>> {
 
         @Override
         public Tuple2<String, Integer> createAccumulator() {
@@ -202,12 +219,7 @@ public class AdvertisingQueryWindowSingleNode {
         }
     }
 
-    private static class PrintCampaignAdClicks implements SinkFunction<Tuple2<String, Integer>> {
-        private final int instance;
-
-        PrintCampaignAdClicks(int instance) {
-            this.instance = instance;
-        }
+    private class PrintCampaignAdClicks implements SinkFunction<Tuple2<String, Integer>> {
 
         @Override
         public void invoke(Tuple2<String, Integer> value, Context context) {

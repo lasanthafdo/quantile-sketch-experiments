@@ -24,7 +24,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <program-class>AdvertisingQueryWindowSingleNode</program-class>
+              <program-class>YSB.AdvertisingQueryWindow</program-class>
             </manifestEntries>
           </archive>
         </configuration>
@@ -71,7 +71,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <program-class>AdvertisingQueryWindowSingleNode</program-class>
+              <program-class>YSB.AdvertisingQueryWindow</program-class>
             </manifestEntries>
           </archive>
         </configuration>

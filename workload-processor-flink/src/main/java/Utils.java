@@ -24,7 +24,7 @@ class Utils {
     }
 
     static Map findAndReadConfigFile(String name) {
-        InputStream in = null;
+        InputStream in;
         try {
             in = getConfigFileInputStream(name);
 
