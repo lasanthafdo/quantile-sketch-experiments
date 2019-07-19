@@ -1,3 +1,5 @@
+package YSB;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
@@ -5,7 +7,9 @@ import redis.clients.jedis.Jedis;
 
 import java.util.*;
 
-public class TupleGenerator implements Runnable {
+import static YSB.YSBConstants.NUM_CAMPAIGNS;
+
+public class YSBWorkloadGenerator implements Runnable {
 
     private static final String[] AD_TYPES = new String[]{"banner", "modal", "sponsored-search", "mail", "mobile"};
     private static final String[] EVENT_TYPES = new String[]{"view", "click", "purchase"};
@@ -14,27 +18,28 @@ public class TupleGenerator implements Runnable {
     private final Producer<byte[], byte[]> kafkaProducer;
     private final String kafkaTopic;
     private final Jedis jedis;
-    // benchmark parameters
+    // Experiment parameters
     private final int throughput;
     private final int watermarkFrequency;
 
 
-    TupleGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, Jedis jedis, int throughput, int watermarkFrequency) {
+    public YSBWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, Jedis jedis, int throughput, int watermarkFrequency) {
+        // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
         this.jedis = jedis;
-
+        // Experiment parameters
         this.throughput = throughput;
         this.watermarkFrequency = watermarkFrequency;
     }
 
     List<String> generateAds() {
         List<String> campaigns = new ArrayList<>(jedis.smembers("campaigns"));
-        if (campaigns.size() != NewSetupGenerator.NUM_CAMPAIGNS) {
+        if (campaigns.size() != NUM_CAMPAIGNS) {
             System.err.println("Setup not generated. Please rerun the program with -n option");
             System.exit(-1);
         }
-        List<String> ads = Utils.generateIds(NewSetupGenerator.NUM_CAMPAIGNS * 10);
+        List<String> ads = YSBUtils.generateIds(NUM_CAMPAIGNS * 10);
         for (int i = 0; i < ads.size(); i++) {
             int campaignIndex = i / 10;
             synchronized (jedis) {
@@ -108,8 +113,8 @@ public class TupleGenerator implements Runnable {
         System.out.println("Emitting " + throughput + " tuples per second to " + kafkaTopic);
 
         List<String> adIds = generateAds();
-        List<String> userIds = Utils.generateIds(NewSetupGenerator.NUM_CAMPAIGNS);
-        List<String> pageIds = Utils.generateIds(NewSetupGenerator.NUM_CAMPAIGNS);
+        List<String> userIds = YSBUtils.generateIds(NUM_CAMPAIGNS);
+        List<String> pageIds = YSBUtils.generateIds(NUM_CAMPAIGNS);
         Random random = new Random();
 
         double numOfEventsPerMS = throughput / 1000.0;

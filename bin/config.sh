@@ -124,22 +124,6 @@ yaml() {
     sudo python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
 }
 
-hosts_lsv_list(){
-   HOSTS_LSV_LIST=""
-   while read line
-   do
-       HOSTS_LSV_LIST="$HOSTS_LSV_LIST$line\n"
-   done <${HOSTS_FILE}
-}
-
-hosts_csv_list(){
-   HOSTS_CSV_LIST=""
-   while read line
-   do
-       HOSTS_CSV_LIST="$HOSTS_CSV_LIST$line,"
-   done <${HOSTS_FILE}
-}
-
 zk_connect(){
     ZK_CONNECTION=""
     while read line
@@ -159,8 +143,6 @@ ssh_connect() {
 if [[ -e "$HOSTS_FILE" ]]; then
     ## Global variables
     HAS_HOSTS=1
-    hosts_csv_list
-    hosts_lsv_list
     zk_connect
 else
     HAS_HOSTS=0

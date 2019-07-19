@@ -1,3 +1,5 @@
+package YSB;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
@@ -15,9 +17,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-public class TupleGeneratorTest {
+public class YSBWorkloadGeneratorTest {
 
-    private final String kafkaTopic = "ad-events";
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
     @Mock
@@ -36,7 +37,7 @@ public class TupleGeneratorTest {
         when(jedis.smembers("campaigns")).thenReturn(campaignsSet);
 
         // RUN
-        TupleGenerator tupleGenerator = new TupleGenerator(kafkaProducer, kafkaTopic, jedis, 1000, 1000);
+        YSBWorkloadGenerator tupleGenerator = new YSBWorkloadGenerator(kafkaProducer, YSBConstants.KAFKA_TOPIC_PREFIX, jedis, 1000, 1000);
         tupleGenerator.generateAds();
 
         // VERIFY
@@ -51,7 +52,7 @@ public class TupleGeneratorTest {
         long currTime = System.currentTimeMillis();
 
         // RUN
-        TupleGenerator tupleGenerator = new TupleGenerator(kafkaProducer, kafkaTopic, jedis, 1000, 1);
+        YSBWorkloadGenerator tupleGenerator = new YSBWorkloadGenerator(kafkaProducer, YSBConstants.KAFKA_TOPIC_PREFIX, jedis, 1000, 1);
         JSONObject jsonObject = tupleGenerator.createKafkaEvent("x", "y", "z", "l", "m", currTime, true);
 
         // VERIFY
@@ -65,7 +66,7 @@ public class TupleGeneratorTest {
         long currTime = System.currentTimeMillis();
 
         // RUN
-        TupleGenerator tupleGenerator = new TupleGenerator(kafkaProducer, kafkaTopic, jedis, 1000, 1);
+        YSBWorkloadGenerator tupleGenerator = new YSBWorkloadGenerator(kafkaProducer, YSBConstants.KAFKA_TOPIC_PREFIX, jedis, 1000, 1);
         JSONObject jsonObject = tupleGenerator.createKafkaEvent("x", "y", "z", "l", "m", currTime, false);
 
         // VERIFY
@@ -88,7 +89,7 @@ public class TupleGeneratorTest {
         when(random.nextInt(eq(1000))).thenReturn(300);
 
         // RUN
-        TupleGenerator tupleGenerator = new TupleGenerator(kafkaProducer, kafkaTopic, jedis, 1000, 100);
+        YSBWorkloadGenerator tupleGenerator = new YSBWorkloadGenerator(kafkaProducer, YSBConstants.KAFKA_TOPIC_PREFIX, jedis, 1000, 100);
         tupleGenerator.emitThroughput(adIds, userIds, pageIds, random, currTimeInMS, 1000, 100);
 
         // VERIFY
@@ -128,7 +129,7 @@ public class TupleGeneratorTest {
         }
 
         // RUN
-        TupleGenerator tupleGenerator = new TupleGenerator(kafkaProducer, kafkaTopic, jedis, 1000, 100);
+        YSBWorkloadGenerator tupleGenerator = new YSBWorkloadGenerator(kafkaProducer, YSBConstants.KAFKA_TOPIC_PREFIX, jedis, 1000, 100);
         long ret = tupleGenerator.emitThroughput(adIds, userIds, pageIds, new Random(), currTimeInMS, 1000, 100);
 
         // VERIFY

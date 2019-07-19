@@ -8,18 +8,32 @@ bin=`cd "$bin"; pwd`
 TEST_TIME=${TEST_TIME:-240}
 
 run_exp(){
-    # Verify first experiment exists
+    ## Verify experiment exists
     if [[ ! -f $EXPERIMENTS_DIR/$1.yaml ]];
 	then
 	    echo "Experiment file does not exist"
 	    exit -1
 	fi
 
+	# Fetch the workload type
+	local workload_type=$(yaml $1 "['workload_type']")
     cd $BIN_DIR
-    echo "Experiment $1.yaml has started."
-    ./start_ysb.sh "$EXPERIMENTS_DIR/$1.yaml"
-    sleep $TEST_TIME
-    ./stop_ysb.sh $1 10
+
+    if [[ "$workload_type" = "YSB" ]]; then
+        echo "Running YSB Experiment"
+        # Run YSB
+        ./YSB/start_ysb.sh "$EXPERIMENTS_DIR/$1.yaml"
+        sleep $TEST_TIME
+
+        # Stop YSB
+        ./YSB/stop_ysb.sh $1 10
+    elif [[ "$workload_type" = "LRB" ]]; then
+        echo "Running LRB Experiment"
+         # Run LRB
+
+         # Stop LRB
+    fi
+
     echo "$Experiment $1 is done."
     sleep 60
 }

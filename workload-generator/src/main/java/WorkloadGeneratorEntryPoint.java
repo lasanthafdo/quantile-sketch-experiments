@@ -1,3 +1,5 @@
+import YSB.YSBWorkloadGenerator;
+import YSB.YSBWorkloadSetup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -7,13 +9,15 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
-public class WorkloadMain {
+import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
+
+public class WorkloadGeneratorEntryPoint {
 
     public static void main(String[] args) {
         String setupFile = null;
         String expFile = null;
 
-        /* Extract input */
+        /* Extract input: setup and experiment files */
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("-s")) {
                 setupFile = args[++i];
@@ -22,11 +26,13 @@ public class WorkloadMain {
             }
         }
 
+        /* WorkloadGenerator require both files. Exit if they were not provided */
         if (setupFile == null || expFile == null) {
-            System.err.println("Missing -s and -e");
+            System.err.println("Missing setup file (-s) or experiment file (-e)");
             System.exit(-1);
         }
 
+        /* Transform configuration files to maps */
         Map setupMap = null;
         Map benchMap = null;
 
@@ -38,22 +44,35 @@ public class WorkloadMain {
             System.exit(-1);
         }
 
-        /* Execution Mode */
+        /* Identify execution mode */
+        boolean isSetupExecution = false;
         for (String arg : args) {
             if (arg.equalsIgnoreCase("-n")) {
-                createNewSetupGeneratorInstance(setupMap);
+                isSetupExecution = true;
             } else if (arg.equalsIgnoreCase("-r")) {
-                createTupleGeneratorInstance(setupMap, benchMap);
+                isSetupExecution = false;
+            }
+        }
+
+        /* Identify workload type */
+        String workloadType = (String) benchMap.get("workload_type");
+
+        /* Execute! */
+        if (workloadType.equalsIgnoreCase("YSB")) {
+            if (isSetupExecution) {
+                runYSBWorkloadSetup(setupMap);
+            } else {
+                runYSBWorkloadGenerator(setupMap, benchMap);
             }
         }
     }
 
-    private static void createNewSetupGeneratorInstance(Map setupMap) {
+    private static void runYSBWorkloadSetup(Map setupMap) {
         String jedisServerName = (String) setupMap.get("redis.host");
-        new NewSetupGenerator(new Jedis(jedisServerName)).setupWorkload();
+        new YSBWorkloadSetup(new Jedis(jedisServerName)).run();
     }
 
-    private static void createTupleGeneratorInstance(Map setupMap, Map benchMap) {
+    private static void runYSBWorkloadGenerator(Map setupMap, Map benchMap) {
         /* Create Kafka Producer */
         Properties props = new Properties();
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
@@ -74,9 +93,10 @@ public class WorkloadMain {
 
         for (int i = 1; i <= numOfInstances; i++) {
             try {
-                TupleGenerator tg =
-                        new TupleGenerator(kafkaProducer, "ad-events-" + i, jedis, throughput, watermarkFrequency);
-                new Thread(tg).start();
+                new Thread(
+                        new YSBWorkloadGenerator(
+                                kafkaProducer, KAFKA_TOPIC_PREFIX+ "-" + i, jedis, throughput, watermarkFrequency))
+                        .start();
                 Thread.sleep(2000);
             } catch (Exception e) {
                 e.printStackTrace();
