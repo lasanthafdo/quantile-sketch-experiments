@@ -5,10 +5,10 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-# Apache Mirror
+# Apache Mirror link
 APACHE_MIRROR="https://archive.apache.org/dist"
 
-# Scala parameters
+# Scala download parameters
 SCALA_BIN_VERSION=${SCALA_BIN_VERSION:-"2.12"}
 
 # Redis download parameters
@@ -112,7 +112,7 @@ init_kafka(){
     echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
 
     ## Check if in distributed mode
-    if [[ $HAS_HOSTS ]]; then
+    if [[ $HAS_HOSTS -eq 1 ]]; then
         echo "Setting up Kafka multi-nodes configurations"
         # 1: Change Zookeeper.connect variable
         sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties

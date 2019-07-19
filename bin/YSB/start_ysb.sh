@@ -6,7 +6,7 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 start_zk(){
- if [[ $HAS_HOSTS ]];
+ if [[ $HAS_HOSTS -eq 1 ]]; 
  then
     while read line
 	do
@@ -19,7 +19,7 @@ start_zk(){
 }
 
 start_redis(){
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]]; 
     then
 
         # Launch Redis on all instances
@@ -55,7 +55,7 @@ create_kafka_topic() {
     for kafka_topic in `seq 1 $1`
     do
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-        if [[ $HAS_HOSTS ]];
+        if [[ $HAS_HOSTS -eq 1 ]]; 
         then
 	        echo "creating $curr_kafka_topic at $2"
             ssh_connect $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" 5
@@ -73,7 +73,7 @@ create_kafka_topic() {
 
 start_kafka(){
     echo "Starting KAFKA"
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]]; 
     then
         while read line
 	    do
@@ -94,7 +94,7 @@ start_kafka(){
 
 start_flink(){
     # flink starts on the second node
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]]; 
     then
         second_node=""
         while read line
@@ -116,7 +116,7 @@ start_flink(){
 
 start_flink_processing(){
     # flink_processing starts on the second node
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]]; 
     then
         second_node=""
         while read line
@@ -137,7 +137,7 @@ start_flink_processing(){
 
 start_load(){
     # flink_load starts on the first node
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]]; 
     then
         first_node=""
         while read line
