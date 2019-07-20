@@ -51,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <program-class>YSB.AdvertisingQueryWindow</program-class>
+                            <program-class>YSB.AdvertisingQuery</program-class>
                         </manifestEntries>
                     </archive>
                 </configuration>

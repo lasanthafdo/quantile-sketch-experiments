@@ -1,4 +1,5 @@
-import YSB.AdvertisingQueryWindow;
+import LRB.model.LinearRoadQuery;
+import YSB.AdvertisingQuery;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
 
@@ -18,6 +19,8 @@ public class WorkloadProcessorEntryPoint {
         String workloadType = (String) experimentMap.get("workload_type");
         if (workloadType.equalsIgnoreCase("ysb")) {
             createYSBInstances(setupParams, experimentMap);
+        } else if (workloadType.equalsIgnoreCase("lrb")) {
+            createLRBInstances(setupParams, experimentMap);
         }
     }
 
@@ -34,14 +37,14 @@ public class WorkloadProcessorEntryPoint {
             int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
 
             // Run YSB query
-            AdvertisingQueryWindow ysbQuery = new AdvertisingQueryWindow(setupParams, policy, numQueries, windowSize);
+            AdvertisingQuery ysbQuery = new AdvertisingQuery(setupParams, policy, numQueries, windowSize);
             ysbQuery.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void createLRBInstance(ParameterTool setupParams, Map experimentMap) {
+    private static void createLRBInstances(ParameterTool setupParams, Map experimentMap) {
         try {
             // Scheduler policy
             int policyIndex = ((Integer) experimentMap.getOrDefault("policy_index", 0)).intValue();
@@ -54,7 +57,8 @@ public class WorkloadProcessorEntryPoint {
             int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
 
             // Run LRB query
-            // TODO(oibfarhat): Implement this
+            LinearRoadQuery lrQuery = new LinearRoadQuery(setupParams, policy, numQueries);
+            lrQuery.run();
         } catch (Exception e) {
             e.printStackTrace();
         }

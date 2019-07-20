@@ -25,7 +25,7 @@ import redis.clients.jedis.Jedis;
 
 import javax.annotation.Nullable;
 
-public class AdvertisingQueryWindow implements Runnable {
+public class AdvertisingQuery implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
     private final String KAFKA_PREFIX_TOPIC = "ad-events";
@@ -38,7 +38,7 @@ public class AdvertisingQueryWindow implements Runnable {
     /* The window size */
     private final int windowSize;
 
-    public AdvertisingQueryWindow(
+    public AdvertisingQuery(
             ParameterTool setupParams, StreamTaskSchedulerPolicy schedulerPolicy, int numQueries, int windowSize) {
         this.setupParams = setupParams;
         this.schedulerPolicy = schedulerPolicy;
