@@ -11,4 +11,12 @@ public class LRBEvent implements Serializable {
         this.type = type;
         this.time = time;
     }
+
+    public int getType() {
+        return type;
+    }
+
+    public long getTime() {
+        return time;
+    }
 }
