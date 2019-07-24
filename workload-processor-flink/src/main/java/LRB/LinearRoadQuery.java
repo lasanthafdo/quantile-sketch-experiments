@@ -37,7 +37,7 @@ import java.util.Iterator;
 public class LinearRoadQuery implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
-    private final String KAFKA_PREFIX_TOPIC = "lrb";
+    private final String KAFKA_PREFIX_TOPIC = "lrb-events";
     /* The Job Parameters */
     private final ParameterTool setupParams;
     /* The scheduler policy */

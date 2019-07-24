@@ -29,9 +29,12 @@ run_exp(){
         ./stop_ysb.sh $1 10
     elif [[ "$workload_type" = "lrb" ]]; then
         echo "Running LRB Experiment"
-         # Run LRB
+        # Run LRB
+        ./start_lrb.sh "$EXPERIMENTS_DIR/$1.yaml"
+        sleep $TEST_TIME
 
         # Stop LRB
+        ./stop_lrb.sh $1 10
     else
         echo "Unknown Workload!"
     fi

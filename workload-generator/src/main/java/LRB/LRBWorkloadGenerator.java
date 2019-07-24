@@ -20,8 +20,6 @@ public class LRBWorkloadGenerator implements Runnable {
     // Experiment parameters
     private final int throughput;
 
-    private int tupleNum = 0;
-
     public LRBWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName, int throughput) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
@@ -29,8 +27,6 @@ public class LRBWorkloadGenerator implements Runnable {
         this.fileName = fileName;
         // Experiment parameters
         this.throughput = throughput;
-
-        this.tupleNum = 0;
     }
 
     JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec, boolean hasWatermark) {
