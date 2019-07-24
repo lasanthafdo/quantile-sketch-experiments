@@ -1,3 +1,5 @@
+package YSB;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -9,7 +11,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class NewSetupGeneratorTest {
+public class YSBWorkloadSetupTest {
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -18,9 +20,9 @@ public class NewSetupGeneratorTest {
 
     @Test
     public void testNewSetup() {
-        NewSetupGenerator newSetupGenerator = new NewSetupGenerator(jedis);
+        YSBWorkloadSetup newSetupGenerator = new YSBWorkloadSetup(jedis);
 
-        newSetupGenerator.setupWorkload();
+        newSetupGenerator.run();
         verify(jedis, times(1)).flushAll();
         verify(jedis, times(100)).sadd(any(String.class), any(String.class));
     }

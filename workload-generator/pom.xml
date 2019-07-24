@@ -60,7 +60,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <program-class>WorkloadMain</program-class>
+                            <program-class>WorkloadGeneratorEntryPoint</program-class>
                         </manifestEntries>
                     </archive>
                 </configuration>

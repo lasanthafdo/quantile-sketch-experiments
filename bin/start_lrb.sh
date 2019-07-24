@@ -6,7 +6,7 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 start_zk(){
- if [[ $HAS_HOSTS -eq 1 ]]; 
+ if [[ $HAS_HOSTS -eq 1 ]];
  then
     while read line
 	do
@@ -18,44 +18,11 @@ start_zk(){
  fi
 }
 
-start_redis(){
-    if [[ $HAS_HOSTS -eq 1 ]]; 
-    then
-
-        # Launch Redis on all instances
-        while read line
-        do
-            echo "Launching redis on $line"
-            ssh -f ${line} "
-            $(declare -f start_if_needed);
-            $(declare -f pid_match);
-            start_if_needed redis-server Redis 1 $REDIS_DIR/src/redis-server"
-            sleep 5
-        done <${HOSTS_FILE}
-
-       # Setup new campaigns on the first node
-        first_node=""
-        while read line
-        do
-            first_node=$line
-            break
-        done <${HOSTS_FILE}
-
-        echo "Deploying Redis on $first_node"
-        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 10
-    else
-        start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
-        cd $WORKLOAD_GENERATOR_DIR
-        $MVN exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -n"
-        cd $PROJECT_DIR
-    fi
-}
-
 create_kafka_topic() {
     for kafka_topic in `seq 1 $1`
     do
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-        if [[ $HAS_HOSTS -eq 1 ]]; 
+        if [[ $HAS_HOSTS -eq 1 ]];
         then
 	        echo "creating $curr_kafka_topic at $2"
             ssh_connect $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" 5
@@ -73,7 +40,7 @@ create_kafka_topic() {
 
 start_kafka(){
     echo "Starting KAFKA"
-    if [[ $HAS_HOSTS -eq 1 ]]; 
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         while read line
 	    do
@@ -94,7 +61,7 @@ start_kafka(){
 
 start_flink(){
     # flink starts on the second node
-    if [[ $HAS_HOSTS -eq 1 ]]; 
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         second_node=""
         while read line
@@ -116,7 +83,7 @@ start_flink(){
 
 start_flink_processing(){
     # flink_processing starts on the second node
-    if [[ $HAS_HOSTS -eq 1 ]]; 
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         second_node=""
         while read line
@@ -137,7 +104,7 @@ start_flink_processing(){
 
 start_load(){
     # flink_load starts on the first node
-    if [[ $HAS_HOSTS -eq 1 ]]; 
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         first_node=""
         while read line
@@ -165,7 +132,6 @@ start(){
     local num_instances=$(yaml $1 "['num_instances']")
 
     start_zk
-    start_redis $1
     start_kafka $num_instances
     start_flink
     start_flink_processing $1
@@ -174,7 +140,7 @@ start(){
 
 if [[ $# -lt 1 ]];
 then
-  echo "Invalid use: ./start_ysb.sh <experiment_name>"
+  echo "Invalid use: ./start_lrb.sh <experiment_name>"
 else
     cd "$PROJECT_DIR"
     start $1 # $1: experiment file

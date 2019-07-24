@@ -18,24 +18,6 @@ stop_zk(){
     fi
 }
 
-stop_redis(){
-    if [[ $HAS_HOSTS -eq 1 ]];
-    then
-        first_node=""
-        while read line
-        do
-        ssh ${line} "
-            $(declare -f stop_if_needed);
-            $(declare -f pid_match);
-            stop_if_needed redis-server Redis
-            rm -f dump.rdb" </dev/null
-        done <${HOSTS_FILE}
-    else
-        stop_if_needed redis-server Redis
-        rm -f dump.rdb
-    fi
-}
-
 stop_kafka(){
     if [[ $HAS_HOSTS -eq 1 ]];
     then
@@ -162,7 +144,7 @@ stop(){
 cd "$PROJECT_DIR"
 if [[ $# -lt 1 ]];
 then
-  echo "Invalid use: ./stop_ysb.sh <experiment_name>"
+  echo "Invalid use: ./stop_lrb.sh <experiment_name>"
 elif [[ $# -lt 2 ]];
 then
   stop "$EXPERIMENTS_DIR/$1"

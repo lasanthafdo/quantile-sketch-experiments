@@ -51,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <program-class>AdvertisingQueryWindowSingleNode</program-class>
+                            <program-class>WorkloadProcessorEntryPoint</program-class>
                         </manifestEntries>
                     </archive>
                 </configuration>

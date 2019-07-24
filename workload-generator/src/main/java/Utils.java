@@ -14,14 +14,6 @@ import static java.util.UUID.randomUUID;
 
 public class Utils {
 
-    static List<String> generateIds(int n) {
-        ArrayList<String> list = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            list.add(randomUUID().toString());
-        }
-        return list;
-    }
-
     static Map yamlToMap(String fileName) throws IOException {
         InputStreamReader in = new InputStreamReader(new FileInputStream(new File(fileName)));
         Yaml yaml = new Yaml(new SafeConstructor());

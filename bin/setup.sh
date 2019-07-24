@@ -5,10 +5,10 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-# Apache Mirror
+# Apache Mirror link
 APACHE_MIRROR="https://archive.apache.org/dist"
 
-# Scala parameters
+# Scala download parameters
 SCALA_BIN_VERSION=${SCALA_BIN_VERSION:-"2.12"}
 
 # Redis download parameters
@@ -16,22 +16,19 @@ REDIS_VERSION=${REDIS_VERSION:-"5.0.5"}
 
 # Kafka download parameters
 KAFKA_VERSION=${KAFKA_VERSION:-"2.2.0"}
-KAFKA_BROKERS="localhost"
-KAFKA_PARTITIONS=${KAFKA_PARTITIONS:-1}
 
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
-    echo '    - "'$KAFKA_BROKERS'"' >> $SETUP_FILE
+    echo '    - "'localhost'"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
-    echo '    - "'$ZK_HOST'"' >> $SETUP_FILE
+    echo '    - "'$ZK_CONNECTION'"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
     echo 'redis.host: "localhost"' >> $SETUP_FILE
-    echo 'kafka.topic.prefix: "'$KAFKA_TOPIC_PREFIX'"' >> $SETUP_FILE
-    echo 'kafka.partitions: '$KAFKA_PARTITIONS >> $SETUP_FILE
+    echo 'kafka.partitions: '1 >> $SETUP_FILE
 }
 
 init_redis(){
@@ -63,18 +60,47 @@ init_zk(){
     echo 'initLimit=5' >> $ZK_CONF_FILE
     echo 'syncLimit=2' >> $ZK_CONF_FILE
 
-    if [[ $HAS_HOSTS ]]; then
+    ## Check if distributed mode
+    if [[ $HAS_HOSTS -eq 1 ]]; then
+        echo "Setting up ZK multi-nodes configurations"
+        # 1: Input ZK servers
         local counter=0
         while read line
         do
            ((counter++))
            echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
         done <${HOSTS_FILE}
+
+        # 2: Write myId in /tmp/ on all hosts
+	    local counter=0
+	    while read line
+	    do
+            ((counter++))
+            ssh_connect $line "
+                if [[ ! -d /tmp/data ]]; then
+                    mkdir /tmp/data
+                fi
+
+                if [[ ! -d /tmp/data/zk ]]; then
+                    mkdir /tmp/data/zk
+                fi
+                echo $counter > /tmp/data/zk/myid" 5
+        done <${HOSTS_FILE}
+
+        # 3: Fix ZK configs to point to loopback address and move the confs to /tmp/
+        counter=0
+        while read line
+	    do
+            ((counter++))
+            ssh_connect $line "
+                cp $ZK_CONF_FILE /tmp/data/zk/zoo.cfg
+                sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg" 5
+        done <${HOSTS_FILE}
     fi
 }
 
 init_kafka(){
-    # Fetch Kafka
+    ## Fetch Kafka
     if [[ ! -d $KAFKA_DIR ]]; then
         local kafka_file="kafka_$SCALA_BIN_VERSION-$KAFKA_VERSION"
         local kafka_tar_file="$kafka_file.tgz"
@@ -85,12 +111,21 @@ init_kafka(){
     echo "dataDir=/tmp/data/zk" > $KAFKA_DIR/config/zookeeper.properties
     echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
 
-    if [[ $HAS_HOSTS ]]; then
-        # init Kafka properties
+    ## Check if in distributed mode
+    if [[ $HAS_HOSTS -eq 1 ]]; then
+        echo "Setting up Kafka multi-nodes configurations"
+        # 1: Change Zookeeper.connect variable
         sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties
+	    # 2: Change broker id for each node and move the file to /tmp/data/
+	    local counter=0
+	    while read line
+	    do
+            ((counter++))
+            ssh_connect $line "
+                cp $HOME/klink-benchmarks/benchmark/kafka/config/server.properties /tmp/data/server.properties
+                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties" 5
+        done <${HOSTS_FILE}
     fi
-
-
 }
 
 init_flink(){
@@ -155,16 +190,22 @@ init_flink_from_github(){
 }
 
 setup(){
+    ## Create SETUP file first
     init_setup_file
 
+    ## Create $BENCH_DIR
     if [[ ! -d "$BENCH_DIR" ]]; then
         mkdir "$BENCH_DIR"
     fi
     cd "$BENCH_DIR"
 
+    ## Install Redis
     init_redis
+    ## Install ZooKeeper
     init_zk
+    ## Install Kafka
     init_kafka
+    ## Install Klink
     init_flink_from_github
 }
 
