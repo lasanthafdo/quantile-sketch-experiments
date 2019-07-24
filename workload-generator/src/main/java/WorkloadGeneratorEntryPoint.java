@@ -1,3 +1,4 @@
+import LRB.LRBWorkloadGenerator;
 import YSB.YSBWorkloadGenerator;
 import YSB.YSBWorkloadSetup;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+import static LRB.LRBConstants.LRB_KAFKA_TOPIC_PREFIX;
 import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
 
 public class WorkloadGeneratorEntryPoint {
@@ -58,12 +60,14 @@ public class WorkloadGeneratorEntryPoint {
         String workloadType = (String) benchMap.get("workload_type");
 
         /* Execute! */
-        if (workloadType.equalsIgnoreCase("YSB")) {
+        if (workloadType.equalsIgnoreCase("ysb")) {
             if (isSetupExecution) {
                 runYSBWorkloadSetup(setupMap);
             } else {
                 runYSBWorkloadGenerator(setupMap, benchMap);
             }
+        } else if (workloadType.equalsIgnoreCase("lrb")) {
+            runLRBWorkloadGenerator(setupMap, benchMap);
         }
     }
 
@@ -95,7 +99,39 @@ public class WorkloadGeneratorEntryPoint {
             try {
                 new Thread(
                         new YSBWorkloadGenerator(
-                                kafkaProducer, KAFKA_TOPIC_PREFIX+ "-" + i, jedis, throughput, watermarkFrequency))
+                                kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput, watermarkFrequency))
+                        .start();
+                Thread.sleep(2000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void runLRBWorkloadGenerator(Map setupMap, Map benchMap) {
+        /* Create Kafka Producer */
+        Properties props = new Properties();
+        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
+
+        Producer<byte[], byte[]> kafkaProducer =
+                new KafkaProducer<>(props,
+                        new ByteArraySerializer(),
+                        new ByteArraySerializer());
+
+        /* Create Redis instance */
+        String jedisServerName = (String) setupMap.get("redis.host");
+        Jedis jedis = new Jedis(jedisServerName);
+
+        /* Get Benchmark properties */
+        int numOfInstances = (Integer) benchMap.get("num_instances");
+        int throughput = (Integer) benchMap.get("throughput");
+        int watermarkFrequency = (Integer) benchMap.get("watermark_frequency");
+
+        for (int i = 1; i <= numOfInstances; i++) {
+            try {
+                new Thread(
+                        new LRBWorkloadGenerator(
+                                kafkaProducer, LRB_KAFKA_TOPIC_PREFIX + "-" + i, "car.dat", throughput))
                         .start();
                 Thread.sleep(2000);
             } catch (Exception e) {

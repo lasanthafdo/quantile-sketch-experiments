@@ -46,7 +46,7 @@ start_redis(){
     else
         start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
         cd $WORKLOAD_GENERATOR_DIR
-        $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+        $MVN exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -n"
         cd $PROJECT_DIR
     fi
 }
@@ -150,10 +150,10 @@ start_load(){
 
         ssh_connect ${first_node} "
             cd $WORKLOAD_GENERATOR_DIR
-            $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -r' &" 10
+            $MVN exec:java -Dexec.mainClass='WorkloadGeneratorEntryPoint' -Dexec.args='-s $SETUP_FILE -e $1 -r' &" 10
     else
         cd $WORKLOAD_GENERATOR_DIR
-        $MVN exec:java -Dexec.mainClass="WorkloadMain" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
+        $MVN exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
         cd $PROJECT_DIR
     fi
 }

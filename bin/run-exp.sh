@@ -16,22 +16,24 @@ run_exp(){
 	fi
 
 	# Fetch the workload type
-	local workload_type=$(yaml $1 "['workload_type']")
+	local workload_type=$(yaml "$EXPERIMENTS_DIR/$1.yaml" "['workload_type']")
     cd $BIN_DIR
 
-    if [[ "$workload_type" = "YSB" ]]; then
+    if [[ "$workload_type" = "ysb" ]]; then
         echo "Running YSB Experiment"
         # Run YSB
-        ./YSB/start_ysb.sh "$EXPERIMENTS_DIR/$1.yaml"
+        ./start_ysb.sh "$EXPERIMENTS_DIR/$1.yaml"
         sleep $TEST_TIME
 
         # Stop YSB
-        ./YSB/stop_ysb.sh $1 10
-    elif [[ "$workload_type" = "LRB" ]]; then
+        ./stop_ysb.sh $1 10
+    elif [[ "$workload_type" = "lrb" ]]; then
         echo "Running LRB Experiment"
          # Run LRB
 
-         # Stop LRB
+        # Stop LRB
+    else
+        echo "Unknown Workload!"
     fi
 
     echo "$Experiment $1 is done."

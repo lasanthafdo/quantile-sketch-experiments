@@ -61,7 +61,7 @@ init_zk(){
     echo 'syncLimit=2' >> $ZK_CONF_FILE
 
     ## Check if distributed mode
-    if [[ $HAS_HOSTS ]]; then
+    if [[ $HAS_HOSTS -eq 1 ]]; then
         echo "Setting up ZK multi-nodes configurations"
         # 1: Input ZK servers
         local counter=0

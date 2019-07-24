@@ -15,7 +15,6 @@ class Utils {
         String zookeeperServers = getZookeeperServers(conf);
 
         Map<String, String> flinkConfs = new HashMap<>();
-        flinkConfs.put("topic", getKafkaTopic(conf));
         flinkConfs.put("bootstrap.servers", kafkaBrokers);
         flinkConfs.put("zookeeper.connect", zookeeperServers);
         flinkConfs.put("jedis_server", getRedisHost(conf));
@@ -60,13 +59,6 @@ class Utils {
             throw new IllegalArgumentException("No kafka port found!");
         }
         return listOfStringToString((List<String>) conf.get("kafka.brokers"), String.valueOf(conf.get("kafka.port")));
-    }
-
-    private static String getKafkaTopic(Map conf) {
-        if (!conf.containsKey("kafka.topic.prefix")) {
-            throw new IllegalArgumentException("No kafka topic found!");
-        }
-        return (String) conf.get("kafka.topic.prefix");
     }
 
     private static String getRedisHost(Map conf) {

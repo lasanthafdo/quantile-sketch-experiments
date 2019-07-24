@@ -1,4 +1,4 @@
-import LRB.model.LinearRoadQuery;
+import LRB.LinearRoadQuery;
 import YSB.AdvertisingQuery;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;

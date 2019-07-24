@@ -6,7 +6,7 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 stop_zk(){
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
     	while read line
 	    do
@@ -18,26 +18,8 @@ stop_zk(){
     fi
 }
 
-stop_redis(){
-    if [[ $HAS_HOSTS ]];
-    then
-        first_node=""
-        while read line
-        do
-        ssh ${line} "
-            $(declare -f stop_if_needed);
-            $(declare -f pid_match);
-            stop_if_needed redis-server Redis
-            rm -f dump.rdb" </dev/null
-        done <${HOSTS_FILE}
-    else
-        stop_if_needed redis-server Redis
-        rm -f dump.rdb
-    fi
-}
-
 stop_kafka(){
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         while read line
 	do
@@ -71,7 +53,7 @@ stop_kafka(){
 
 stop_flink(){
     # flink starts on the second node
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         second_node=""
         while read line
@@ -101,7 +83,7 @@ stop_flink_processing_local() {
 
 stop_flink_processing(){
     # flink starts on the second node
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         second_node=""
         while read line
@@ -125,7 +107,7 @@ pull_stdout() {
 }
 
 stop_load(){
-    if [[ $HAS_HOSTS ]];
+    if [[ $HAS_HOSTS -eq 1 ]];
     then
         first_node=""
         while read line
@@ -162,7 +144,7 @@ stop(){
 cd "$PROJECT_DIR"
 if [[ $# -lt 1 ]];
 then
-  echo "Invalid use: ./stop_ysb.sh <experiment_name>"
+  echo "Invalid use: ./stop_lrb.sh <experiment_name>"
 elif [[ $# -lt 2 ]];
 then
   stop "$EXPERIMENTS_DIR/$1"
