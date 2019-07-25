@@ -12,7 +12,7 @@
 
 ### Scheduling Algorithms
 
-1 -> round robin
+1 -> round robin //
 2 -> longest queue first
 3 -> shortest remaining processing time
 4 -> rate based
