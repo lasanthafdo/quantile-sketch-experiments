@@ -18,6 +18,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.RichWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
@@ -108,7 +109,7 @@ public class LinearRoadQuery implements Runnable {
         // speed monitor - segment, xway, avg speed
         DataStream<Tuple3<Integer, Integer, Double>> speedStreams = intermediate
                 .keyBy(1, 5) // key by xway and seg
-                .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+                .window(TumblingEventTimeWindows.of(Time.seconds(3)))
                 .apply(new RichWindowFunction<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>,
                         Tuple3<Integer, Integer, Double>, Tuple, TimeWindow>() {
 
@@ -134,12 +135,12 @@ public class LinearRoadQuery implements Runnable {
 
                         out.collect(new Tuple3<>(head.f1, head.f5, speed / counter));
                     }
-                });
+                }).name("SpeedWindow (" + queryInstance + ")");
 
         // vehicle stream - seg, xway, vcounter
         DataStream<Tuple3<Integer, Integer, Integer>> vehiclesStream = intermediate
                 .keyBy(1, 5)
-                .window(TumblingEventTimeWindows.of(Time.minutes(1)))
+                .window(TumblingEventTimeWindows.of(Time.seconds(3)))
                 .apply(new WindowFunction<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>,
                         Tuple3<Integer, Integer, Integer>, Tuple, TimeWindow>() {
                     @Override
@@ -162,12 +163,12 @@ public class LinearRoadQuery implements Runnable {
                         out.collect(new Tuple3<>(head.f1, head.f5, counter.size()));
 
                     }
-                });
+                }).name("Vehicle Window (" + queryInstance + ")" );
 
         // accident counter - vid, seg, xway, pos, time
         DataStream<Tuple5<Integer, Integer, Integer, Integer, Integer>> accidentsStream = intermediate
                 .keyBy(1) // segment
-                .window(SlidingEventTimeWindows.of(Time.seconds(120), Time.seconds(30)))
+                .window(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(2)))
                 .process(new ProcessWindowFunction<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>,
                         Tuple5<Integer, Integer, Integer, Integer, Integer>, Tuple, TimeWindow>() {
 
@@ -195,7 +196,7 @@ public class LinearRoadQuery implements Runnable {
                                     int cnt = stopped.get(vid).f0;
                                     long timestamp = stopped.get(vid).f2;
                                     long now = context.currentProcessingTime();
-                                    if (currPos != oldPos || (now - timestamp) < (120 * 1000)) {
+                                    if (currPos != oldPos || (now - timestamp) < (3 * 1000)) {
                                         // reset counter
                                         stopped.put(vid, new Tuple3<>(1, currPos, now));
                                     } else if (cnt == 4) {
@@ -223,7 +224,7 @@ public class LinearRoadQuery implements Runnable {
                                         })));
                     }
 
-                });
+                }).name("Accident Window (" + queryInstance + ")");
 
 
         DataStream<Tuple4<Integer, Integer, Integer, Double>> tollsStream = vehiclesStream
@@ -240,7 +241,7 @@ public class LinearRoadQuery implements Runnable {
                         return new Tuple2<>(value.f0, value.f1);
                     }
                 })
-                .window(TumblingEventTimeWindows.of(Time.seconds(30)))
+                .window(TumblingEventTimeWindows.of(Time.seconds(3)))
                 .apply(new JoinFunction<Tuple3<Integer, Integer, Integer>,
                         Tuple3<Integer, Integer, Double>,
                         Tuple4<Integer, Integer, Integer, Double>>() {
@@ -270,7 +271,7 @@ public class LinearRoadQuery implements Runnable {
                         return new Tuple2<>(value.f1, value.f2);
                     }
                 })
-                .window(TumblingEventTimeWindows.of(Time.seconds(30)))
+                .window(TumblingEventTimeWindows.of(Time.seconds(3)))
                 .apply(new CoGroupFunction<Tuple4<Integer, Integer, Integer, Double>,
                         Tuple5<Integer, Integer, Integer, Integer, Integer>,
                         Tuple4<Integer, Integer, Integer, Double>>() {
@@ -292,7 +293,12 @@ public class LinearRoadQuery implements Runnable {
                 });
 
 
-        tollsStream.print();
+        tollsStream.addSink(new SinkFunction<Tuple4<Integer, Integer, Integer, Double>>() {
+            @Override
+            public void invoke(Tuple4<Integer, Integer, Integer, Double> value, Context contet) throws Exception {
+                // Do nothing
+            }
+        }).name("Sink Function");
     }
 
     private class LRBWatermarkAndTimeStampAssigner implements AssignerWithPeriodicWatermarks<LRBInputRecord> {
