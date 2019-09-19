@@ -42,7 +42,7 @@ start_redis(){
         done <${HOSTS_FILE}
 
         echo "Deploying Redis on $first_node"
-        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadMain' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 10
+        ssh_connect ${first_node} "$(declare -f start_if_needed); $(declare -f pid_match); cd $WORKLOAD_GENERATOR_DIR; $MVN exec:java -Dexec.mainClass='WorkloadGeneratorEntryPoint' -Dexec.args='-s $SETUP_FILE -e $1 -n'" 10
     else
         start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server"
         cd $WORKLOAD_GENERATOR_DIR
