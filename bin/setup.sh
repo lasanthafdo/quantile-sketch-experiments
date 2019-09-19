@@ -23,7 +23,7 @@ init_setup_file(){
     echo '    - "'localhost'"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
-    echo '    - "'$ZK_CONNECTION'"' >> $SETUP_FILE
+    echo '    - "localhost:2181"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
