@@ -118,12 +118,15 @@ init_kafka(){
         sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties
 	    # 2: Change broker id for each node and move the file to /tmp/data/
 	    local counter=0
+	    local port=9092
 	    while read line
 	    do
             ((counter++))
             ssh_connect $line "
                 cp $HOME/klink-benchmarks/benchmark/kafka/config/server.properties /tmp/data/server.properties
-                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties" 5
+                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties
+                cat port=$port" 5
+            ((port++))
         done <${HOSTS_FILE}
     fi
 }

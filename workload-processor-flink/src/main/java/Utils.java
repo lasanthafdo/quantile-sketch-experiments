@@ -58,7 +58,17 @@ class Utils {
         if (!conf.containsKey("kafka.port")) {
             throw new IllegalArgumentException("No kafka port found!");
         }
-        return listOfStringToString((List<String>) conf.get("kafka.brokers"), String.valueOf(conf.get("kafka.port")));
+        String kafkaStr = (String) conf.get("kafka.brokers");
+        int kafkaPort = (int) conf.get("kafka.port");
+        String[] parts = kafkaStr.split(" ");
+        String result = "";
+        for(int i = 0; i < parts.length; i++) {
+            result = result + " " + parts[i] + ":" + (kafkaPort + i);
+            if (i < parts.length - 1) {
+                result += ",";
+            }
+        }
+        return result;
     }
 
     private static String getRedisHost(Map conf) {
