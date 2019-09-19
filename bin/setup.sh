@@ -20,10 +20,18 @@ KAFKA_VERSION=${KAFKA_VERSION:-"2.2.0"}
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
+#    if [[ $HAS_HOSTS -eq 1 ]]; then
+#    echo '  -' >> $SETUP_FILE
+#    while read line
+#        do
+#           echo "$line " >> SETUP_FILE
+#           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
+#        done <${HOSTS_FILE}
+#    fi
     echo '    - "'localhost'"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
-    echo '    - "localhost:2181"' >> $SETUP_FILE
+    echo '    - "localhost"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
@@ -125,7 +133,7 @@ init_kafka(){
             ssh_connect $line "
                 cp $HOME/klink-benchmarks/benchmark/kafka/config/server.properties /tmp/data/server.properties
                 sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties
-                cat port=$port" 5
+                echo "port=$port" >> /tmp/data/server.properties" 5
             ((port++))
         done <${HOSTS_FILE}
     fi
