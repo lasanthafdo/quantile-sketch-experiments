@@ -58,9 +58,9 @@ class Utils {
         if (!conf.containsKey("kafka.port")) {
             throw new IllegalArgumentException("No kafka port found!");
         }
-        String kafkaStr = (String) conf.get("kafka.brokers");
+        List<String> kafkaStr = (List<String>) conf.get("kafka.brokers");
         int kafkaPort = (int) conf.get("kafka.port");
-        String[] parts = kafkaStr.split(" ");
+        String[] parts = kafkaStr.get(0).split(" ");
         String result = "";
         for(int i = 0; i < parts.length; i++) {
             result = result + " " + parts[i] + ":" + (kafkaPort + i);
