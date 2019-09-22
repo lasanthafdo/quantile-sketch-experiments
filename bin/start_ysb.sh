@@ -106,8 +106,6 @@ start_flink(){
             $(declare -f start_if_needed);
             $(declare -f pid_match);
             start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh" 10
-
-        sleep 10
     else
         start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh
         sleep 5

@@ -75,7 +75,7 @@ public class AdvertisingQuery implements Runnable {
                         // Different topics for different query queryInstances
                         KAFKA_PREFIX_TOPIC + "-" + queryInstance,
                         new SimpleStringSchema(),
-                        setupParams.getProperties()))
+                        setupParams.getProperties()).setStartFromEarliest())
                 .name("Source (" + queryInstance + ")")
                 // Chain all operators before a watermark is emitted.
                 .startNewChain();

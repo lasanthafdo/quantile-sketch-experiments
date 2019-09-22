@@ -14,6 +14,8 @@ public class WorkloadProcessorEntryPoint {
         Map setupMap = Utils.findAndReadConfigFile(parameterTool.getRequired("setup"));
         ParameterTool setupParams = ParameterTool.fromMap(Utils.getFlinkConfs(setupMap));
 
+        System.out.println(setupParams.toMap().toString());
+
         Map experimentMap = Utils.findAndReadConfigFile(parameterTool.getRequired("experiment"));
 
         String workloadType = (String) experimentMap.get("workload_type");
