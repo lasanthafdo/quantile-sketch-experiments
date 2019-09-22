@@ -100,9 +100,11 @@ init_zk(){
         while read line
 	    do
             ((counter++))
+            port=counter + 2181
             ssh_connect $line "
                 cp $ZK_CONF_FILE /tmp/data/zk/zoo.cfg
-                sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg" 5
+                sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg
+                sed -i 's/clientPort=.*/clientPort=${port}/g' /tmp/data/zk/zoo.cfg" 5
         done <${HOSTS_FILE}
     fi
 }
