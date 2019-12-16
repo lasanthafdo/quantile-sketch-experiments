@@ -33,7 +33,6 @@ init_setup_file(){
     echo 'zookeeper.servers:' >> $SETUP_FILE
     echo '    - "localhost"' >> $SETUP_FILE
     echo >> $SETUP_FILE
-    echo 'setup.mode: '$1 >> $SETUP_FILE
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
     echo 'redis.host: "localhost"' >> $SETUP_FILE
@@ -142,13 +141,18 @@ init_kafka(){
 
 init_flink(){
     # Fetch Flink
-    if [[ ! -d $FLINK_DIR ]]; then
-        local flink_file="flink-$FLINK_VERSION"
-        local flink_file_with_scala="$flink_file-bin-scala_${SCALA_BIN_VERSION}"
-        local flink_tar_file="$flink_file_with_scala.tgz"
-        fetch_untar_file "$flink_tar_file" "$APACHE_MIRROR/flink/$flink_file/$flink_tar_file"
-        mv "$flink_file" $FLINK_DIR
+
+    # Remove old_target
+     if [[ -d $FLINK_DIR ]]; then
+        rm -r $FLINK_DIR
     fi
+
+     # If Apache Flink is not built
+     if [[ ! -d $FLINK_SRC_DIR ]]; then
+        echo "Cloning Flink"
+        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        maven_clean_install_no_tests $FLINK_SRC_DIR
+     fi
 }
 
 init_klink(){
@@ -229,9 +233,48 @@ init_watslack() {
      sudo chmod -R 777 $PROJECT_DIR
 }
 
+init_magellan() {
+    # Remove old_target
+     if [[ -d $FLINK_DIR ]]; then
+        rm -r $FLINK_DIR
+    fi
+
+     # If Apache Flink is not built
+     if [[ ! -d $FLINK_SRC_DIR ]]; then
+        echo "Cloning Flink"
+        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        maven_clean_install_no_tests $FLINK_SRC_DIR
+     fi
+
+     # Get Magellan
+     if [[ ! -d $MAG_DIR ]]; then
+        git clone https://github.com/oibfarhat/magellan.git $MAG_DIR
+     fi
+
+     # Move klink changes
+     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
+        sudo rm -r $FLINK_SRC_DIR/flink-runtime
+     fi
+
+     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
+        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
+     fi
+
+     sudo chmod -R 777 $PROJECT_DIR
+
+     cp -r $MAG_DIR/flink-runtime $FLINK_SRC_DIR/
+     cp -r $MAG_DIR/flink-streaming-java $FLINK_SRC_DIR/
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
+     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
+
+     sudo chmod -R 777 $PROJECT_DIR
+}
+
 setup(){
     ## Create SETUP file first
-    init_setup_file $1
+    init_setup_file
 
     ## Create $BENCH_DIR
     if [[ ! -d "$BENCH_DIR" ]]; then
@@ -259,9 +302,6 @@ setup(){
     elif [[ $1 = "magellan" ]]; then
         init_magellan
     fi
-
-    ## Install Klink
-    init_flink_from_github
 }
 
 if [[ $# -lt 1 ]];
