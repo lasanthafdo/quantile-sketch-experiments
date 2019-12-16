@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 
 ## Projects Directories
-PROJECT_DIR="$HOME/klink-benchmarks"
+PROJECT_DIR="$HOME/flink-benchmarks"
 KLINK_DIR="$HOME/klink"
+MAG_DIR="$HOME/magellan"
+WATSLACK_DIR="$HOME/watslack"
 
-## klink-benchmarks directories
+## flink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
 BENCH_DIR="$PROJECT_DIR/benchmark"
 WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator"
 WORKLOAD_PROCESSOR_DIR="$PROJECT_DIR/workload-processor-flink"
 WORKLOAD_ANALYZER_DIR="$PROJECT_DIR/workload-analyzer"
 
-## klink-benchmarks-benchmark directories
+## flink-benchmarks-benchmark directories
 EXPERIMENTS_DIR="$BENCH_DIR/experiments"
 DOWNLOAD_CACHE_DIR="$BENCH_DIR/download-cache"
 ZK_DIR="$BENCH_DIR/zk"
@@ -20,7 +22,7 @@ KAFKA_DIR="$BENCH_DIR/kafka"
 FLINK_DIR="$BENCH_DIR/flink"
 FLINK_SRC_DIR="$BENCH_DIR/flink-src"
 
-## klink-benchmarks files
+## flink-benchmarks files
 SETUP_FILE="$PROJECT_DIR/setup.yaml"
 HOSTS_FILE="$PROJECT_DIR/hosts.txt"
 ZK_CONF_FILE="$ZK_DIR/conf/zoo.cfg"

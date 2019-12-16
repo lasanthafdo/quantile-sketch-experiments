@@ -33,6 +33,7 @@ init_setup_file(){
     echo 'zookeeper.servers:' >> $SETUP_FILE
     echo '    - "localhost"' >> $SETUP_FILE
     echo >> $SETUP_FILE
+    echo 'setup.mode: '$1 >> $SETUP_FILE
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
     echo 'redis.host: "localhost"' >> $SETUP_FILE
@@ -150,7 +151,7 @@ init_flink(){
     fi
 }
 
-init_flink_from_github(){
+init_klink(){
     # Remove old_target
      if [[ -d $FLINK_DIR ]]; then
         rm -r $FLINK_DIR
@@ -187,22 +188,50 @@ init_flink_from_github(){
      mv $FLINK_SRC_DIR/build-target $FLINK_DIR
 
      sudo chmod -R 777 $PROJECT_DIR
+}
 
-     echo 'metrics.latency.history-size: 65536' >> $FLINK_CONF_FILE
-     echo 'metrics.latency.interval: 500' >> $FLINK_CONF_FILE
+init_watslack() {
+    # Remove old_target
+     if [[ -d $FLINK_DIR ]]; then
+        rm -r $FLINK_DIR
+    fi
 
-     echo 'metrics.scope.jm: <host>.jobmanager' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.jm.job: <host>.jobmanager.<job_name>' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.tm: <host>.taskmanager.<tm_id>' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.tm.job: <host>.taskmanager.<tm_id>.<job_name>' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.task: <host>.taskmanager.<tm_id>.<job_name>.<task_name>.<subtask_index>' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.operator: <host>.taskmanager.<tm_id>.<job_name>.<task_name>.<operator_name>.<subtask_index>' >> $FLINK_CONF_FILE
-     echo 'metrics.scope.scheduler: <host>.<tm_id>.<scheduler_name>' >> $FLINK_CONF_FILE
+     # If Apache Flink is not built
+     if [[ ! -d $FLINK_SRC_DIR ]]; then
+        echo "Cloning Flink"
+        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        maven_clean_install_no_tests $FLINK_SRC_DIR
+     fi
+
+     # Get Watslack
+     if [[ ! -d $WATSLACK_DIR ]]; then
+        git clone https://github.com/oibfarhat/watslack.git $WATSLACK_DIR
+     fi
+
+     # Move klink changes
+     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
+        sudo rm -r $FLINK_SRC_DIR/flink-runtime
+     fi
+
+     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
+        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
+     fi
+
+     sudo chmod -R 777 $PROJECT_DIR
+
+     cp -r $WATSLACK_DIR/flink-runtime $FLINK_SRC_DIR/
+     cp -r $WATSLACK_DIR/flink-streaming-java $FLINK_SRC_DIR/
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
+     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
+     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
+
+     sudo chmod -R 777 $PROJECT_DIR
 }
 
 setup(){
     ## Create SETUP file first
-    init_setup_file
+    init_setup_file $1
 
     ## Create $BENCH_DIR
     if [[ ! -d "$BENCH_DIR" ]]; then
@@ -216,8 +245,29 @@ setup(){
     init_zk
     ## Install Kafka
     init_kafka
+
+    ## Install Flink
+    if [[ $1 = "flink" ]]; then
+        init_flink
+    ## Install Klink
+    elif [[ $1 = "klink" ]]; then
+        init_klink
+    ## Install watslack
+    elif [[ $1 = "watslack" ]]; then
+        init_watslack
+    ## Install magellan
+    elif [[ $1 = "magellan" ]]; then
+        init_magellan
+    fi
+
     ## Install Klink
     init_flink_from_github
 }
 
-setup
+if [[ $# -lt 1 ]];
+then
+    echo "Invalid use: ./setup.sh MODE=[flink|klink|watslack|magellan]"
+else
+    cd "$PROJECT_DIR"
+    setup $1
+fi
