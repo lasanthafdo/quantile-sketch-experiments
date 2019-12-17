@@ -1,7 +1,7 @@
 import LRB.LinearRoadQuery;
 import YSB.AdvertisingQuery;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
+//import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
 
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public class WorkloadProcessorEntryPoint {
         try {
             // Scheduler policy
             int policyIndex = ((Integer) experimentMap.getOrDefault("policy_index", 0)).intValue();
-            StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
+          //  StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
 
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
@@ -39,7 +39,7 @@ public class WorkloadProcessorEntryPoint {
             int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
 
             // Run YSB query
-            AdvertisingQuery ysbQuery = new AdvertisingQuery(setupParams, policy, numQueries, windowSize);
+            AdvertisingQuery ysbQuery = new AdvertisingQuery(setupParams, numQueries, windowSize);
             ysbQuery.run();
         } catch (Exception e) {
             e.printStackTrace();
@@ -50,7 +50,7 @@ public class WorkloadProcessorEntryPoint {
         try {
             // Scheduler policy
             int policyIndex = ((Integer) experimentMap.getOrDefault("policy_index", 0)).intValue();
-            StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
+            // StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
 
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
@@ -59,7 +59,7 @@ public class WorkloadProcessorEntryPoint {
             int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
 
             // Run LRB query
-            LinearRoadQuery lrQuery = new LinearRoadQuery(setupParams, policy, numQueries);
+            LinearRoadQuery lrQuery = new LinearRoadQuery(setupParams, numQueries);
             lrQuery.run();
         } catch (Exception e) {
             e.printStackTrace();

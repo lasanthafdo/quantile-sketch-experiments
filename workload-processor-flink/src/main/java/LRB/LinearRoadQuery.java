@@ -28,7 +28,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
+//import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
@@ -42,14 +42,14 @@ public class LinearRoadQuery implements Runnable {
     /* The Job Parameters */
     private final ParameterTool setupParams;
     /* The scheduler policy */
-    private final StreamTaskSchedulerPolicy schedulerPolicy;
+//    private final StreamTaskSchedulerPolicy schedulerPolicy;
     /* The num of queries */
     private final int numQueries;
 
     public LinearRoadQuery(
-            ParameterTool setupParams, StreamTaskSchedulerPolicy schedulerPolicy, int numQueries) {
+            ParameterTool setupParams, int numQueries) {
         this.setupParams = setupParams;
-        this.schedulerPolicy = schedulerPolicy;
+//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
     }
 
@@ -57,7 +57,7 @@ public class LinearRoadQuery implements Runnable {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
+//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
 
         // Add queries
