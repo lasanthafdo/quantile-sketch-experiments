@@ -19,7 +19,7 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
+//import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
@@ -32,16 +32,16 @@ public class AdvertisingQuery implements Runnable {
     /* The Job Parameters */
     private final ParameterTool setupParams;
     /* The scheduler policy */
-    private final StreamTaskSchedulerPolicy schedulerPolicy;
+//    private final StreamTaskSchedulerPolicy schedulerPolicy;
     /* The num of queries */
     private final int numQueries;
     /* The window size */
     private final int windowSize;
 
     public AdvertisingQuery(
-            ParameterTool setupParams, StreamTaskSchedulerPolicy schedulerPolicy, int numQueries, int windowSize) {
+            ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-        this.schedulerPolicy = schedulerPolicy;
+//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -52,7 +52,7 @@ public class AdvertisingQuery implements Runnable {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
+//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
 
         // Add queries

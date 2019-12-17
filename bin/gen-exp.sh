@@ -29,7 +29,7 @@ gen_exp(){
     # echo 'policy_index:' $3 >> $exp_file
 }
 
-if [[ $# -lt 7 ]];
+if [[ $# -lt 6 ]];
 then
   echo "Invalid use: gen-exp.sh <experiment_name> <workload_type> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
 else
