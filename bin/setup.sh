@@ -242,13 +242,13 @@ init_magellan() {
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
         echo "Cloning Flink"
-        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
         maven_clean_install_no_tests $FLINK_SRC_DIR
      fi
 
      # Get Magellan
      if [[ ! -d $MAG_DIR ]]; then
-        git clone https://github.com/oibfarhat/magellan.git $MAG_DIR
+        git clone https://github.com/aaronchlam/magellan.git $MAG_DIR
      fi
 
      # Move klink changes
