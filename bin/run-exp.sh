@@ -5,7 +5,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-40}
+TEST_TIME=${TEST_TIME:-240}
 
 run_exp(){
     ## Verify experiment exists

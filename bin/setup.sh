@@ -150,7 +150,7 @@ init_flink(){
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
         echo "Cloning Flink"
-        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
         maven_clean_install_no_tests $FLINK_SRC_DIR
      fi
 }
@@ -203,7 +203,7 @@ init_watslack() {
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
         echo "Cloning Flink"
-        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
+        git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
         maven_clean_install_no_tests $FLINK_SRC_DIR
      fi
 

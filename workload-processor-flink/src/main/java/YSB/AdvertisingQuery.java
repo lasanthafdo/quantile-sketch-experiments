@@ -78,17 +78,19 @@ public class AdvertisingQuery implements Runnable {
                         setupParams.getProperties()).setStartFromEarliest())
                 .name("Source (" + queryInstance + ")")
                 // Chain all operators before a watermark is emitted.
-                .startNewChain();
+                .disableChaining();
 
         messageStream
                 // Parse the JSON string from Kafka as an ad
                 .map(new DeserializeAdsFromkafka())
                 .name("DeserializeInput (" + queryInstance + ")")
+                .disableChaining()
                 // Filter ads
                 //.filter(new FilterAds())
                 // Assign timestamps and watermarks
                 .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
                 .name("TimeStamp (" + queryInstance + ")")
+                .disableChaining()
                 // perform join with redis data
                 .map(new JoinAdWithRedis()).name("JoinWithRedis (" + queryInstance + ")")
                 .disableChaining()
