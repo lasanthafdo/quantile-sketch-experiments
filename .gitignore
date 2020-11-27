@@ -25,5 +25,6 @@ tmp
 benchmark
 benchmark/*
 dependency-reduced-pom.xml
+**/dependency-reduced-pom.xml
 hosts.txt
 car.dat
