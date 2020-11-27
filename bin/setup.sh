@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+echo $0
 bin=`dirname "$0"`
+echo "$bin"
 bin=`cd "$bin"; pwd`
+echo "$bin"
 
 . "$bin"/config.sh
 
@@ -131,7 +134,7 @@ init_kafka(){
 	    do
             ((counter++))
             ssh_connect $line "
-                cp $HOME/klink-benchmarks/benchmark/kafka/config/server.properties /tmp/data/server.properties
+                cp $HOME/flink-benchmarks/kafka/config/server.properties /tmp/data/server.properties
                 sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties
                 echo "port=$port" >> /tmp/data/server.properties" 5
             ((port++))
@@ -155,44 +158,6 @@ init_flink(){
      fi
 }
 
-init_klink(){
-    # Remove old_target
-     if [[ -d $FLINK_DIR ]]; then
-        rm -r $FLINK_DIR
-    fi
-
-     # If Apache Flink is not built
-     if [[ ! -d $FLINK_SRC_DIR ]]; then
-        echo "Cloning Flink"
-        git clone -b release-1.8 https://github.com/apache/flink.git $FLINK_SRC_DIR
-        maven_clean_install_no_tests $FLINK_SRC_DIR
-     fi
-
-     # Get Klink
-     if [[ ! -d $KLINK_DIR ]]; then
-        git clone https://github.com/oibfarhat/klink.git $KLINK_DIR
-     fi
-
-     # Move klink changes
-     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-runtime
-     fi
-
-     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
-     fi
-
-     sudo chmod -R 777 $PROJECT_DIR
-
-     cp -r $KLINK_DIR/flink-runtime $FLINK_SRC_DIR/
-     cp -r $KLINK_DIR/flink-streaming-java $FLINK_SRC_DIR/
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
-     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
-
-     sudo chmod -R 777 $PROJECT_DIR
-}
 
 init_watslack() {
     # Remove old_target
@@ -203,70 +168,34 @@ init_watslack() {
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
         echo "Cloning Flink"
-        git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
-        maven_clean_install_no_tests $FLINK_SRC_DIR
+        git clone https://github.com/ChasonPickles/streamingWithQuantification $FLINK_SRC_DIR
+        # maven_clean_install_no_tests $FLINK_SRC_DIR
+	maven_install_no_tests $FLINK_SRC_DIR
      fi
 
      # Get Watslack
      if [[ ! -d $WATSLACK_DIR ]]; then
-        git clone https://github.com/oibfarhat/watslack.git $WATSLACK_DIR
+	git clone https://github.com/ChasonPickles/streamingWithQuantification $WATSLACK_DIR
      fi
 
-     # Move klink changes
-     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-runtime
-     fi
+     # Move flink changes
+     # if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
+     #    sudo rm -r $FLINK_SRC_DIR/flink-runtime
+     # fi
 
-     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
-     fi
+     #if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
+     #   sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
+     #fi
 
      sudo chmod -R 777 $PROJECT_DIR
 
-     cp -r $WATSLACK_DIR/flink-runtime $FLINK_SRC_DIR/
-     cp -r $WATSLACK_DIR/flink-streaming-java $FLINK_SRC_DIR/
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
-     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
-
-     sudo chmod -R 777 $PROJECT_DIR
-}
-
-init_magellan() {
-    # Remove old_target
-     if [[ -d $FLINK_DIR ]]; then
-        rm -r $FLINK_DIR
-    fi
-
-     # If Apache Flink is not built
-     if [[ ! -d $FLINK_SRC_DIR ]]; then
-        echo "Cloning Flink"
-        git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
-        maven_clean_install_no_tests $FLINK_SRC_DIR
-     fi
-
-     # Get Magellan
-     if [[ ! -d $MAG_DIR ]]; then
-        git clone https://github.com/aaronchlam/magellan.git $MAG_DIR
-     fi
-
-     # Move klink changes
-     if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-runtime
-     fi
-
-     if [[ -d $FLINK_SRC_DIR/flink-streaming-java ]]; then
-        sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
-     fi
-
-     sudo chmod -R 777 $PROJECT_DIR
-
-     cp -r $MAG_DIR/flink-runtime $FLINK_SRC_DIR/
-     cp -r $MAG_DIR/flink-streaming-java $FLINK_SRC_DIR/
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
-     maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
+     # cp -r $WATSLACK_DIR/flink-runtime $FLINK_SRC_DIR/
+     # cp -r $WATSLACK_DIR/flink-streaming-java $FLINK_SRC_DIR/
+     # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
+     # echo "Installing flink-streaming-java"
+     # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
+     # echo "Installing flink-dist"
+     # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
      mv $FLINK_SRC_DIR/build-target $FLINK_DIR
 
      sudo chmod -R 777 $PROJECT_DIR
@@ -283,30 +212,24 @@ setup(){
     cd "$BENCH_DIR"
 
     ## Install Redis
-    init_redis
+    # init_redis
     ## Install ZooKeeper
-    init_zk
+    # init_zk
     ## Install Kafka
-    init_kafka
+    # init_kafka
 
-    ## Install Flink
+    # Install Flink
     if [[ $1 = "flink" ]]; then
         init_flink
-    ## Install Klink
-    elif [[ $1 = "klink" ]]; then
-        init_klink
-    ## Install watslack
+    # Install watslack
     elif [[ $1 = "watslack" ]]; then
         init_watslack
-    ## Install magellan
-    elif [[ $1 = "magellan" ]]; then
-        init_magellan
     fi
 }
 
 if [[ $# -lt 1 ]];
 then
-    echo "Invalid use: ./setup.sh MODE=[flink|klink|watslack|magellan]"
+    echo "Invalid use: ./setup.sh MODE=[flink|watslack]"
 else
     cd "$PROJECT_DIR"
     setup $1

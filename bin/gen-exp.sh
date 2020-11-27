@@ -25,8 +25,6 @@ gen_exp(){
     echo 'throughput:' $4 >> $exp_file
     echo 'watermark_frequency:' $5 >> $exp_file
     echo 'window_size:' $6 >> $exp_file
-    ## TODO(oibfarhat): Find a solution for scheduling policy
-    # echo 'policy_index:' $3 >> $exp_file
 }
 
 if [[ $# -lt 6 ]];

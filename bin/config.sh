@@ -122,6 +122,11 @@ maven_clean_install_no_tests(){
     $MVN clean install -DskipTests -Dcheckstyle.skip -Drat.skip=true
 }
 
+maven_install_no_tests(){
+    cd $1
+    $MVN install -DskipTests -Dcheckstyle.skip -Drat.skip=true
+}
+
 yaml() {
     sudo python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
 }
