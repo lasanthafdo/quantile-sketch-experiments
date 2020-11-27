@@ -1,23 +1,13 @@
 # Flink Streaming Benchmarks 
 
 ### Setup
-./bin/setup.sh
+./bin/setup.sh [watslack|flink]
 
 ### Generate Experiments
-./bin/gen-exp.sh <configurations> (Leave it empty)
+./bin/gen-exp.sh <configurations>
+<configurations> are: 
+<experiment_name> <workload_type> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
 
 ### Run Experiments
 ./bin/run-exp.sh <exp_name>
 
-
-### Scheduling Algorithms
-
-1 -> round robin
-
-2 -> longest queue first
-
-3 -> shortest remaining processing time
-
-4 -> rate based
-
-5 -> shortest emitting watermark processing
