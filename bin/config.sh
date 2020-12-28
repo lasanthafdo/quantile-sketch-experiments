@@ -2,37 +2,36 @@
 
 ## Projects Directories
 PROJECT_DIR="$HOME/flink-benchmarks"
-KLINK_DIR="$HOME/klink"
-MAG_DIR="$HOME/magellan"
-WATSLACK_DIR="$HOME/watslack"
 
 ## flink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
-BENCH_DIR="$PROJECT_DIR/benchmark"
+BENCHMARK_DIR="$PROJECT_DIR/benchmark"
 WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator"
 WORKLOAD_PROCESSOR_DIR="$PROJECT_DIR/workload-processor-flink"
 WORKLOAD_ANALYZER_DIR="$PROJECT_DIR/workload-analyzer"
 
 ## flink-benchmarks-benchmark directories
-EXPERIMENTS_DIR="$BENCH_DIR/experiments"
-DOWNLOAD_CACHE_DIR="$BENCH_DIR/download-cache"
-ZK_DIR="$BENCH_DIR/zk"
-REDIS_DIR="$BENCH_DIR/redis"
-KAFKA_DIR="$BENCH_DIR/kafka"
-FLINK_DIR="$BENCH_DIR/flink"
-FLINK_SRC_DIR="$BENCH_DIR/flink-src"
+EXPERIMENTS_DIR="$BENCHMARK_DIR/experiments"
+DOWNLOAD_CACHE_DIR="$BENCHMARK_DIR/download-cache"
+ZK_DIR="$BENCHMARK_DIR/zk"
+REDIS_DIR="$BENCHMARK_DIR/redis"
+KAFKA_DIR="$BENCHMARK_DIR/kafka"
+FLINK_DIR="$BENCHMARK_DIR/flink"
+FLINK_SRC_DIR="$BENCHMARK_DIR/flink-src"
+#FLINK_SRC_DIR="/Users/harshbindra/temp/flink"
 
 ## flink-benchmarks files
 SETUP_FILE="$PROJECT_DIR/setup.yaml"
 HOSTS_FILE="$PROJECT_DIR/hosts.txt"
 ZK_CONF_FILE="$ZK_DIR/conf/zoo.cfg"
+ZK_KAFKA_CONF_FILE="$KAFKA_DIR/config/zookeeper.properties"
 KAFKA_CONF_FILE="$KAFKA_DIR/config/server.properties"
 FLINK_CONF_FILE="$FLINK_DIR/conf/flink-conf.yaml"
 
 WORKLOAD_PROCESSOR_JAR_FILE="$WORKLOAD_PROCESSOR_DIR/target/workload-processor-flink-0.5.0.jar"
 
 # Versions
-FLINK_VERSION=${FLINK_VERSION:-"1.8.0"}
+FLINK_VERSION=${FLINK_VERSION:-"1.12.0"}
 # Zookeeper download parameters
 ZK_VERSION=${ZK_VERSION:-"3.5.5"}
 
@@ -48,7 +47,7 @@ GIT=${GIT:-git}
 MVN=${MVN:-sudo mvn}
 
 pid_match() {
-   local VAL=`ps -aef | grep "$1" | grep -v grep | awk '{print $2}'`
+   local VAL=$(ps -aef | grep "$1" | grep -v grep | awk '{print $2}' | head -1)
    echo $VAL
 }
 
@@ -61,8 +60,7 @@ start_if_needed() {
   shift
   local PID=`pid_match "$match"`
 
-  if [[ "$PID" -ne "" ]];
-  then
+  if [ -n "$PID" ]; then
     echo "$name is already running..."
   else
     "$@" &
@@ -74,12 +72,11 @@ stop_if_needed() {
   local match="$1"
   local name="$2"
   local PID=`pid_match "$match"`
-  if [[ "$PID" -ne "" ]];
-  then
+  if [ ! -z "$PID" ]; then
     kill "$PID"
     sleep 1
-    local CHECK_AGAIN=`pid_match "$match"`
-    if [[ "$CHECK_AGAIN" -ne "" ]];
+    local CHECK_AGAIN=$(pid_match "$match")
+    if [ ! -z "$CHECK_AGAIN" ];
     then
       kill -9 "$CHECK_AGAIN"
     fi
@@ -114,17 +111,17 @@ fetch_untar_file() {
 
 maven_clean_install_with_tests(){
     cd $1
-    $MVN clean install -Dcheckstyle.skip -Drat.skip=true
+    $MVN clean install -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true
 }
 
 maven_clean_install_no_tests(){
     cd $1
-    $MVN clean install -DskipTests -Dcheckstyle.skip -Drat.skip=true
+    $MVN clean install -DskipTests -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true
 }
 
 maven_install_no_tests(){
     cd $1
-    $MVN install -DskipTests -Dcheckstyle.skip -Drat.skip=true
+    $MVN install -DskipTests -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true
 }
 
 yaml() {
@@ -154,3 +151,6 @@ if [[ -e "$HOSTS_FILE" ]]; then
 else
     HAS_HOSTS=0
 fi
+
+## TODO remove this line
+HAS_HOSTS=0
