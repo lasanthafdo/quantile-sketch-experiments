@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <artifactId>klink-benchmarks</artifactId>
-    <groupId>com.oibfarhat.klink.benchmarks</groupId>
+    <artifactId>flink-benchmarks</artifactId>
+    <groupId>com.harshbindra.flink.benchmarks</groupId>
     <version>0.5.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -40,21 +40,37 @@
           </transformers>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-streaming-java_2.11</artifactId>
-      <version>1.8-SNAPSHOT</version>
+      <version>1.12.0</version>
       <scope>provided</scope>
       <exclusions>
+        <exclusion>
+          <artifactId>flink-core</artifactId>
+          <groupId>org.apache.flink</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>flink-file-sink-common</artifactId>
+          <groupId>org.apache.flink</groupId>
+        </exclusion>
         <exclusion>
           <artifactId>flink-runtime_2.11</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-clients_2.11</artifactId>
+          <artifactId>flink-java</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
