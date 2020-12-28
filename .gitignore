@@ -32,3 +32,4 @@ heapdump*
 javacore*
 Snap*
 dependency-reduced-pom*
+dump.rdb
