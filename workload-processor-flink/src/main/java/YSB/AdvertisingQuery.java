@@ -126,12 +126,12 @@ public class AdvertisingQuery implements Runnable {
         public Tuple9<String, String, String, String, String, String, String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             return new Tuple9<>(
+                    obj.getString("user_id"),
                     obj.getString("page_id"),
                     obj.getString("ad_id"),
-                    obj.getString("event_type"),
                     obj.getString("ad_type"),
-                    obj.getString("user_id"),
-                    obj.getString("watermark_time"),
+                    obj.getString("event_type"),
+                    obj.getString("event_time"),
                     obj.getString("ip_address"),
                     obj.getString("event_time"),
                     String.valueOf(System.currentTimeMillis())); // ingestion time
