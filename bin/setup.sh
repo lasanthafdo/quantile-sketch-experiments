@@ -12,13 +12,13 @@ echo "$bin"
 APACHE_MIRROR="https://archive.apache.org/dist"
 
 # Scala download parameters
-SCALA_BIN_VERSION=${SCALA_BIN_VERSION:-"2.12"}
+SCALA_BIN_VERSION=${SCALA_BIN_VERSION:-"2.11"}
 
 # Redis download parameters
 REDIS_VERSION=${REDIS_VERSION:-"5.0.5"}
 
 # Kafka download parameters
-KAFKA_VERSION=${KAFKA_VERSION:-"2.2.0"}
+KAFKA_VERSION=${KAFKA_VERSION:-"2.4.1"}
 
 init_setup_file(){
     # setup file
@@ -71,6 +71,12 @@ init_zk(){
     echo 'initLimit=5' >> $ZK_CONF_FILE
     echo 'syncLimit=2' >> $ZK_CONF_FILE
 
+    echo 'tickTime=2000' > $ZK_KAFKA_CONF_FILE
+    echo "dataDir=/tmp/data/zk/" >> $ZK_KAFKA_CONF_FILE
+    echo 'clientPort='$ZK_PORT >> $ZK_KAFKA_CONF_FILE
+    echo 'initLimit=5' >> $ZK_KAFKA_CONF_FILE
+    echo 'syncLimit=2' >> $ZK_KAFKA_CONF_FILE
+
     ## Check if distributed mode
     if [[ $HAS_HOSTS -eq 1 ]]; then
         echo "Setting up ZK multi-nodes configurations"
@@ -110,6 +116,7 @@ init_zk(){
     fi
 }
 
+
 init_kafka(){
     ## Fetch Kafka
     if [[ ! -d $KAFKA_DIR ]]; then
@@ -148,7 +155,14 @@ init_flink(){
     # Remove old_target
      if [[ -d $FLINK_DIR ]]; then
         rm -r $FLINK_DIR
-    fi
+     fi
+
+     if [[ $2 = 1 ]]; then
+	echo "IF STATEMENT equal 1"
+        if [[ -d $FLINK_SRC_DIR ]]; then
+	    rm -r $FLINK_SRC_DIR
+        fi
+     fi
 
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
@@ -156,27 +170,45 @@ init_flink(){
         git clone -b release-1.9 https://github.com/apache/flink.git $FLINK_SRC_DIR
         maven_clean_install_no_tests $FLINK_SRC_DIR
      fi
+
+     cp -rf $FLINK_SRC_DIR/build-target $FLINK_DIR
 }
 
 
 init_watslack() {
-    # Remove old_target
+     # Remove old_target
      if [[ -d $FLINK_DIR ]]; then
         rm -r $FLINK_DIR
-    fi
+     fi
+
+     if [[ $2 = 1 ]]; then
+        if [[ -d $FLINK_SRC_DIR ]]; then
+	    rm -r $FLINK_SRC_DIR
+        fi
+     fi
 
      # If Apache Flink is not built
      if [[ ! -d $FLINK_SRC_DIR ]]; then
-        echo "Cloning Flink"
-        git clone https://github.com/ChasonPickles/streamingWithQuantification $FLINK_SRC_DIR
-        # maven_clean_install_no_tests $FLINK_SRC_DIR
-	maven_install_no_tests $FLINK_SRC_DIR
+        #echo "Cloning Flink"
+        #git clone https://github.com/ChasonPickles/streamingWithQuantification $FLINK_SRC_DIR
+	mkdir $FLINK_SRC_DIR
+	echo "Copying Flink/flink-streaming-java from Source to $FLINK_SRC_DIR..."
+	cp -r $HOME/roughCopy/streamingWithQuantification/flink-streaming-java $FLINK_SRC_DIR
+	sleep 2
+	echo "Finished Copying"
+        maven_install_no_tests $FLINK_SRC_DIR
+        local firstfile=$FLINK_SRC_DIR/lib/$(ls -S $FLINK_SRC_DIR/lib | head -n 1)
+        echo "$(unzip -p $firstfile META-INF/MANIFEST.MF)"
+	sleep 2
      fi
+     cp -rf $FLINK_SRC_DIR/build-target $FLINK_DIR
+     local file=$FLINK_DIR/lib/$(ls -S $FLINK_DIR/lib | head -n 1)
+     echo "$(unzip -p $file META-INF/MANIFEST.MF)"
 
      # Get Watslack
-     if [[ ! -d $WATSLACK_DIR ]]; then
-	git clone https://github.com/ChasonPickles/streamingWithQuantification $WATSLACK_DIR
-     fi
+     #if [[ ! -d $WATSLACK_DIR ]]; then
+     #	git clone https://github.com/ChasonPickles/streamingWithQuantification $WATSLACK_DIR
+     #fi
 
      # Move flink changes
      # if [[ -d $FLINK_SRC_DIR/flink-runtime ]]; then
@@ -187,8 +219,6 @@ init_watslack() {
      #   sudo rm -r $FLINK_SRC_DIR/flink-streaming-java
      #fi
 
-     sudo chmod -R 777 $PROJECT_DIR
-
      # cp -r $WATSLACK_DIR/flink-runtime $FLINK_SRC_DIR/
      # cp -r $WATSLACK_DIR/flink-streaming-java $FLINK_SRC_DIR/
      # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-runtime
@@ -196,41 +226,79 @@ init_watslack() {
      # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-streaming-java
      # echo "Installing flink-dist"
      # maven_clean_install_no_tests $FLINK_SRC_DIR/flink-dist
-     mv $FLINK_SRC_DIR/build-target $FLINK_DIR
+     # mv $FLINK_SRC_DIR/build-target $FLINK_DIR
 
      sudo chmod -R 777 $PROJECT_DIR
+}
+
+init_synthetic_analytics(){
+     # Remove old_target
+     if [[ -d $FLINK_DIR ]]; then
+        rm -r $FLINK_DIR
+     fi
+
+     if [[ $2 = 1 ]]; then
+        if [[ -d $FLINK_SRC_DIR ]]; then
+	    rm -r $FLINK_SRC_DIR
+        fi
+     fi
+
+     # If Apache Flink is not built
+     if [ ! -d $FLINK_SRC_DIR ] ; then
+          #git clone -b release-1.12.0 https://github.com/ChasonPickles/flink.git $FLINK_SRC_DIR
+
+	  echo "Copying Flink from $HOME/flink to $FLINK_SRC_DIR..."
+          
+          mkdir $FLINK_SRC_DIR
+	  cp -r $HOME/flink/* $FLINK_SRC_DIR
+	  echo "Finished Copying"
+
+	  sleep 1
+	  #maven_install_no_tests $FLINK_SRC_DIR
+     fi
+
+     sleep 2
+
+     cp -r $FLINK_SRC_DIR/build-target $FLINK_DIR
+
+     echo "Printing META_INF/MANIFEST.MF file of $FLINK_SRC_DIR/lib to check java and flink version"
+     firstfile=$FLINK_DIR/lib/$(ls -S $FLINK_DIR/lib | head -n 1)
+     echo "$(unzip -p $firstfile META-INF/MANIFEST.MF)"
 }
 
 setup(){
     ## Create SETUP file first
     init_setup_file
 
-    ## Create $BENCH_DIR
-    if [[ ! -d "$BENCH_DIR" ]]; then
-        mkdir "$BENCH_DIR"
+    ## Create $BENCHMARK_DIR
+    if [[ ! -d "$BENCHMARK_DIR" ]]; then
+        mkdir "$BENCHMARK_DIR"
     fi
-    cd "$BENCH_DIR"
+    cd "$BENCHMARK_DIR"
 
     ## Install Redis
-    # init_redis
+    init_redis
     ## Install ZooKeeper
     # init_zk
+    # init_kafka_zookeeper
     ## Install Kafka
-    # init_kafka
+    init_kafka
 
     # Install Flink
     if [[ $1 = "flink" ]]; then
-        init_flink
+        init_flink $1 $2
     # Install watslack
     elif [[ $1 = "watslack" ]]; then
-        init_watslack
+        init_watslack $1 $2
+    elif [[ $1 = "syn" ]]; then
+        init_synthetic_analytics $1 $2
     fi
 }
 
-if [[ $# -lt 1 ]];
+if [[ $# -lt 2 ]];
 then
-    echo "Invalid use: ./setup.sh MODE=[flink|watslack]"
+    echo "Invalid use: ./setup.sh MODE=[flink|watslack|syn] get_new{1=true, 0=false}"
 else
     cd "$PROJECT_DIR"
-    setup $1
+    setup $1 $2
 fi
