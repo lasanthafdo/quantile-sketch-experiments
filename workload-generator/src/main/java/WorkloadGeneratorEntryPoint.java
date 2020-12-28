@@ -29,8 +29,11 @@ public class WorkloadGeneratorEntryPoint {
         }
 
         /* WorkloadGenerator require both files. Exit if they were not provided */
-        if (setupFile == null || expFile == null) {
-            System.err.println("Missing setup file (-s) or experiment file (-e)");
+        if (setupFile == null ) {
+            System.err.println("Missing setup file (-s)");
+            System.exit(-1);
+        }else if(expFile == null){
+            System.err.println("Missing experiment file (-e)");
             System.exit(-1);
         }
 
@@ -42,17 +45,17 @@ public class WorkloadGeneratorEntryPoint {
             setupMap = Utils.yamlToMap(setupFile);
             benchMap = Utils.yamlToMap(expFile);
         } catch (IOException e) {
-            System.err.println("Invalid conf files. You must use -s and -e correctly.");
+            System.err.println("Invalid setup or experiment conf files. You must use -s and -e correctly.");
             System.exit(-1);
         }
 
         /* Identify execution mode */
-        boolean isSetupExecution = false;
+        boolean setupExecution = false;
         for (String arg : args) {
             if (arg.equalsIgnoreCase("-n")) {
-                isSetupExecution = true;
+                setupExecution = true;
             } else if (arg.equalsIgnoreCase("-r")) {
-                isSetupExecution = false;
+                setupExecution = false;
             }
         }
 
@@ -61,7 +64,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Execute! */
         if (workloadType.equalsIgnoreCase("ysb")) {
-            if (isSetupExecution) {
+            if (setupExecution) {
                 runYSBWorkloadSetup(setupMap);
             } else {
                 runYSBWorkloadGenerator(setupMap, benchMap);
@@ -85,6 +88,7 @@ public class WorkloadGeneratorEntryPoint {
                 new KafkaProducer<>(props,
                         new ByteArraySerializer(),
                         new ByteArraySerializer());
+
 
         /* Create Redis instance */
         String jedisServerName = (String) setupMap.get("redis.host");

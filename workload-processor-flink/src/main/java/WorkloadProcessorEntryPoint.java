@@ -28,10 +28,6 @@ public class WorkloadProcessorEntryPoint {
 
     private static void createYSBInstances(ParameterTool setupParams, Map experimentMap) {
         try {
-            // Scheduler policy
-            int policyIndex = ((Integer) experimentMap.getOrDefault("policy_index", 0)).intValue();
-          //  StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
-
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
 
@@ -48,10 +44,6 @@ public class WorkloadProcessorEntryPoint {
 
     private static void createLRBInstances(ParameterTool setupParams, Map experimentMap) {
         try {
-            // Scheduler policy
-            int policyIndex = ((Integer) experimentMap.getOrDefault("policy_index", 0)).intValue();
-            // StreamTaskSchedulerPolicy policy = StreamTaskSchedulerPolicy.fromIndex(policyIndex);
-
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
 

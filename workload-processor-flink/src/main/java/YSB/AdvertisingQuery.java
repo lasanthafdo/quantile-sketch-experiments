@@ -30,6 +30,9 @@ public class AdvertisingQuery implements Runnable {
     /* The Kafka topic the source operators are pulling the results from */
     private final String KAFKA_PREFIX_TOPIC = "ad-events";
     /* The Job Parameters */
+    //This class provides simple utility methods for reading and parsing program
+    // arguments from different sources.
+    // Only single value parameter could be supported in args.
     private final ParameterTool setupParams;
     /* The scheduler policy */
 //    private final StreamTaskSchedulerPolicy schedulerPolicy;
@@ -51,7 +54,7 @@ public class AdvertisingQuery implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 //        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
 
@@ -86,7 +89,7 @@ public class AdvertisingQuery implements Runnable {
                 .name("DeserializeInput (" + queryInstance + ")")
                 .disableChaining()
                 // Filter ads
-                //.filter(new FilterAds())
+                .filter(new FilterAds())
                 // Assign timestamps and watermarks
                 .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
                 .name("TimeStamp (" + queryInstance + ")")
@@ -116,20 +119,21 @@ public class AdvertisingQuery implements Runnable {
                 .disableChaining();
     }
 
+
     private class DeserializeAdsFromkafka implements MapFunction<String, Tuple9<String, String, String, String, String, String, String, String, String>> {
 
         @Override
         public Tuple9<String, String, String, String, String, String, String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             return new Tuple9<>(
-                    obj.getString("user_id"),
                     obj.getString("page_id"),
                     obj.getString("ad_id"),
-                    obj.getString("ad_type"),
                     obj.getString("event_type"),
-                    obj.getString("event_time"),
-                    obj.getString("ip_address"),
+                    obj.getString("ad_type"),
+                    obj.getString("user_id"),
                     obj.getString("watermark_time"),
+                    obj.getString("ip_address"),
+                    obj.getString("event_time"),
                     String.valueOf(System.currentTimeMillis())); // ingestion time
         }
     }
