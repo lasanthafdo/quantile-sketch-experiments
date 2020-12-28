@@ -11,10 +11,12 @@ start_zk(){
     while read line
 	do
         echo "Starting ZK on $line"
-        ssh_connect ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" 5
+        # ssh_connect ${line} "$ZK_DIR/bin/zkServer.sh start /tmp/data/zk/zoo.cfg" 5
+        ssh_connect ${line} "$KAFKA_DIR/bin/zookeeper-server-start.sh $KAFKA_DIR/config/zookeeper.properties" 5
     done <${HOSTS_FILE}
  else
-    $ZK_DIR/bin/zkServer.sh start
+    # $ZK_DIR/bin/zkServer.sh 
+    $KAFKA_DIR/bin/zookeeper-server-start.sh $KAFKA_DIR/config/zookeeper.properties &
  fi
 }
 
@@ -52,12 +54,12 @@ start_redis(){
 }
 
 create_kafka_topic() {
-    for kafka_topic in `seq 1 $1`
+    for kafka_topic in `seq 1 $1` 
     do
         local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
         if [[ $HAS_HOSTS -eq 1 ]]; 
         then
-	        echo "creating $curr_kafka_topic at $2"
+	    echo "creating $curr_kafka_topic at $2"
             ssh_connect $2 "$KAFKA_DIR/bin/kafka-topics.sh --create --zookeeper $ZK_CONNECTION --replication-factor 1 --partitions 1 --topic $curr_kafka_topic" 5
         else
           local count=`$KAFKA_DIR/bin/kafka-topics.sh --describe --zookeeper "$ZK_CONNECTION" --topic $curr_kafka_topic 2>/dev/null | grep -c $curr_kafka_topic`
@@ -72,8 +74,8 @@ create_kafka_topic() {
 }
 
 start_kafka(){
-    echo "Starting KAFKA"
     if [[ $HAS_HOSTS -eq 1 ]]; 
+    echo "Starting Multiple KAFKA"
     then
         while read line
 	    do
@@ -87,6 +89,7 @@ start_kafka(){
             create_kafka_topic $1 $line
         done <${HOSTS_FILE}
     else
+    	echo "Starting KAFKA"
         start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
         create_kafka_topic $1
     fi
@@ -108,7 +111,7 @@ start_flink(){
             start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh" 10
     else
         start_if_needed org.apache.flink.runtime.jobmanager.JobManager Flink 1 $FLINK_DIR/bin/start-cluster.sh
-        sleep 5
+        sleep 10
     fi
 }
 
@@ -160,7 +163,7 @@ start(){
     echo $1
 
     maven_clean_install_with_tests $PROJECT_DIR
-    local num_instances=$(yaml $1 "['num_instances']")
+    local num_instances=$(yq r $1 "num_instances")
 
     start_zk
     start_redis $1

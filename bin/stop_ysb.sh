@@ -119,7 +119,8 @@ stop_flink_processing(){
 }
 
 pull_stdout() {
-      local task_manager_id=`curl -s "http://localhost:8081/taskmanagers/" | jq -r '.taskmanagers[0].id'`
+      local task_manager_id=`curl -s "http://localhost:8081/taskmanagers/" | jq '.taskmanagers[0].id'`
+      echo "$task_manager_id"
       curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" > "$1_output.txt"
       sleep 3
 }
@@ -136,9 +137,9 @@ stop_load(){
         ssh ${first_node} "
             $(declare -f stop_if_needed);
             $(declare -f pid_match);
-            stop_if_needed 'WorkloadMain' 'Workload Generator'" </dev/null
+            stop_if_needed 'WorkloadGenerator' 'WorkloadGenerator'" </dev/null
     else
-        stop_if_needed "WorkloadMain" "Workload Generator"
+        stop_if_needed "WorkloadGenerator" "WorkloadGenerator"
     fi
 }
 
@@ -146,14 +147,14 @@ stop(){
     stop_load
     if [[ $# -gt 1 ]];
     then
-        echo "Load Stopped. Sleeping..."
+        echo "Load Stopped. Sleeping for $2..."
         sleep $2
         pull_stdout $1
     fi
     stop_flink_processing
     stop_flink
 
-    local num_instances=$(yaml "$1.yaml" "['num_instances']")
+    local num_instances=$(yq r "$1.yaml" "num_instances")
     stop_kafka $num_instances
     stop_redis
     stop_zk
