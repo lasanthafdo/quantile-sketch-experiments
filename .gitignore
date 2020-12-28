@@ -28,3 +28,7 @@ dependency-reduced-pom.xml
 **/dependency-reduced-pom.xml
 hosts.txt
 car.dat
+heapdump*
+javacore*
+Snap*
+dependency-reduced-pom*
