@@ -27,9 +27,18 @@ gen_exp(){
     echo 'window_size:' $6 >> $exp_file
 }
 
+#if [[ $# -lt 6 ]];
+#then
+#  echo "Invalid use: gen-exp.sh <experiment_name> <workload_type> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
+#else
+#    gen_exp $1 $2 $3 $4 $5 $6
+#fi
+
 if [[ $# -lt 6 ]];
 then
-  echo "Invalid use: gen-exp.sh <experiment_name> <workload_type> <num_instances> <throughput> <watermark_frequency> <window_size_in_seconds>"
+  echo "Invalid number arguments"
+  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 50 watermark_freq: 50ms window_size_in_seconds: 2"
+  gen_exp ysb_default ysb 1 50 50 2
 else
-    gen_exp $1 $2 $3 $4 $5 $6
+  gen_exp $1 $2 $3 $4 $5 $6
 fi
