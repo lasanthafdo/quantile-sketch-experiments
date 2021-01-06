@@ -54,7 +54,7 @@ pull_stdout_from_flink_taskmanager() {
       local task_manager_id=-1
       task_manager_id=$(curl -s "http://localhost:8081/taskmanagers/" | jq '.taskmanagers[0].id' | tr -d '"')
       echo  "Retrieving Output from TaskManager: $task_manager_id"
-      curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" > "$1_output_after_stop_processing.txt"
+      curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" > "$1_output.txt"
       sleep 3
 }
 
@@ -74,9 +74,9 @@ stop(){
     pull_stdout_from_flink_taskmanager $1
 
     local num_instances=$(yq r "$1.yaml" "num_instances")
-    # stop_kafka $num_instances
-    # stop_zk
+    stop_kafka $num_instances
     stop_redis
+    stop_zk
     stop_flink
 }
 

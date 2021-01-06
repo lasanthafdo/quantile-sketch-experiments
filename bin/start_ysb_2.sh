@@ -32,12 +32,22 @@ create_kafka_topic() {
     echo "Finish Creating KAFKA Topic"
 }
 
+create_kafka_topic_stragglers(){
+    echo "Creating KAFKA Topic stragglers"
+    local curr_kafka_topic="stragglers"
+    bash "$KAFKA_DIR"/bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic "stragglers"
+
+    bash "$KAFKA_DIR"/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+    echo "Finish Creating KAFKA Topic"
+}
+
 start_kafka(){
-   echo "Starting KAFKA"
-   start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
-   sleep 5
-   create_kafka_topic $1
-   echo "Finish Starting KAFKA"
+    echo "Starting KAFKA"
+    start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
+    sleep 5
+    create_kafka_topic $1
+    create_kafka_topic_stragglers
+    echo "Finish Starting KAFKA"
 }
 
 start_flink(){
