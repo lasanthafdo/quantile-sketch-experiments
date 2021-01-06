@@ -30,9 +30,13 @@
                 <version>3.1.0</version>
                 <configuration>
                     <archive>
-                        <manifestEntries>
+                        <manifest>
+                            <mainClass>WorkloadOutputAnalyzer</mainClass>
+                        </manifest>
+<!--                        <manifestEntries>
                             <program-class>WorkloadOutputAnalyzer</program-class>
                         </manifestEntries>
+-->
                     </archive>
                 </configuration>
             </plugin>
@@ -61,5 +65,5 @@
             </plugin>
         </plugins>
     </build>
-    
+
 </project>
