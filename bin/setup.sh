@@ -55,67 +55,6 @@ init_redis(){
     fi
 }
 
-init_zk(){
-    # Fetch Zookeeper
-    if [[ ! -d $ZK_DIR ]]; then
-        local zk_file="apache-zookeeper-$ZK_VERSION-bin"
-        local zk_tar_file="$zk_file.tar.gz"
-        fetch_untar_file "$zk_tar_file" "$APACHE_MIRROR/zookeeper/zookeeper-$ZK_VERSION/$zk_tar_file"
-        mv "$zk_file" "$ZK_DIR"
-    fi
-
-    ## Set zookeeper configurations
-    echo 'tickTime=2000' > $ZK_CONF_FILE
-    echo "dataDir=/tmp/data/zk/" >> $ZK_CONF_FILE
-    echo 'clientPort='$ZK_PORT >> $ZK_CONF_FILE
-    echo 'initLimit=5' >> $ZK_CONF_FILE
-    echo 'syncLimit=2' >> $ZK_CONF_FILE
-
-    echo 'tickTime=2000' > $ZK_KAFKA_CONF_FILE
-    echo "dataDir=/tmp/data/zk/" >> $ZK_KAFKA_CONF_FILE
-    echo 'clientPort='$ZK_PORT >> $ZK_KAFKA_CONF_FILE
-    echo 'initLimit=5' >> $ZK_KAFKA_CONF_FILE
-    echo 'syncLimit=2' >> $ZK_KAFKA_CONF_FILE
-
-    ## Check if distributed mode
-    if [[ $HAS_HOSTS -eq 1 ]]; then
-        echo "Setting up ZK multi-nodes configurations"
-        # 1: Input ZK servers
-        local counter=0
-        while read line
-        do
-           ((counter++))
-           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
-        done <${HOSTS_FILE}
-
-        # 2: Write myId in /tmp/ on all hosts
-	    local counter=0
-	    while read line
-	    do
-            ((counter++))
-            ssh_connect $line "
-                if [[ ! -d /tmp/data ]]; then
-                    mkdir /tmp/data
-                fi
-
-                if [[ ! -d /tmp/data/zk ]]; then
-                    mkdir /tmp/data/zk
-                fi
-                echo $counter > /tmp/data/zk/myid" 5
-        done <${HOSTS_FILE}
-
-        # 3: Fix ZK configs to point to loopback address and move the confs to /tmp/
-        counter=0
-        while read line
-	    do
-            ((counter++))
-            ssh_connect $line "
-                cp $ZK_CONF_FILE /tmp/data/zk/zoo.cfg
-                sed -i 's/server.${counter}=.*/server.${counter}=0.0.0.0:2888:3888/g' /tmp/data/zk/zoo.cfg" 5
-        done <${HOSTS_FILE}
-    fi
-}
-
 
 init_kafka(){
     ## Fetch Kafka
@@ -245,21 +184,19 @@ init_synthetic_analytics(){
 
      # If Apache Flink is not built
      if [ ! -d $FLINK_SRC_DIR ] ; then
-          #git clone -b release-1.12.0 https://github.com/ChasonPickles/flink.git $FLINK_SRC_DIR
+      #git clone -b release-1.12.0 https://github.com/ChasonPickles/flink.git $FLINK_SRC_DIR
+      echo "Copying Flink from $HOME/flink to $FLINK_SRC_DIR..."
 
-	  echo "Copying Flink from $HOME/flink to $FLINK_SRC_DIR..."
-          
-          mkdir $FLINK_SRC_DIR
-	  cp -r $HOME/flink/* $FLINK_SRC_DIR
-	  echo "Finished Copying"
-
-	  sleep 1
-	  #maven_install_no_tests $FLINK_SRC_DIR
+      mkdir $FLINK_SRC_DIR
+      cp -r $HOME/flink/* $FLINK_SRC_DIR
+      echo "Finished Copying"
+      sleep 1
+      cp -r $FLINK_SRC_DIR/build-target $FLINK_DIR
+      #maven_install_no_tests $FLINK_SRC_DIR
      fi
 
      sleep 2
 
-     cp -r $FLINK_SRC_DIR/build-target $FLINK_DIR
 
      echo "Printing META_INF/MANIFEST.MF file of $FLINK_SRC_DIR/lib to check java and flink version"
      firstfile=$FLINK_DIR/lib/$(ls -S $FLINK_DIR/lib | head -n 1)
@@ -270,24 +207,17 @@ setup(){
     ## Create SETUP file first
     init_setup_file
 
-    ## Create $BENCHMARK_DIR
     if [[ ! -d "$BENCHMARK_DIR" ]]; then
         mkdir "$BENCHMARK_DIR"
     fi
     cd "$BENCHMARK_DIR"
 
-    ## Install Redis
     init_redis
-    ## Install ZooKeeper
-    # init_zk
-    # init_kafka_zookeeper
-    ## Install Kafka
+    init_kafka_zookeeper
     init_kafka
 
-    # Install Flink
     if [[ $1 = "flink" ]]; then
         init_flink $1 $2
-    # Install watslack
     elif [[ $1 = "watslack" ]]; then
         init_watslack $1 $2
     elif [[ $1 = "syn" ]]; then
