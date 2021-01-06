@@ -90,24 +90,14 @@ public class AdvertisingQuery implements Runnable {
                 .disableChaining()
                 // Filter ads
                 .filter(new FilterAds())
+                //.<Tuple2<String, String>>project(2,5)
                 // Assign timestamps and watermarks
-                .assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
-                .name("TimeStamp (" + queryInstance + ")")
-                .disableChaining()
+                //.assignTimestampsAndWatermarks(new AdsWatermarkAndTimeStampAssigner())
+                //.name("TimeStamp (" + queryInstance + ")")
+                //.disableChaining()
                 // perform join with redis data
-                .map(new JoinAdWithRedis()).name("JoinWithRedis (" + queryInstance + ")")
-                .disableChaining()
-                // Duplicate operator
-                .map(new NameToLowerCase())
-                .name("IdenticalMap 1 (" + queryInstance + ")")
-                .disableChaining()
-                // Duplicate operator
-                .map(new NameToLowerCase())
-                .name("IdenticalMap 2 (" + queryInstance + ")")
-                .disableChaining()
-                // Duplicate operator
-                .map(new NameToLowerCase())
-                .name("IdenticalMap 3 (" + queryInstance + ")")
+                .map(new JoinAdWithRedis())
+                .name("JoinWithRedis (" + queryInstance + ")")
                 .disableChaining()
                 // Collect aggregates in an event window
                 .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize))).aggregate(new WindowAdsAggregator())
