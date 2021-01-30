@@ -20,6 +20,8 @@ REDIS_VERSION=${REDIS_VERSION:-"5.0.5"}
 # Kafka download parameters
 KAFKA_VERSION=${KAFKA_VERSION:-"2.4.1"}
 
+ANNOYING_DIR="$HOME/flink/flink-runtime-web/web-dashboard/node_modules/.cache"
+
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
@@ -31,7 +33,8 @@ init_setup_file(){
 #           echo "server.$counter=$line:2888:3888" >> $ZK_CONF_FILE
 #        done <${HOSTS_FILE}
 #    fi
-    echo '    - "'localhost'"' >> $SETUP_FILE
+#    echo '    - "'localhost'"' >> $SETUP_FILE
+    echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
     echo '    - "localhost"' >> $SETUP_FILE
@@ -66,26 +69,7 @@ init_kafka(){
     fi
 
     echo "dataDir=/tmp/data/zk" > $KAFKA_DIR/config/zookeeper.properties
-    echo "clientPort=$ZK_PORT" >>     $KAFKA_DIR/config/zookeeper.properties
-
-    ## Check if in distributed mode
-    if [[ $HAS_HOSTS -eq 1 ]]; then
-        echo "Setting up Kafka multi-nodes configurations"
-        # 1: Change Zookeeper.connect variable
-        sed -i "s/zookeeper.connect=.*/zookeeper.connect=$ZK_CONNECTION/g" $KAFKA_DIR/config/server.properties
-	    # 2: Change broker id for each node and move the file to /tmp/data/
-	    local counter=0
-	    local port=9092
-	    while read line
-	    do
-            ((counter++))
-            ssh_connect $line "
-                cp $HOME/flink-benchmarks/kafka/config/server.properties /tmp/data/server.properties
-                sed -i "s/broker.id=.*/broker.id=$counter/g" /tmp/data/server.properties
-                echo "port=$port" >> /tmp/data/server.properties" 5
-            ((port++))
-        done <${HOSTS_FILE}
-    fi
+    echo "clientPort=$ZK_PORT" >> $KAFKA_DIR/config/zookeeper.properties
 }
 
 init_flink(){
@@ -172,26 +156,30 @@ init_watslack() {
 
 init_synthetic_analytics(){
      # Remove old_target
-     if [[ -d $FLINK_DIR ]]; then
-        rm -r $FLINK_DIR
+     if [[ -d "$FLINK_DIR" ]]; then
+        rm -r "$FLINK_DIR"
      fi
 
      if [[ $2 = 1 ]]; then
         if [[ -d $FLINK_SRC_DIR ]]; then
-	    rm -r $FLINK_SRC_DIR
+	        rm -r $FLINK_SRC_DIR
         fi
      fi
 
      # If Apache Flink is not built
      if [ ! -d $FLINK_SRC_DIR ] ; then
       #git clone -b release-1.12.0 https://github.com/ChasonPickles/flink.git $FLINK_SRC_DIR
-      echo "Copying Flink from $HOME/flink to $FLINK_SRC_DIR..."
+      #echo "Copying Flink from $HOME/flink to $FLINK_SRC_DIR..."
 
-      mkdir $FLINK_SRC_DIR
-      cp -r $HOME/flink/* $FLINK_SRC_DIR
-      echo "Finished Copying"
+      #if [[ -d $ANNOYING_DIR ]]; then
+      #  sudo rm -r "$ANNOYING_DIR"
+      #fi
+
+      #mkdir "$FLINK_SRC_DIR"
+      #cp -r $HOME/flink $FLINK_SRC_DIR
+      #echo "Finished Copying"
       sleep 1
-      cp -r $FLINK_SRC_DIR/build-target $FLINK_DIR
+      cp -r $HOME/flink/build-target $FLINK_DIR
       #maven_install_no_tests $FLINK_SRC_DIR
      fi
 
@@ -203,6 +191,14 @@ init_synthetic_analytics(){
      echo "$(unzip -p $firstfile META-INF/MANIFEST.MF)"
 }
 
+init_synthetic_analytics_fast(){
+     # Remove old_target
+     if [[ -d "$FLINK_DIR" ]]; then
+        rm -r "$FLINK_DIR"
+        cp -r "$HOME/flink/build-target" "$FLINK_DIR"
+     fi
+}
+
 setup(){
     ## Create SETUP file first
     init_setup_file
@@ -210,10 +206,9 @@ setup(){
     if [[ ! -d "$BENCHMARK_DIR" ]]; then
         mkdir "$BENCHMARK_DIR"
     fi
-    cd "$BENCHMARK_DIR"
+    cd "$BENCHMARK_DIR" || exit
 
     init_redis
-    init_kafka_zookeeper
     init_kafka
 
     if [[ $1 = "flink" ]]; then
@@ -221,7 +216,8 @@ setup(){
     elif [[ $1 = "watslack" ]]; then
         init_watslack $1 $2
     elif [[ $1 = "syn" ]]; then
-        init_synthetic_analytics $1 $2
+        #init_synthetic_analytics $1 $2
+        init_synthetic_analytics_fast
     fi
 }
 

@@ -7,6 +7,7 @@ bin=`cd "$bin"; pwd`
 
 stop_zk(){
    $KAFKA_DIR/bin/zookeeper-server-stop.sh
+   rm -rf /tmp/kafka-logs/
 }
 
 stop_redis(){
@@ -18,7 +19,10 @@ stop_kafka(){
    for kafka_topic in `seq 1 $1`
    do
       local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-$kafka_topic"
-      "$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic $curr_kafka_topic
+      "$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "$curr_kafka_topic"
+      "$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "stragglers"
+      sleep 2
+      "$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "stragglers-2"
    done
    stop_if_needed kafka\.Kafka Kafka
    rm -rf /tmp/kafka-logs/
@@ -62,6 +66,10 @@ stop_load(){
    stop_if_needed "WorkloadGenerator" "WorkloadGenerator"
 }
 
+stop_sdv(){
+  stop_if_needed sdv_server.py sdv
+}
+
 stop(){
     stop_load
     if [[ $# -gt 1 ]];
@@ -74,10 +82,11 @@ stop(){
     pull_stdout_from_flink_taskmanager $1
 
     local num_instances=$(yq r "$1.yaml" "num_instances")
-    stop_kafka $num_instances
+    #stop_kafka $num_instances
     stop_redis
-    stop_zk
+    #stop_zk
     stop_flink
+    #stop_sdv
 }
 
 cd "$PROJECT_DIR"
@@ -88,5 +97,7 @@ elif [[ $# -lt 2 ]];
 then
   stop "$EXPERIMENTS_DIR/$1"
 else
+  #stop_load
   stop "$EXPERIMENTS_DIR/$1" $2 # $1: experiment name, $2: Time to sleep
+  echo "do nothing"
 fi

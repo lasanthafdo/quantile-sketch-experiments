@@ -5,7 +5,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-120}
+TEST_TIME=${TEST_TIME:-34}
 
 run_exp(){
     ## Verify experiment exists
@@ -18,7 +18,7 @@ run_exp(){
 	# Fetch the workload type
 	local workload_type="unassigned"
 	workload_type=$(yq r "$EXPERIMENTS_DIR/$1.yaml" "workload_type")
-    cd $BIN_DIR
+    cd "$BIN_DIR" || exit
 
     if [[ "$workload_type" = "ysb" ]]; then
         echo "Running YSB Experiment"

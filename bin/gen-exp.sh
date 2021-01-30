@@ -37,8 +37,8 @@ gen_exp(){
 if [[ $# -lt 6 ]];
 then
   echo "Invalid number arguments"
-  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 50 watermark_freq: 50ms window_size_in_seconds: 2"
-  gen_exp ysb_default ysb 1 50 50 2
+  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 500events/s watermark_freq: 400ms window_size_in_seconds: 2"
+  gen_exp ysb_default ysb 1 500 200 3
 else
   gen_exp $1 $2 $3 $4 $5 $6
 fi

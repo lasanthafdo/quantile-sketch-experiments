@@ -1,11 +1,15 @@
 package YSB;
 
+import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static YSB.YSBConstants.NUM_CAMPAIGNS;
 
@@ -20,17 +24,15 @@ public class YSBWorkloadGenerator implements Runnable {
     private final Jedis jedis;
     // Experiment parameters
     private final int throughput;
-    private final int watermarkFrequency;
 
 
-    public YSBWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, Jedis jedis, int throughput, int watermarkFrequency) {
+    public YSBWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, Jedis jedis, int throughput) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
         this.jedis = jedis;
         // Experiment parameters
         this.throughput = throughput;
-        this.watermarkFrequency = watermarkFrequency;
     }
 
     List<String> generateAds() {
@@ -43,13 +45,14 @@ public class YSBWorkloadGenerator implements Runnable {
         for (int i = 0; i < ads.size(); i++) {
             int campaignIndex = i / 10;
             synchronized (jedis) {
-                jedis.sadd(campaigns.get(campaignIndex), ads.get(i));
+                //jedis.sadd(campaigns.get(campaignIndex), ads.get(i));
+                jedis.set(ads.get(i), campaigns.get(campaignIndex));
             }
         }
         return ads;
     }
 
-    JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec, boolean hasWatermark) {
+    JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec) {
         Map<String, String> eventMap = new HashMap<>();
         eventMap.put("user_id", userId);
         eventMap.put("page_id", pageId);
@@ -57,18 +60,11 @@ public class YSBWorkloadGenerator implements Runnable {
         eventMap.put("ad_type", adType);
         eventMap.put("event_type", eventType);
         eventMap.put("event_time", String.valueOf(eventTimeInMsec));
-        if (hasWatermark) {
-            long watermarkTime = eventTimeInMsec - (5 * 1000); // 5 seconds before
-            eventMap.put("watermark_time", String.valueOf(watermarkTime));
-        } else {
-            eventMap.put("watermark_time", String.valueOf(0));
-        }
-
         eventMap.put("ip_address", "1.2.3.4");
         return new JSONObject(eventMap);
     }
 
-    long emitThroughput(List<String> adIds, List<String> userIds, List<String> pageIds, Random random, long currTimeInMsec, double numOfEventsPerMS, long tuplesUntilWatermark) {
+    long emitThroughput(List<String> adIds, List<String> userIds, List<String> pageIds, Random random, long currTimeInMsec, double numOfEventsPerMS) {
         // Transform timestamp to seconds
         long now = System.currentTimeMillis();
 
@@ -80,6 +76,11 @@ public class YSBWorkloadGenerator implements Runnable {
             }
         }
 
+        //TODO add network and inter-event generation delay here in Milliseconds
+        NormalDistribution normalDistribution = new NormalDistribution(100.0, 50.0);
+        ExponentialDistribution ed = new ExponentialDistribution(100);
+        PoissonDistribution pd = new PoissonDistribution(100);
+
         if (numOfEventsPerMS < 1) {
             if (random.nextDouble() < numOfEventsPerMS) {
                 numOfEventsPerMS = 1;
@@ -88,25 +89,29 @@ public class YSBWorkloadGenerator implements Runnable {
             }
         }
 
+
         int numOfEventsPerMsInt = (int) Math.ceil(numOfEventsPerMS);
         for (int i = 0; i < numOfEventsPerMsInt; i++) {
+
+            // create Kafka Event
             String userId = userIds.get(random.nextInt(userIds.size()));
             String pageId = pageIds.get(random.nextInt(pageIds.size()));
             String adId = adIds.get(random.nextInt(adIds.size()));
             String adType = AD_TYPES[random.nextInt(AD_TYPES.length)];
             String eventType = EVENT_TYPES[random.nextInt(EVENT_TYPES.length)];
-            long eventTime = currTimeInMsec - random.nextInt(100); // Lateness of 100msec
-            boolean hasWatermark = false;
-            if (tuplesUntilWatermark == 0) {
-                hasWatermark = true;
-                tuplesUntilWatermark = watermarkFrequency;
-            }
-            JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime, hasWatermark);
+            // Network Delay
+            int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
+            //int sampled_value = (int) normalDistribution.sample();
+            //int sampled_value = (int) ed.sample();
+            int sampled_value = (int) pd.sample();
+            long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
+            JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime);
+
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaEvent.toString().getBytes(), kafkaEvent.toString().getBytes()));
-            tuplesUntilWatermark--;
+
         }
 
-        return tuplesUntilWatermark;
+        return 1;
     }
 
     public void run() {
@@ -120,11 +125,10 @@ public class YSBWorkloadGenerator implements Runnable {
         double numOfEventsPerMS = throughput / 1000.0;
 
         long originalTimestamp = System.currentTimeMillis(); // current time in milliseconds
-        long tuplesUntilWatermark = watermarkFrequency;
 
         while (true) {
             originalTimestamp += 1;
-            tuplesUntilWatermark = emitThroughput(adIds, userIds, pageIds, random, originalTimestamp, numOfEventsPerMS, tuplesUntilWatermark);
+            emitThroughput(adIds, userIds, pageIds, random, originalTimestamp, numOfEventsPerMS);
         }
     }
 }

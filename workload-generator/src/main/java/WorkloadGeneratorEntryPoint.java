@@ -97,13 +97,12 @@ public class WorkloadGeneratorEntryPoint {
         /* Get Benchmark properties */
         int numOfInstances = (Integer) benchMap.get("num_instances");
         int throughput = (Integer) benchMap.get("throughput");
-        int watermarkFrequency = (Integer) benchMap.get("watermark_frequency");
 
         for (int i = 1; i <= numOfInstances; i++) {
             try {
                 new Thread(
                         new YSBWorkloadGenerator(
-                                kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput, watermarkFrequency))
+                                kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput))
                         .start();
                 Thread.sleep(2000);
             } catch (Exception e) {
