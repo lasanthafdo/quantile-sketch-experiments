@@ -1,4 +1,5 @@
 import sdv
+import time
 from sdv.tabular import GaussianCopula, CTGAN
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
@@ -9,13 +10,15 @@ from threading import Thread, Lock
 import random
 import datetime
 import os
+from queue import LifoQueue
 
 
+# Writing this comment
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-KAFKA_SEND_TOPIC = "ad-events-1"
-#KAFKA_SEND_TOPIC = "stragglers-2"
+KAFKA_SEND_TOPIC = "ad-events-2"
 KAFKA_RECEIVE_TOPIC = "stragglers"
+#KAFKA_RECEIVE_TOPIC = "ad-events-1"
 
 GAUSSIAN_MODEL_FILE = 'gaussian_model.pkl'
 GAN_MODEL_FILE = 'gan_model.pkl'
@@ -62,7 +65,7 @@ def create_fake_data_model(df):
     execution_time = round(time_diff.seconds, 4)
     print("Training took " + str(execution_time) + " seconds")
 
-def sample_data(num_to_sample):
+def sample_data(num_to_sample, last_watermark):
     sdv_instance = sdv.SDV()
     lock.acquire()
     model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
@@ -75,16 +78,20 @@ def sample_data(num_to_sample):
         new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
         new_data_point["ad_type"] = sampled_data_point[1]["ad_type"]
         new_data_point["event_type"] = sampled_data_point[1]["event_type"]
-        new_data_point["event_time"] = event["lastWatermark"]
+        new_data_point["event_time"] = last_watermark
         new_data_point["ip_address"] = "-"
         # send to Kafka
         # fh.write(str(new_data_point) + "\n")
         producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
+def current_milli_time():
+    return round(time.time() * 1000)
 
 if __name__ == "__main__":
     tmp_data = []
     curr_data_points = 0
+    last_model_start_time = current_milli_time() - 10000
+
     for msg in consumer_regular:
         event = msg.value
         num_to_sample = event.get("EventsDiscardedSinceLastWatermark")
@@ -95,13 +102,17 @@ if __name__ == "__main__":
             tmp_dict.update({"event_type" : event["event_type"]})
             tmp_dict.update({"ad_type" : event["ad_type"]})
             tmp_data.append(tmp_dict)
+            if len(tmp_data) > 30000:
+                tmp_data.pop()
         else:  # is watermark event
             if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE):
                 print("starting new thread creating new sample\n")
-                thread = Thread(target=sample_data, args=(int(num_to_sample),))
+                thread = Thread(target=sample_data, args=(int(num_to_sample), event["lastWatermark"],))
                 thread.start()
-        if curr_data_points > 10000:
+
+        if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
             print("starting new thread creating new model\n")
+            last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
             thread = Thread(target=create_fake_data_model, args=(df,))
             thread.start()
