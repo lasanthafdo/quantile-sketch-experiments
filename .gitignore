@@ -33,3 +33,6 @@ javacore*
 Snap*
 dependency-reduced-pom*
 dump.rdb
+*.pkl
+nohup.out
+results.txt
