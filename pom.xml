@@ -112,7 +112,6 @@ Licensed under the terms of the Apache License 2.0. Please see LICENSE file in t
     <modules>
         <module>workload-generator</module>
         <module>workload-processor-flink</module>
-        <module>workload-analyzer</module>
     </modules>
 
     <build>
