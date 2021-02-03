@@ -30,7 +30,7 @@ import java.time.Duration;
 public class AdvertisingQuery implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
-    private final String KAFKA_PREFIX_TOPIC = "ad-events";
+    private final String KAFKA_PREFIX_TOPIC = "ad-events-1";
     /* The Job Parameters */
     //This class provides simple utility methods for reading and parsing program
     // arguments from different sources.
@@ -84,7 +84,7 @@ public class AdvertisingQuery implements Runnable {
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
                         // Different topics for different query queryInstances
-                        KAFKA_PREFIX_TOPIC + "-" + queryInstance,
+                        KAFKA_PREFIX_TOPIC,
                         new SimpleStringSchema(),
                         setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
                 .name("Source (" + queryInstance + ")").setParallelism(1)
