@@ -106,9 +106,23 @@ if __name__ == "__main__":
                 tmp_data.pop()
         else:  # is watermark event
             if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE):
-                print("starting new thread creating new sample\n")
-                thread = Thread(target=sample_data, args=(int(num_to_sample), event["lastWatermark"],))
-                thread.start()
+                sdv_instance = sdv.SDV()
+                lock.acquire()
+                model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
+                lock.release()
+                sampled_data = model.sample(int(num_to_sample))
+                for sampled_data_point in sampled_data.iterrows():
+                    new_data_point = {}
+                    new_data_point["user_id"] = "-"
+                    new_data_point["page_id"] = "-"
+                    new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
+                    new_data_point["ad_type"] = sampled_data_point[1]["ad_type"]
+                    new_data_point["event_type"] = sampled_data_point[1]["event_type"]
+                    new_data_point["event_time"] = last_watermark
+                    new_data_point["ip_address"] = "-"
+                    # send to Kafka
+                    # fh.write(str(new_data_point) + "\n")
+                    producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
         if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
             print("starting new thread creating new model\n")
