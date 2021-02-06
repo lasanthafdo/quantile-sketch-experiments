@@ -39,9 +39,9 @@ consumer_regular = KafkaConsumer(
     value_deserializer=lambda x: loads(x.decode('utf-8')))
 
 producer_regular = KafkaProducer(
-    bootstrap_servers = server,
-    key_serializer = lambda x: (x.encode('utf-8')),
-    value_serializer = lambda x: (x.encode('utf-8')))
+    bootstrap_servers=server,
+    key_serializer=lambda x: (x.encode('utf-8')),
+    value_serializer=lambda x: (x.encode('utf-8')))
 
 HEADERS = ["ad_id", "ad_type", "event_type"]
 lock = Lock()

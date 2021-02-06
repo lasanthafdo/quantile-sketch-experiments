@@ -36,3 +36,4 @@ dump.rdb
 *.pkl
 nohup.out
 results.txt
+test_server.py
