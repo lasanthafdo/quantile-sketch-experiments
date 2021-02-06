@@ -111,6 +111,7 @@ if __name__ == "__main__":
                 model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
                 lock.release()
                 sampled_data = model.sample(int(num_to_sample))
+                last_watermark = event["lastWatermark"]
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
                     new_data_point["user_id"] = "-"
