@@ -37,3 +37,4 @@ dump.rdb
 nohup.out
 results.txt
 test_server.py
+sdv.out
