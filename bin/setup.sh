@@ -110,6 +110,7 @@ init_synthetic_analytics(){
      fi
 
      # If Apache Flink is not built
+
      cp -r $HOME/flink-binary $FLINK_DIR
      #maven_install_no_tests $FLINK_SRC_DIR
 

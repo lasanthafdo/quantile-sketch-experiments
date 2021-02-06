@@ -48,7 +48,7 @@ start_flink_processing(){
 start_sdv(){
   #source "$HOME"/PythonEnvironments/sdv_project/bin/activate
   cd "$PROJECT_DIR"/sdv || exit
-  python sdv_server.py > "$PROJECT_DIR"/sdv/sdv.out &
+  python sdv_server.py > "$PROJECT_DIR"/sdv/sdv.out 2>&1 &
   cd "$PROJECT_DIR" || exit
 }
 

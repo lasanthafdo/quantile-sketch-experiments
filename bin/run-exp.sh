@@ -24,12 +24,12 @@ run_exp() {
 
   if [[ "$workload_type" == "ysb" ]]; then
     echo "Running YSB Experiment"
-    ./start_ysb_2.sh "$EXPERIMENTS_DIR/$1.yaml"
+    ./start_ysb.sh "$EXPERIMENTS_DIR/$1.yaml"
     echo "Sleeping for $TEST_TIME to let experiment $1 run"
     sleep $TEST_TIME
 
     # Stop YSB
-    ./stop_ysb_2.sh $1 10
+    ./stop_ysb.sh $1 10
   else
     echo "Unknown Workload!"
   fi

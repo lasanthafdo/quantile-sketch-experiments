@@ -22,8 +22,7 @@ start_redis(){
 
 create_kafka_topic() {
     echo "Creating KAFKA Topic"
-    local kafka_topic="$1"
-    bash "$KAFKA_DIR"/bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic "$1" --if-not-exists
+    bash "$KAFKA_DIR"/bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic "$1"
 }
 
 
@@ -31,7 +30,8 @@ start_kafka(){
     echo "Starting KAFKA"
     start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
     sleep 5
-    create_kafka_topic "ad-events-$1"
+    create_kafka_topic "ad-events-1"
+    create_kafka_topic "ad-events-2"
     create_kafka_topic "stragglers"
     create_kafka_topic "stragglers-2"
     bash "$KAFKA_DIR"/bin/kafka-topics.sh --list --bootstrap-server localhost:9092

@@ -81,10 +81,9 @@ stop(){
     sleep 5
     pull_stdout_from_flink_taskmanager $1
 
-    local num_instances=$(yq r "$1.yaml" "num_instances")
-    #stop_kafka $num_instances
+    stop_kafka
     stop_redis
-    #stop_zk
+    stop_zk
     stop_flink
     #stop_sdv
 }
@@ -99,5 +98,4 @@ then
 else
   #stop_load
   stop "$EXPERIMENTS_DIR/$1" $2 # $1: experiment name, $2: Time to sleep
-  echo "do nothing"
 fi
