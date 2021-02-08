@@ -20,8 +20,6 @@ REDIS_VERSION=${REDIS_VERSION:-"5.0.5"}
 # Kafka download parameters
 KAFKA_VERSION=${KAFKA_VERSION:-"2.4.1"}
 
-ANNOYING_DIR="$HOME/flink/flink-runtime-web/web-dashboard/node_modules/.cache"
-
 init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
@@ -112,23 +110,13 @@ init_synthetic_analytics(){
      # If Apache Flink is not built
 
      cp -r $HOME/flink-binary $FLINK_DIR
-     #maven_install_no_tests $FLINK_SRC_DIR
 
      echo "Printing META_INF/MANIFEST.MF file of $FLINK_SRC_DIR/lib to check java and flink version"
      firstfile=$FLINK_DIR/lib/$(ls -S $FLINK_DIR/lib | head -n 1)
      echo "$(unzip -p $firstfile META-INF/MANIFEST.MF)"
 }
 
-init_synthetic_analytics_fast(){
-     # Remove old_target
-     if [[ -d "$FLINK_DIR" ]]; then
-        rm -r "$FLINK_DIR"
-        cp -r "$HOME/flink/build-target" "$FLINK_DIR"
-     fi
-}
-
 setup(){
-    ## Create SETUP file first
     init_setup_file
 
     if [[ ! -d "$BENCHMARK_DIR" ]]; then
@@ -140,19 +128,16 @@ setup(){
     init_kafka
 
     if [[ $1 = "flink" ]]; then
-        init_flink $1 $2
-    elif [[ $1 = "watslack" ]]; then
-        init_watslack $1 $2
+        init_flink $1
     elif [[ $1 = "syn" ]]; then
-        #init_synthetic_analytics $1 $2
-        init_synthetic_analytics_fast
+        init_synthetic_analytics $1
     fi
 }
 
 if [[ $# -lt 2 ]];
 then
-    echo "Invalid use: ./setup.sh MODE=[flink|watslack|syn] get_new{1=true, 0=false}"
+    echo "Invalid use: ./setup.sh MODE=[flink|syn]"
 else
-    cd "$PROJECT_DIR"
+    cd "$PROJECT_DIR" || exit
     setup $1 $2
 fi

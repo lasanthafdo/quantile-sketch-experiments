@@ -65,6 +65,8 @@ stop_sdv() {
 }
 
 stop() {
+  stop_sdv
+  sleep 5
   stop_flink_processing
   sleep 5
   pull_stdout_from_flink_taskmanager $1
@@ -72,7 +74,6 @@ stop() {
   stop_flink
   stop_kafka
   stop_zk
-  stop_sdv
 }
 
 cd "$PROJECT_DIR"

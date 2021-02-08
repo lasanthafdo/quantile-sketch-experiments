@@ -13,7 +13,7 @@ start_zk(){
 create_kafka_topic() {
     echo "Creating KAFKA Topic"
     local kafka_topic="$1"
-    bash "$KAFKA_DIR"/bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic "$1"
+    bash "$KAFKA_DIR"/bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 2 --topic "$1"
     echo "Finish Creating KAFKA Topic"
 }
 
@@ -47,9 +47,11 @@ start_flink_processing(){
 
 start_sdv(){
   #source "$HOME"/PythonEnvironments/sdv_project/bin/activate
-  cd "$PROJECT_DIR"/sdv || exit
-  python sdv_server.py > "$PROJECT_DIR"/sdv/sdv.out 2>&1 &
+  echo "Starting SDV"
+  cd "$PROJECT_DIR"/sdv || echo "Cannot cd into sdv folder" || exit
+  nohup python sdv_server.py &
   cd "$PROJECT_DIR" || exit
+  echo "Finish starting SDV"
 }
 
 start(){
