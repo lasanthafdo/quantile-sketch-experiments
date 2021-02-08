@@ -77,9 +77,9 @@ public class YSBWorkloadGenerator implements Runnable {
         }
 
         //TODO add network and inter-event generation delay here in Milliseconds
-        NormalDistribution normalDistribution = new NormalDistribution(100.0, 50.0);
-        ExponentialDistribution ed = new ExponentialDistribution(100);
-        PoissonDistribution pd = new PoissonDistribution(100);
+        NormalDistribution nD = new NormalDistribution(100.0, 10.0);
+        ExponentialDistribution eD = new ExponentialDistribution(100);
+        PoissonDistribution pD = new PoissonDistribution(100);
 
         if (numOfEventsPerMS < 1) {
             if (random.nextDouble() < numOfEventsPerMS) {
@@ -103,7 +103,7 @@ public class YSBWorkloadGenerator implements Runnable {
             int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
             //int sampled_value = (int) normalDistribution.sample();
             //int sampled_value = (int) ed.sample();
-            int sampled_value = (int) pd.sample();
+            int sampled_value = (int) nD.sample();
             long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
             JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime);
 

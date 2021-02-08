@@ -16,7 +16,7 @@ from queue import LifoQueue
 # Writing this comment
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-KAFKA_SEND_TOPIC = "ad-events-2"
+KAFKA_SEND_TOPIC = "ad-events-1"
 KAFKA_RECEIVE_TOPIC = "stragglers"
 #KAFKA_RECEIVE_TOPIC = "ad-events-1"
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     tmp_data = []
     curr_data_points = 0
     last_model_start_time = current_milli_time() - 10000
-
+    print("Starting Server")
     for msg in consumer_regular:
         event = msg.value
         num_to_sample = event.get("EventsDiscardedSinceLastWatermark")
@@ -112,6 +112,7 @@ if __name__ == "__main__":
                 lock.release()
                 sampled_data = model.sample(int(num_to_sample))
                 last_watermark = event["lastWatermark"]
+                print("Sending sample of " + num_to_sample)
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
                     new_data_point["user_id"] = "-"
@@ -121,6 +122,7 @@ if __name__ == "__main__":
                     new_data_point["event_type"] = sampled_data_point[1]["event_type"]
                     new_data_point["event_time"] = last_watermark
                     new_data_point["ip_address"] = "-"
+                    new_data_point["fake"] = "true"
                     # send to Kafka
                     # fh.write(str(new_data_point) + "\n")
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
