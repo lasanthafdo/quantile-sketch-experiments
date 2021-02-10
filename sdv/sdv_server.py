@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 lock.release()
                 sampled_data = model.sample(int(num_to_sample))
                 last_watermark = event["lastWatermark"]
-                print("Sending sample of " + num_to_sample)
+                print("Sending sample of " + str(num_to_sample))
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
                     new_data_point["user_id"] = "-"

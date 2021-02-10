@@ -8,7 +8,7 @@ bin=$(
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-100}
+TEST_TIME=${TEST_TIME:-25}
 
 run_exp() {
   if [[ ! -f $EXPERIMENTS_DIR/$1.yaml ]]; then
@@ -28,13 +28,14 @@ run_exp() {
       ./start_ysb_workload.sh "$EXPERIMENTS_DIR/$1.yaml"
       echo "Sleeping for $TEST_TIME to let generator $1 run"
       sleep $TEST_TIME
-      sleep 30
       ./stop_ysb_workload.sh
+      echo "Workload $1 is done."
     elif [[ "$2" == "processing" ]]; then
       ./start_ysb_flink.sh "$EXPERIMENTS_DIR/$1.yaml"
       echo "Sleeping for $TEST_TIME to let generator $1 run"
       sleep $TEST_TIME
       ./stop_ysb_flink.sh $1
+      echo "Processing $1 is done."
     else
       echo "Unknown type of program of $1 you wish to run"
     fi
@@ -42,8 +43,7 @@ run_exp() {
     echo "Unknown Workload!"
   fi
 
-  echo "Generator $1 is done."
-  sleep 20
+  sleep 5
 }
 
 if [[ $# -lt 2 ]]; then

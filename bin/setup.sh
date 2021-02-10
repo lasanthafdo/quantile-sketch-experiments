@@ -131,13 +131,15 @@ setup(){
         init_flink $1
     elif [[ $1 = "syn" ]]; then
         init_synthetic_analytics $1
+    else
+      echo "unrecogized option"
     fi
 }
 
-if [[ $# -lt 2 ]];
+if [[ $# -lt 1 ]];
 then
     echo "Invalid use: ./setup.sh MODE=[flink|syn]"
 else
     cd "$PROJECT_DIR" || exit
-    setup $1 $2
+    setup $1
 fi
