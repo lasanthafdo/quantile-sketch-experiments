@@ -100,7 +100,7 @@ public class AdvertisingQuery implements Runnable {
                 .filter(new FilterAds())
                 .name("FilterAds (" + queryInstance + ")")
                 .disableChaining()
-                .<Tuple3<String, String, String>>project(2, 5, 7)
+                .<Tuple4<String, String, String, Boolean>>project(2, 5, 7, 8)
                 .name("project (" + queryInstance + ")")
                 .disableChaining()
                 // perform join with redis data
@@ -118,12 +118,16 @@ public class AdvertisingQuery implements Runnable {
     }
 
 
-    private class DeserializeAdsFromkafka implements MapFunction<String, Tuple8<String, String, String, String, String, String, String, String>> {
+    private class DeserializeAdsFromkafka implements MapFunction<String, Tuple9<String, String, String, String, String, String, String, String, Boolean>> {
 
         @Override
-        public Tuple8<String, String, String, String, String, String, String, String> map(String input) {
+        public Tuple9<String, String, String, String, String, String, String, String, Boolean> map(String input) {
             JSONObject obj = new JSONObject(input);
-            return new Tuple8<>(
+            Boolean fake = false;
+            if (obj.has("fake")){
+                fake = true;
+            }
+            return new Tuple9<>(
                     obj.getString("user_id"),
                     obj.getString("page_id"),
                     obj.getString("ad_id"),
@@ -131,35 +135,20 @@ public class AdvertisingQuery implements Runnable {
                     obj.getString("event_type"),
                     obj.getString("event_time"),
                     obj.getString("ip_address"),
-                    String.valueOf(System.currentTimeMillis())); // ingestion time
+                    String.valueOf(System.currentTimeMillis()),
+                    fake); // ingestion time
         }
     }
 
-    private class FilterAds implements FilterFunction<Tuple8<String, String, String, String, String, String, String, String>> {
+    private class FilterAds implements FilterFunction<Tuple9<String, String, String, String, String, String, String, String, Boolean>> {
 
         @Override
-        public boolean filter(Tuple8<String, String, String, String, String, String, String, String> ad) {
+        public boolean filter(Tuple9<String, String, String, String, String, String, String, String, Boolean> ad) {
             return ad.getField(4).equals("view");
         }
     }
 
-    private class AdsWatermarkAndTimeStampAssigner implements AssignerWithPunctuatedWatermarks<Tuple8<String, String, String, String, String, String, String, String>> {
-        @Nullable
-        @Override
-        public Watermark checkAndGetNextWatermark(Tuple8<String, String, String, String, String, String, String, String> lastElement, long extractedTimestamp) {
-            long watermarkTime = Long.valueOf(lastElement.getField(7));
-            // this is irrelevant.
-            //TODO if I have time, remove this since I do not need watermarks with events
-            return watermarkTime != 0 ? new Watermark(watermarkTime) : null;
-        }
-
-        @Override
-        public long extractTimestamp(Tuple8<String, String, String, String, String, String, String, String> element, long previousElementTimestamp) {
-            return Long.valueOf(element.getField(5));
-        }
-    }
-
-    private class JoinAdWithRedis extends RichMapFunction<Tuple3<String, String, String>, Tuple3<String, String, String>> {
+    private class JoinAdWithRedis extends RichMapFunction<Tuple4<String, String, String, Boolean>, Tuple4<String, String, String, Boolean>> {
 
         private RedisAdCampaignCache redisAdCampaignCache;
 
@@ -171,54 +160,49 @@ public class AdvertisingQuery implements Runnable {
         }
 
         @Override
-        public Tuple3<String, String, String> map(Tuple3<String, String, String> input) {
+        public Tuple4<String, String, String, Boolean> map(Tuple4<String, String, String, Boolean> input) {
             //String userId = input.getField(0);
             String adId = input.getField(0);
-            return new Tuple3<>(
+            System.out.println("EEVENT: " + input);
+            return new Tuple4<>(
                     redisAdCampaignCache.execute(adId),
                     input.getField(1), // event time
-                    input.getField(2) // ingestion time
+                    input.getField(2), // ingestion time
+                    input.getField(3) // fake?
             );
         }
     }
 
-    private class NameToLowerCase extends RichMapFunction<Tuple5<String, String, String, String, String>, Tuple5<String, String, String, String, String>> {
+    private class WindowAdsAggregator implements AggregateFunction<Tuple4<String, String, String, Boolean>, Tuple3<Long, Integer, Integer>, Tuple3<Long, Integer, Integer>> {
 
         @Override
-        public Tuple5<String, String, String, String, String> map(Tuple5<String, String, String, String, String> input) throws Exception {
-            return new Tuple5<>(
-                    input.f0,
-                    input.f1,
-                    input.f2, // event time
-                    input.f3, // watermark
-                    input.f4 // ingestion
-            );
-        }
-    }
-
-    private class WindowAdsAggregator implements AggregateFunction<Tuple3<String, String, String>, Tuple2<String, Integer>, Tuple2<String, Integer>> {
-
-        @Override
-        public Tuple2<String, Integer> createAccumulator() {
-            return new Tuple2<>("", 0);
+        public Tuple3<Long, Integer, Integer> createAccumulator() {
+            return new Tuple3<>((long)1, 0, 0);
         }
 
         @Override
-        public Tuple2<String, Integer> add(Tuple3<String, String, String> value, Tuple2<String, Integer> accumulator) {
-            accumulator.f0 = value.f0;
+        public Tuple3<Long, Integer, Integer> add(Tuple4<String, String, String, Boolean> value, Tuple3<Long, Integer, Integer> accumulator) {
+            //windowSize
+            accumulator.f0 = Long.parseLong(value.f1)/(3 * 1000);
             accumulator.f1 += 1;
+            if(value.f3){
+                System.out.println("received fake event in WindowsAddAggregator " + value);
+            }
+            if (!value.f3.booleanValue()){
+                accumulator.f2 += 1;
+            }
             return accumulator;
         }
 
         @Override
-        public Tuple2<String, Integer> getResult(Tuple2<String, Integer> accumulator) {
+        public Tuple3<Long, Integer, Integer> getResult(Tuple3<Long, Integer, Integer> accumulator) {
             return accumulator;
         }
 
         @Override
-        public Tuple2<String, Integer> merge(Tuple2<String, Integer> acc0, Tuple2<String, Integer> acc1) {
-            assert acc0.f0.equalsIgnoreCase(acc1.f0);
-            return new Tuple2<>(acc0.f0, acc0.f1 + acc1.f1);
+        public Tuple3<Long, Integer, Integer> merge(Tuple3<Long, Integer, Integer> acc0, Tuple3<Long, Integer, Integer> acc1) {
+            //assert acc0.f0.equals(acc1.f0);
+            return new Tuple3<>(acc0.f0, acc0.f1 + acc1.f1, acc0.f2 + acc1.f2);
         }
     }
 
