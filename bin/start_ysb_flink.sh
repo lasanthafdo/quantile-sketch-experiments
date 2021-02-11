@@ -57,8 +57,10 @@ start_sdv(){
 start(){
     echo $1
 
-    maven_clean_install_with_tests $PROJECT_DIR/workload-processor-flink
-
+    hname=$(hostname)
+    if [[ $hname == "Harshs-MBP"  ]]; then
+      maven_clean_install_with_tests $PROJECT_DIR/workload-processor-flink
+    fi
     start_zk
     start_kafka
     start_flink

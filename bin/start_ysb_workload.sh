@@ -33,7 +33,10 @@ start_load() {
 }
 
 start() {
-  maven_clean_install_no_tests $PROJECT_DIR/workload-generator
+  hname=$(hostname)
+  if [[ $hname == "Harshs-MBP"  ]]; then
+    maven_clean_install_no_tests $PROJECT_DIR/workload-generator
+  fi
 
   start_redis $1
   read -n 1 -s -r -p "Press any key to continue"
