@@ -163,7 +163,6 @@ public class AdvertisingQuery implements Runnable {
         public Tuple4<String, String, String, Boolean> map(Tuple4<String, String, String, Boolean> input) {
             //String userId = input.getField(0);
             String adId = input.getField(0);
-            System.out.println("EEVENT: " + input);
             return new Tuple4<>(
                     redisAdCampaignCache.execute(adId),
                     input.getField(1), // event time
@@ -185,10 +184,7 @@ public class AdvertisingQuery implements Runnable {
             //windowSize
             accumulator.f0 = Long.parseLong(value.f1)/(3 * 1000);
             accumulator.f1 += 1;
-            if(value.f3){
-                System.out.println("received fake event in WindowsAddAggregator " + value);
-            }
-            if (!value.f3.booleanValue()){
+            if (!value.f3){
                 accumulator.f2 += 1;
             }
             return accumulator;
