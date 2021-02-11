@@ -1,6 +1,7 @@
 package YSB;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.GammaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.kafka.clients.producer.Producer;
@@ -77,9 +78,10 @@ public class YSBWorkloadGenerator implements Runnable {
         }
 
         //TODO add network and inter-event generation delay here in Milliseconds
-        NormalDistribution nD = new NormalDistribution(100.0, 10.0);
-        ExponentialDistribution eD = new ExponentialDistribution(100);
+        NormalDistribution nD = new NormalDistribution(150.0, 10.0);
+        ExponentialDistribution eD = new ExponentialDistribution(200);
         PoissonDistribution pD = new PoissonDistribution(100);
+        GammaDistribution gD = new GammaDistribution(60, 4);
 
         if (numOfEventsPerMS < 1) {
             if (random.nextDouble() < numOfEventsPerMS) {
@@ -103,7 +105,7 @@ public class YSBWorkloadGenerator implements Runnable {
             int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
             //int sampled_value = (int) normalDistribution.sample();
             //int sampled_value = (int) ed.sample();
-            int sampled_value = (int) nD.sample();
+            int sampled_value = (int) eD.sample();
             long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
             JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime);
 
