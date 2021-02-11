@@ -124,10 +124,9 @@ if __name__ == "__main__":
                     new_data_point["ip_address"] = "-"
                     new_data_point["fake"] = "true"
                     # send to Kafka
-                    # fh.write(str(new_data_point) + "\n")
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
-        if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
+        if curr_data_points > 30000 and (current_milli_time() - last_model_start_time) > 15000:
             print("starting new thread creating new model\n")
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
