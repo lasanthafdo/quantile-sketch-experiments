@@ -7,7 +7,7 @@ bin=`cd "$bin"; pwd`
 
 stop_redis(){
    stop_if_needed redis-server Redis
-   #rm -f dump.rdb
+   rm -f dump.rdb
 }
 
 stop_load(){

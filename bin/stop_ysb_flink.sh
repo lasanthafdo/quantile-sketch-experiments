@@ -66,7 +66,7 @@ stop_sdv() {
 
 stop() {
   stop_sdv
-  sleep 5
+  sleep 1
   stop_flink_processing
   sleep 5
   pull_stdout_from_flink_taskmanager $1
