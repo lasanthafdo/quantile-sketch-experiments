@@ -24,27 +24,28 @@ init_setup_file(){
     # setup file
     echo 'kafka.brokers:' > $SETUP_FILE
     hname=$(hostname)
-    if [[ $hname == "tem102"  ]]; then
-      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
-    else
+
+    if [[ $hname == "Harshs-MBP"  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
+    else
+      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
 
-    if [[ $hname == "tem102"  ]]; then
-      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
-    else
+    if [[ $hname == "Harshs-MBP"  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
+    else
+      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
 
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
-    if [[ $hname == "tem101"  ]]; then
-      echo 'redis.host: "tem102.tembo-domain.cs.uwaterloo.ca"' >> $SETUP_FILE
-    else
+    if [[ $hname == "Harshs-MBP"  ]]; then
       echo 'redis.host: "localhost"' >> $SETUP_FILE
+    else
+      echo 'redis.host: "tem102.tembo-domain.cs.uwaterloo.ca"' >> $SETUP_FILE
     fi
     echo 'kafka.partitions: '1 >> $SETUP_FILE
 }
