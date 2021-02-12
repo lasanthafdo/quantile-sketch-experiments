@@ -11,10 +11,12 @@ import random
 import datetime
 import os
 from queue import LifoQueue
+import socket
 
 
 # Writing this comment
 dir_path = os.path.dirname(os.path.realpath(__file__))
+print("dir_path: " + dir_path)
 
 KAFKA_SEND_TOPIC = "ad-events-1"
 KAFKA_RECEIVE_TOPIC = "stragglers"
@@ -25,7 +27,10 @@ GAN_MODEL_FILE = 'gan_model.pkl'
 SAMPLE_AMOUNT = 800
 
 kafka_port = 9092
-kafka_broker = "localhost"
+if socket.gethostname() == "Harshs-MBP":
+    kafka_broker = "localhost"
+else:
+    kafka_broker = "tem101.tembo-domain.cs.uwaterloo.c"
 
 server = kafka_broker + ":" + str(kafka_port)
 bootstrap_servers = [server]
@@ -48,16 +53,24 @@ lock = Lock()
 
 
 def create_fake_data_model(df):
+    print("Created New Thread")
     start_time = datetime.datetime.now()
     # create a new model here
+    df.to_csv("temporary.txt", index=False)
+    df = pd.read_csv("temporary.txt")
     ctgan_model = GaussianCopula(field_transformers={
         'ad_id': 'label_encoding'
     })
+    print("Fitting Model")
     ctgan_model.fit(df)
 
+    print("Acquiring Lock to save")
     lock.acquire()
+    print("Lock Acquired")
     ctgan_model.save(dir_path + "/" + GAUSSIAN_MODEL_FILE)
+    print("File Saved")
     lock.release()
+    print("Lock Released")
 
     end_time = datetime.datetime.now()
     time_diff = end_time - start_time
@@ -81,17 +94,18 @@ def sample_data(num_to_sample, last_watermark):
         new_data_point["event_time"] = last_watermark
         new_data_point["ip_address"] = "-"
         # send to Kafka
-        # fh.write(str(new_data_point) + "\n")
         producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
 def current_milli_time():
     return round(time.time() * 1000)
 
 if __name__ == "__main__":
+    #fh = open("temp.txt", "w+")
     tmp_data = []
     curr_data_points = 0
-    last_model_start_time = current_milli_time() - 10000
+    last_model_start_time = current_milli_time() - 100000
     print("Starting Server")
+    new_models_created = 0
     for msg in consumer_regular:
         event = msg.value
         num_to_sample = event.get("EventsDiscardedSinceLastWatermark")
@@ -102,10 +116,10 @@ if __name__ == "__main__":
             tmp_dict.update({"event_type" : event["event_type"]})
             tmp_dict.update({"ad_type" : event["ad_type"]})
             tmp_data.append(tmp_dict)
-            if len(tmp_data) > 30000:
+            if len(tmp_data) > 11000:
                 tmp_data.pop()
         else:  # is watermark event
-            if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE):
+            if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE) and num_to_sample > 0:
                 sdv_instance = sdv.SDV()
                 lock.acquire()
                 model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
@@ -126,11 +140,14 @@ if __name__ == "__main__":
                     # send to Kafka
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
-        if curr_data_points > 30000 and (current_milli_time() - last_model_start_time) > 15000:
+        if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
             print("starting new thread creating new model\n")
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
-            thread = Thread(target=create_fake_data_model, args=(df,))
-            thread.start()
+            df.to_csv("temp" + str(new_models_created) + ".csv", index=False)
+            new_models_created = new_models_created + 1
+            #thread = Thread(target=create_fake_data_model, args=(df,))
+            #thread.start()
             curr_data_points = 0
             tmp_data = []
+    #fh.close()
