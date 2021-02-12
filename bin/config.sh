@@ -80,6 +80,12 @@ stop_if_needed() {
     then
       kill -9 "$CHECK_AGAIN"
     fi
+    sleep 1
+    local CHECK_AGAIN=$(pid_match "$match")
+    if [ ! -z "$CHECK_AGAIN" ];
+    then
+      sudo kill -9 "$CHECK_AGAIN"
+    fi
   else
     echo "No $name instance found to stop"
   fi
