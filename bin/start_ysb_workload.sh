@@ -19,7 +19,8 @@ start_redis() {
   else
     start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server" "--protected-mode no"
     cd "$WORKLOAD_GENERATOR_DIR" || exit
-    mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+    #sudo mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -n"
+    java -classpath target/workload-generator-0.5.0.jar WorkloadGeneratorEntryPoint -s "$SETUP_FILE" -e "$1" -n
     cd "$PROJECT_DIR" || exit
   fi
 }
@@ -28,7 +29,8 @@ start_load() {
   # flink_load starts on the first node
   echo "Start Workload Generator"
   cd "$WORKLOAD_GENERATOR_DIR" || exit
-  mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
+  #mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
+  java -classpath target/workload-generator-0.5.0.jar WorkloadGeneratorEntryPoint -s $SETUP_FILE -e "$1" &
   cd "$PROJECT_DIR" || exit
 }
 
