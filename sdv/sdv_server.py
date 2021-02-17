@@ -6,11 +6,11 @@ from kafka import KafkaProducer
 from json import loads
 from json import dumps
 import pandas as pd
-from threading import Thread, Lock
 import random
 import datetime
 import os
 from queue import LifoQueue
+import multiprocessing as mp
 import socket
 
 
@@ -30,7 +30,7 @@ kafka_port = 9092
 if socket.gethostname() == "Harshs-MBP":
     kafka_broker = "localhost"
 else:
-    kafka_broker = "tem101.tembo-domain.cs.uwaterloo.c"
+    kafka_broker = "tem101.tembo-domain.cs.uwaterloo.ca"
 
 server = kafka_broker + ":" + str(kafka_port)
 bootstrap_servers = [server]
@@ -49,15 +49,13 @@ producer_regular = KafkaProducer(
     value_serializer=lambda x: (x.encode('utf-8')))
 
 HEADERS = ["ad_id", "ad_type", "event_type"]
-lock = Lock()
 
-
-def create_fake_data_model(df):
-    print("Created New Thread")
+def create_fake_data_model(df, lock):
+    print("Created New Process")
     start_time = datetime.datetime.now()
     # create a new model here
-    df.to_csv("temporary.txt", index=False)
-    df = pd.read_csv("temporary.txt")
+    #df.to_csv("temporary.txt", index=False)
+    #df = pd.read_csv("temporary.txt")
     ctgan_model = GaussianCopula(field_transformers={
         'ad_id': 'label_encoding'
     })
@@ -93,17 +91,18 @@ def sample_data(num_to_sample, last_watermark):
         new_data_point["event_type"] = sampled_data_point[1]["event_type"]
         new_data_point["event_time"] = last_watermark
         new_data_point["ip_address"] = "-"
-        # send to Kafka
+        new_data_point["gen_time"] = current_milli_time();
         producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
 def current_milli_time():
     return round(time.time() * 1000)
 
 if __name__ == "__main__":
-    #fh = open("temp.txt", "w+")
+    mp.set_start_method('forkserver')
+    lock = mp.Lock()
     tmp_data = []
     curr_data_points = 0
-    last_model_start_time = current_milli_time() - 100000
+    last_model_start_time = current_milli_time() - 1000000
     print("Starting Server")
     new_models_created = 0
     for msg in consumer_regular:
@@ -126,7 +125,8 @@ if __name__ == "__main__":
                 lock.release()
                 sampled_data = model.sample(int(num_to_sample))
                 last_watermark = event["lastWatermark"]
-                print("Sending sample of " + str(num_to_sample))
+                print("Sending sample: " + str(num_to_sample) + " last_watermark: " + str(last_watermark)
+                      + " current_time: " + str(current_milli_time()))
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
                     new_data_point["user_id"] = "-"
@@ -137,17 +137,15 @@ if __name__ == "__main__":
                     new_data_point["event_time"] = last_watermark
                     new_data_point["ip_address"] = "-"
                     new_data_point["fake"] = "true"
-                    # send to Kafka
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
         if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
-            print("starting new thread creating new model\n")
+            print("starting new thread creating new model")
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
-            df.to_csv("temp" + str(new_models_created) + ".csv", index=False)
+            #df.to_csv("temp" + str(new_models_created) + ".csv", index=False)
             new_models_created = new_models_created + 1
-            #thread = Thread(target=create_fake_data_model, args=(df,))
-            #thread.start()
+            process = mp.Process(target=create_fake_data_model, args=(df, lock,))
+            process.start()
             curr_data_points = 0
             tmp_data = []
-    #fh.close()
