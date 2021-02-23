@@ -148,7 +148,8 @@ if __name__ == "__main__":
                     new_data_point["current_milli_time"] = current_milli_time()
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
-        if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
+        time_since_last_model = current_milli_time() - last_model_start_time
+        if curr_data_points > 10000 and time_since_last_model > 15000:
             print("length of data being converted to csv file" + str(len(tmp_data)))
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
