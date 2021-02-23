@@ -12,6 +12,8 @@ import os
 from queue import LifoQueue
 import multiprocessing as mp
 import socket
+from filelock import Timeout, FileLock
+import sys
 
 
 # Writing this comment
@@ -22,8 +24,15 @@ KAFKA_SEND_TOPIC = "ad-events-1"
 KAFKA_RECEIVE_TOPIC = "stragglers"
 #KAFKA_RECEIVE_TOPIC = "ad-events-1"
 
+#locks
+DATA_FILE = sys.argv[1]
+LOCK_PATH_DATA = DATA_FILE + ".lock"
+
 GAUSSIAN_MODEL_FILE = 'gaussian_model.pkl'
+LOCK_PATH_MODEL = GAUSSIAN_MODEL_FILE + ".lock"
+
 GAN_MODEL_FILE = 'gan_model.pkl'
+
 SAMPLE_AMOUNT = 800
 
 kafka_port = 9092
@@ -54,8 +63,6 @@ def create_fake_data_model(df, lock):
     print("Created New Process")
     start_time = datetime.datetime.now()
     # create a new model here
-    #df.to_csv("temporary.txt", index=False)
-    #df = pd.read_csv("temporary.txt")
     ctgan_model = GaussianCopula(field_transformers={
         'ad_id': 'label_encoding'
     })
@@ -98,8 +105,9 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 if __name__ == "__main__":
-    mp.set_start_method('forkserver')
-    lock = mp.Lock()
+    #lock = mp.Lock()
+    lock_data = FileLock(LOCK_PATH_DATA)
+    lock_model = FileLock(LOCK_PATH_MODEL)
     tmp_data = []
     curr_data_points = 0
     last_model_start_time = current_milli_time() - 1000000
@@ -120,9 +128,9 @@ if __name__ == "__main__":
         else:  # is watermark event
             if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE) and num_to_sample > 0:
                 sdv_instance = sdv.SDV()
-                lock.acquire()
+                lock_model.acquire()
                 model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
-                lock.release()
+                lock_model.release()
                 sampled_data = model.sample(int(num_to_sample))
                 last_watermark = event["lastWatermark"]
                 print("Sending sample: " + str(num_to_sample) + " last_watermark: " + str(last_watermark)
@@ -137,15 +145,15 @@ if __name__ == "__main__":
                     new_data_point["event_time"] = last_watermark
                     new_data_point["ip_address"] = "-"
                     new_data_point["fake"] = "true"
+                    new_data_point["current_milli_time"] = current_milli_time()
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
         if curr_data_points > 10000 and (current_milli_time() - last_model_start_time) > 15000:
-            print("starting new thread creating new model")
+            print("length of data being converted to csv file" + str(len(tmp_data)))
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
-            #df.to_csv("temp" + str(new_models_created) + ".csv", index=False)
-            new_models_created = new_models_created + 1
-            process = mp.Process(target=create_fake_data_model, args=(df, lock,))
-            process.start()
+            lock_data.acquire()
+            df.to_csv(DATA_FILE, index=False)
+            lock_data.release()
             curr_data_points = 0
             tmp_data = []
