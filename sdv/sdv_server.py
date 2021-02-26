@@ -16,8 +16,9 @@ from filelock import Timeout, FileLock
 import sys
 
 
+
 if socket.gethostname() == "Harshs-MBP":
-    dir_path = path.dirname(path.realpath(__file__))
+    dir_path = os.path.dirname(path.realpath(__file__))
 else:
     dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)

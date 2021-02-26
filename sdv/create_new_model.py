@@ -1,5 +1,4 @@
 import time
-from os import path
 from sdv.tabular import GaussianCopula, CTGAN
 from json import loads, dumps
 import pandas as pd
@@ -9,10 +8,12 @@ from filelock import Timeout, FileLock
 import hashlib
 import sys
 import csv
+import os
+import socket
 
 
 if socket.gethostname() == "Harshs-MBP":
-    dir_path = path.dirname(path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
 else:
     dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
@@ -69,7 +70,7 @@ if __name__ == "__main__":
         if (current_milli_time() - last_model_start_time) > 15000:
             last_model_start_time = current_milli_time()
 
-            if path.exists(DATA_FILE):
+            if os.path.exists(DATA_FILE):
                 lock_data.acquire()
                 with open(DATA_FILE, 'r+') as csvfile:
                     sha1 = hashlib.sha1()
