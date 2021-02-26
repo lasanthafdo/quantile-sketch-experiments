@@ -16,20 +16,25 @@ from filelock import Timeout, FileLock
 import sys
 
 
-# Writing this comment
-dir_path = os.path.dirname(os.path.realpath(__file__))
+if socket.gethostname() == "Harshs-MBP":
+    dir_path = path.dirname(path.realpath(__file__))
+else:
+    dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
 
 KAFKA_SEND_TOPIC = "ad-events-1"
 KAFKA_RECEIVE_TOPIC = "stragglers"
-#KAFKA_RECEIVE_TOPIC = "ad-events-1"
+# KAFKA_RECEIVE_TOPIC = "ad-events-1"
 
 #locks
-DATA_FILE = sys.argv[1]
+DATA_FILE = dir_path + "/" + sys.argv[1]
 LOCK_PATH_DATA = DATA_FILE + ".lock"
 
-GAUSSIAN_MODEL_FILE = 'gaussian_model.pkl'
+GAUSSIAN_MODEL_FILE = dir_path + "/" + 'gaussian_model.pkl'
 LOCK_PATH_MODEL = GAUSSIAN_MODEL_FILE + ".lock"
+
+lock_data = FileLock(LOCK_PATH_DATA)
+lock_model = FileLock(LOCK_PATH_MODEL)
 
 GAN_MODEL_FILE = 'gan_model.pkl'
 
@@ -72,7 +77,7 @@ def create_fake_data_model(df, lock):
     print("Acquiring Lock to save")
     lock.acquire()
     print("Lock Acquired")
-    ctgan_model.save(dir_path + "/" + GAUSSIAN_MODEL_FILE)
+    ctgan_model.save(GAUSSIAN_MODEL_FILE)
     print("File Saved")
     lock.release()
     print("Lock Released")
@@ -106,8 +111,6 @@ def current_milli_time():
 
 if __name__ == "__main__":
     #lock = mp.Lock()
-    lock_data = FileLock(LOCK_PATH_DATA)
-    lock_model = FileLock(LOCK_PATH_MODEL)
     tmp_data = []
     curr_data_points = 0
     last_model_start_time = current_milli_time() - 1000000
@@ -126,7 +129,7 @@ if __name__ == "__main__":
             if len(tmp_data) > 11000:
                 tmp_data.pop()
         else:  # is watermark event
-            if os.path.exists(dir_path + "/" + GAUSSIAN_MODEL_FILE) and num_to_sample > 0:
+            if os.path.exists(GAUSSIAN_MODEL_FILE) and num_to_sample > 0:
                 sdv_instance = sdv.SDV()
                 lock_model.acquire()
                 model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
@@ -154,6 +157,7 @@ if __name__ == "__main__":
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
             lock_data.acquire()
+
             df.to_csv(DATA_FILE, index=False)
             lock_data.release()
             curr_data_points = 0

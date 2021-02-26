@@ -11,8 +11,10 @@ import sys
 import csv
 
 
-
-dir_path = path.dirname(path.realpath(__file__))
+if socket.gethostname() == "Harshs-MBP":
+    dir_path = path.dirname(path.realpath(__file__))
+else:
+    dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
 
 GAUSSIAN_MODEL_FILE = dir_path + '/' + 'gaussian_model.pkl'
@@ -21,10 +23,10 @@ SAMPLE_AMOUNT = 800
 HEADERS = ["ad_id", "ad_type", "event_type"]
 
 #locks
-DATA_FILE = dir_path + '/' + sys.argv[1]
+DATA_FILE = dir_path + "/" + sys.argv[1]
 LOCK_PATH_DATA = DATA_FILE + ".lock"
 
-GAUSSIAN_MODEL_FILE = 'gaussian_model.pkl'
+GAUSSIAN_MODEL_FILE = dir_path + "/" + 'gaussian_model.pkl'
 LOCK_PATH_MODEL = GAUSSIAN_MODEL_FILE + ".lock"
 
 lock_data = FileLock(LOCK_PATH_DATA)
@@ -43,7 +45,7 @@ def create_fake_data_model(df):
     print("Acquiring Lock to save")
     lock_model.acquire()
     print("Lock Acquired")
-    ctgan_model.save(dir_path + "/" + GAUSSIAN_MODEL_FILE)
+    ctgan_model.save(GAUSSIAN_MODEL_FILE)
     print("Lock Released")
     lock_model.release()
 
