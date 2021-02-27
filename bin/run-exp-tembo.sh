@@ -8,7 +8,7 @@ bin=$(
 
 . "$bin"/config.sh
 
-TEST_TIME=${TEST_TIME:-25}
+TEST_TIME=${TEST_TIME:-$3}
 
 run_exp() {
   if [[ ! -f $EXPERIMENTS_DIR/$1.yaml ]]; then
