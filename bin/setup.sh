@@ -36,7 +36,7 @@ init_setup_file(){
     if [[ $hname == "Harshs-MBP"  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
     else
-      echo '    - "'tem76.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
+      echo '    - "'tem75.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
 
