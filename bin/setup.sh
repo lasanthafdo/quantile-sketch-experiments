@@ -28,7 +28,7 @@ init_setup_file(){
     if [[ $hname == "Harshs-MBP"  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
     else
-      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
+      echo '    - "'tem75.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
@@ -36,7 +36,7 @@ init_setup_file(){
     if [[ $hname == "Harshs-MBP"  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
     else
-      echo '    - "'tem101.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
+      echo '    - "'tem76.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
 
@@ -51,8 +51,7 @@ init_setup_file(){
 }
 
 init_redis(){
-    # Fetch Redis
-    if [[ ! -d "redis" ]]; then
+    if [[ ! -d "redis" ]]; then # Fetch Redis
         local redis_file="redis-$REDIS_VERSION"
         local redis_tar_file="$redis_file.tar.gz"
         fetch_untar_file "$redis_tar_file" "http://download.redis.io/releases/$redis_tar_file"
@@ -65,8 +64,7 @@ init_redis(){
 
 
 init_kafka(){
-    ## Fetch Kafka
-    if [[ ! -d $KAFKA_DIR ]]; then
+    if [[ ! -d $KAFKA_DIR ]]; then ## Fetch Kafka
         local kafka_file="kafka_$SCALA_BIN_VERSION-$KAFKA_VERSION"
         local kafka_tar_file="$kafka_file.tgz"
         fetch_untar_file "$kafka_tar_file" "$APACHE_MIRROR/kafka/$KAFKA_VERSION/$kafka_tar_file"
