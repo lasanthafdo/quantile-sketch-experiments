@@ -46,11 +46,13 @@ run_exp() {
   sleep 5
 }
 
-if [[ $# -lt 2 ]]; then
-  echo "Invalid use: ./run-exp.sh <experiment_name> <workload|processing>"
+if [[ $# -lt 3 ]]; then
+  echo "3 Arguements Required: ./run-exp-tembo.sh <experiment_name> <workload|processing> <experiment_running_time>"
+  exit
 else
   while [[ $# -gt 0 ]]; do
     run_exp $1 $2
+    shift
     shift
     shift
   done
