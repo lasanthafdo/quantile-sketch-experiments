@@ -18,7 +18,7 @@ import sys
 
 
 if socket.gethostname() == "Harshs-MBP":
-    dir_path = os.path.dirname(path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
 else:
     dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
@@ -157,9 +157,10 @@ if __name__ == "__main__":
             print("length of data being converted to csv file" + str(len(tmp_data)))
             last_model_start_time = current_milli_time()
             df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
-            lock_data.acquire()
 
+            lock_data.acquire()
             df.to_csv(DATA_FILE, index=False)
             lock_data.release()
+
             curr_data_points = 0
             tmp_data = []

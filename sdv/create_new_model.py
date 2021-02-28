@@ -18,8 +18,6 @@ else:
     dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
 
-GAUSSIAN_MODEL_FILE = dir_path + '/' + 'gaussian_model.pkl'
-SAMPLE_AMOUNT = 800
 
 HEADERS = ["ad_id", "ad_type", "event_type"]
 
@@ -27,7 +25,7 @@ HEADERS = ["ad_id", "ad_type", "event_type"]
 DATA_FILE = dir_path + "/" + sys.argv[1]
 LOCK_PATH_DATA = DATA_FILE + ".lock"
 
-GAUSSIAN_MODEL_FILE = dir_path + "/" + 'gaussian_model.pkl'
+GAUSSIAN_MODEL_FILE = dir_path + '/' + 'gaussian_model.pkl'
 LOCK_PATH_MODEL = GAUSSIAN_MODEL_FILE + ".lock"
 
 lock_data = FileLock(LOCK_PATH_DATA)
@@ -36,8 +34,15 @@ lock_model = FileLock(LOCK_PATH_MODEL)
 
 def create_fake_data_model(df):
     # create a new model here
+    #ctgan_model = GaussianCopula(field_transformers={
+    #    'ad_id': 'label_encoding',
+    #    "event_type": "label_encoding",
+    #    "ad_type": "label_encoding",
+    #})
     ctgan_model = GaussianCopula(field_transformers={
-        'ad_id': 'label_encoding'
+        'ad_id': 'categorical',
+        "event_type": "categorical",
+        "ad_type": "categorical",
     })
     print("Fitting Model")
     start_time = datetime.datetime.now()
@@ -93,7 +98,6 @@ if __name__ == "__main__":
                     new_models_created = new_models_created + 1
                     create_fake_data_model(df)
                     curr_data_points = 0
-                    time.sleep(15)
                 else:
                     print("data file has not been updated")
                     time.sleep(5)
