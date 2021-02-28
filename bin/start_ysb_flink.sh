@@ -49,7 +49,8 @@ start_sdv(){
   #source "$HOME"/PythonEnvironments/sdv_project/bin/activate
   echo "Starting SDV"
   cd "$PROJECT_DIR"/sdv || echo "Cannot cd into sdv folder" || exit
-  nohup python sdv_server.py &
+  nohup python sdv_server.py data.csv &
+  nohup python create_new_model.py data.csv &
   cd "$PROJECT_DIR" || exit
   echo "Finish starting SDV"
 }
@@ -64,7 +65,7 @@ start(){
     start_zk
     start_kafka
     start_flink
-    start_sdv
+    #start_sdv
     read -n 1 -s -r -p "Press any key to continue"
     start_flink_processing $1
 }
