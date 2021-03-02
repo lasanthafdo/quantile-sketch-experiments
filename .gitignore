@@ -41,4 +41,4 @@ sdv.out
 sdv/*
 !sdv/sdv_server.py
 !sdv/create_new_model.py
-
+setup.yaml
