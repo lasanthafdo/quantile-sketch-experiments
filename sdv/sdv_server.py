@@ -14,6 +14,7 @@ import multiprocessing as mp
 import socket
 from filelock import Timeout, FileLock
 import sys
+import uuid
 
 
 
@@ -45,7 +46,7 @@ kafka_port = 9092
 if socket.gethostname() == "Harshs-MBP":
     kafka_broker = "localhost"
 else:
-    kafka_broker = "tem101.tembo-domain.cs.uwaterloo.ca"
+    kafka_broker = "tem76.tembo-domain.cs.uwaterloo.ca"
 
 server = kafka_broker + ":" + str(kafka_port)
 bootstrap_servers = [server]
@@ -139,8 +140,10 @@ if __name__ == "__main__":
                 last_watermark = event["lastWatermark"]
                 print("Sending sample: " + str(num_to_sample) + " last_watermark: " + str(last_watermark)
                       + " current_time: " + str(current_milli_time()))
+
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
+                    new_data_point["uniqueId"] = uuid.uuid4().hex
                     new_data_point["user_id"] = "-"
                     new_data_point["page_id"] = "-"
                     new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
