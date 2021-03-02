@@ -46,7 +46,7 @@ kafka_port = 9092
 if socket.gethostname() == "Harshs-MBP":
     kafka_broker = "localhost"
 else:
-    kafka_broker = "tem76.tembo-domain.cs.uwaterloo.ca"
+    kafka_broker = "tem75.tembo-domain.cs.uwaterloo.ca"
 
 server = kafka_broker + ":" + str(kafka_port)
 bootstrap_servers = [server]
