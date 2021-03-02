@@ -11,6 +11,7 @@ import redis.clients.jedis.Jedis;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import static java.util.UUID.randomUUID;
 
 import static YSB.YSBConstants.NUM_CAMPAIGNS;
 
@@ -53,7 +54,7 @@ public class YSBWorkloadGenerator implements Runnable {
         return ads;
     }
 
-    JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec) {
+    JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec, String uniqueId) {
         Map<String, String> eventMap = new HashMap<>();
         eventMap.put("user_id", userId);
         eventMap.put("page_id", pageId);
@@ -62,6 +63,7 @@ public class YSBWorkloadGenerator implements Runnable {
         eventMap.put("event_type", eventType);
         eventMap.put("event_time", String.valueOf(eventTimeInMsec));
         eventMap.put("ip_address", "1.2.3.4");
+        eventMap.put("uniqueId", uniqueId);
         return new JSONObject(eventMap);
     }
 
@@ -79,8 +81,8 @@ public class YSBWorkloadGenerator implements Runnable {
 
         //TODO add network and inter-event generation delay here in Milliseconds
         NormalDistribution nD = new NormalDistribution(150.0, 10.0);
-        ExponentialDistribution eD = new ExponentialDistribution(200);
-        PoissonDistribution pD = new PoissonDistribution(100);
+        ExponentialDistribution eD = new ExponentialDistribution(250);
+        PoissonDistribution pD = new PoissonDistribution(250);
         GammaDistribution gD = new GammaDistribution(60, 4);
 
         if (numOfEventsPerMS < 1) {
@@ -96,6 +98,7 @@ public class YSBWorkloadGenerator implements Runnable {
         for (int i = 0; i < numOfEventsPerMsInt; i++) {
 
             // create Kafka Event
+            String uniqueID = randomUUID().toString();
             String userId = userIds.get(random.nextInt(userIds.size()));
             String pageId = pageIds.get(random.nextInt(pageIds.size()));
             String adId = adIds.get(random.nextInt(adIds.size()));
@@ -103,11 +106,12 @@ public class YSBWorkloadGenerator implements Runnable {
             String eventType = EVENT_TYPES[random.nextInt(EVENT_TYPES.length)];
             // Network Delay
             int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
-            //int sampled_value = (int) normalDistribution.sample();
-            //int sampled_value = (int) ed.sample();
+            //int sampled_value = (int) nD.sample();
             int sampled_value = (int) eD.sample();
+            //int sampled_value = (int) pD.sample();
+            //int sampled_value = (int) gD.sample();
             long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
-            JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime);
+            JSONObject kafkaEvent = createKafkaEvent(userId, pageId, adId, adType, eventType, eventTime, uniqueID);
 
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaEvent.toString().getBytes(), kafkaEvent.toString().getBytes()));
 

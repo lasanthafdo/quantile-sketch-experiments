@@ -87,9 +87,9 @@ public class AdvertisingQuery implements Runnable {
                         KAFKA_PREFIX_TOPIC,
                         new SimpleStringSchema(),
                         setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
-                .name("Source (" + queryInstance + ")").setParallelism(1)
+                .name("Source (" + queryInstance + ")").setParallelism(1);
                 // Chain all operators before a watermark is emitted.
-                .disableChaining();
+                //.disableChaining();
 
         messageStream
                 // Parse the JSON string from Kafka as an ad
@@ -99,14 +99,14 @@ public class AdvertisingQuery implements Runnable {
                 // Filter ads
                 .filter(new FilterAds())
                 .name("FilterAds (" + queryInstance + ")")
-                .disableChaining()
-                .<Tuple4<String, String, String, Boolean>>project(2, 5, 7, 8)
+                //.disableChaining()
+                .<Tuple5<String, String, String, Boolean, String>>project(2, 5, 7, 8, 9)
                 .name("project (" + queryInstance + ")")
-                .disableChaining()
+                //.disableChaining()
                 // perform join with redis data
                 .map(new JoinAdWithRedis())
                 .name("JoinWithRedis (" + queryInstance + ")")
-                .disableChaining()
+                //.disableChaining()
                 //.keyBy(0)
                 .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
                 .aggregate(new WindowAdsAggregator())
@@ -118,16 +118,16 @@ public class AdvertisingQuery implements Runnable {
     }
 
 
-    private class DeserializeAdsFromkafka implements MapFunction<String, Tuple9<String, String, String, String, String, String, String, String, Boolean>> {
+    private class DeserializeAdsFromkafka implements MapFunction<String, Tuple10<String, String, String, String, String, String, String, String, Boolean, String>> {
 
         @Override
-        public Tuple9<String, String, String, String, String, String, String, String, Boolean> map(String input) {
+        public Tuple10<String, String, String, String, String, String, String, String, Boolean, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             Boolean fake = false;
             if (obj.has("fake")){
                 fake = true;
             }
-            return new Tuple9<>(
+            return new Tuple10<>(
                     obj.getString("user_id"),
                     obj.getString("page_id"),
                     obj.getString("ad_id"),
@@ -136,19 +136,21 @@ public class AdvertisingQuery implements Runnable {
                     obj.getString("event_time"),
                     obj.getString("ip_address"),
                     String.valueOf(System.currentTimeMillis()),
-                    fake); // ingestion time
+                    fake,
+                    obj.getString("uniqueId")); // ingestion time
+
         }
     }
 
-    private class FilterAds implements FilterFunction<Tuple9<String, String, String, String, String, String, String, String, Boolean>> {
+    private class FilterAds implements FilterFunction<Tuple10<String, String, String, String, String, String, String, String, Boolean, String>> {
 
         @Override
-        public boolean filter(Tuple9<String, String, String, String, String, String, String, String, Boolean> ad) {
+        public boolean filter(Tuple10<String, String, String, String, String, String, String, String, Boolean, String> ad) {
             return ad.getField(4).equals("view");
         }
     }
 
-    private class JoinAdWithRedis extends RichMapFunction<Tuple4<String, String, String, Boolean>, Tuple4<String, String, String, Boolean>> {
+    private class JoinAdWithRedis extends RichMapFunction<Tuple5<String, String, String, Boolean, String>, Tuple5<String, String, String, Boolean, String>> {
 
         private RedisAdCampaignCache redisAdCampaignCache;
 
@@ -160,19 +162,20 @@ public class AdvertisingQuery implements Runnable {
         }
 
         @Override
-        public Tuple4<String, String, String, Boolean> map(Tuple4<String, String, String, Boolean> input) {
+        public Tuple5<String, String, String, Boolean, String> map(Tuple5<String, String, String, Boolean, String> input) {
             //String userId = input.getField(0);
             String adId = input.getField(0);
-            return new Tuple4<>(
+            return new Tuple5<>(
                     redisAdCampaignCache.execute(adId),
                     input.getField(1), // event time
                     input.getField(2), // ingestion time
-                    input.getField(3) // fake?
+                    input.getField(3), // fake?
+                    input.getField(4) // uniqueId?
             );
         }
     }
 
-    private class WindowAdsAggregator implements AggregateFunction<Tuple4<String, String, String, Boolean>, Tuple3<Long, Integer, Integer>, Tuple3<Long, Integer, Integer>> {
+    private class WindowAdsAggregator implements AggregateFunction<Tuple5<String, String, String, Boolean, String>, Tuple3<Long, Integer, Integer>, Tuple3<Long, Integer, Integer>> {
 
         @Override
         public Tuple3<Long, Integer, Integer> createAccumulator() {
@@ -180,7 +183,7 @@ public class AdvertisingQuery implements Runnable {
         }
 
         @Override
-        public Tuple3<Long, Integer, Integer> add(Tuple4<String, String, String, Boolean> value, Tuple3<Long, Integer, Integer> accumulator) {
+        public Tuple3<Long, Integer, Integer> add(Tuple5<String, String, String, Boolean, String> value, Tuple3<Long, Integer, Integer> accumulator) {
             //windowSize
             accumulator.f0 = Long.parseLong(value.f1)/(3 * 1000);
             accumulator.f1 += 1;
