@@ -34,16 +34,16 @@ lock_model = FileLock(LOCK_PATH_MODEL)
 
 def create_fake_data_model(df):
     # create a new model here
-    #ctgan_model = GaussianCopula(field_transformers={
-    #    'ad_id': 'label_encoding',
-    #    "event_type": "label_encoding",
-    #    "ad_type": "label_encoding",
-    #})
     ctgan_model = GaussianCopula(field_transformers={
-        'ad_id': 'categorical',
-        "event_type": "categorical",
-        "ad_type": "categorical",
+        'ad_id': 'label_encoding',
+        "event_type": "label_encoding",
+        "ad_type": "label_encoding",
     })
+    #ctgan_model = GaussianCopula(field_transformers={
+    #    'ad_id': 'categorical',
+    #    "event_type": "categorical",
+    #    "ad_type": "categorical",
+    #})
     print("Fitting Model")
     start_time = datetime.datetime.now()
     ctgan_model.fit(df)
@@ -72,9 +72,7 @@ if __name__ == "__main__":
     new_models_created = 0
     curr_data_points = 0
     while True:
-        if (current_milli_time() - last_model_start_time) > 15000:
-            last_model_start_time = current_milli_time()
-
+        if (current_milli_time() - last_model_start_time) > 10000:
             if os.path.exists(DATA_FILE):
                 lock_data.acquire()
                 with open(DATA_FILE, 'r+') as csvfile:
@@ -100,8 +98,8 @@ if __name__ == "__main__":
                     curr_data_points = 0
                 else:
                     print("data file has not been updated")
-                    time.sleep(5)
+                    time.sleep(3)
         else:
-            sleep_time = int((15000 - (current_milli_time() - last_model_start_time)) / 1000) + 1
+            sleep_time = int((10000 - (current_milli_time() - last_model_start_time)) / 1000) + 1
             print("sleeping for " + str(sleep_time) + " seconds")
             time.sleep(sleep_time)
