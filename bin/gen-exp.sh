@@ -30,8 +30,10 @@ gen_exp(){
 if [[ $# -lt 6 ]];
 then
   echo "Less than 6 number of arguments"
-  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 500events/s watermark_freq: 400ms window_size_in_seconds: 3"
-  gen_exp ysb_default ysb 1 500 200 3
+  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 2000events/s watermark_freq: 600ms window_size_in_seconds: 3"
+  gen_exp ysb_default ysb 1 2000 600 3
 else
+  echo "Using supplied arguments"
+  echo "gen-exp.sh <experiment_name>  <workload_type> <num_instances> <throughput>  <watermark_freq>  <window_size_in_seconds>"
   gen_exp $1 $2 $3 $4 $5 $6
 fi
