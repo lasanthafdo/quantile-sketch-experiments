@@ -21,29 +21,24 @@ run_exp() {
   workload_type=$(yq r "$EXPERIMENTS_DIR/$1.yaml" "workload_type")
   cd "$BIN_DIR" || exit
 
-  if [[ "$workload_type" == "ysb" ]]; then
-    echo "Running YSB Experiment"
 
-    if [[ "$2" == "workload" ]] ; then
-      ./start_ysb_workload.sh "$EXPERIMENTS_DIR/$1.yaml"
-      echo "Sleeping for $TEST_TIME to let generator $1 run"
-      sleep $TEST_TIME
-      ./stop_ysb_workload.sh
-      echo "Workload $1 is done."
-    elif [[ "$2" == "processing" ]]; then
-      ./start_ysb_flink.sh "$EXPERIMENTS_DIR/$1.yaml"
-      echo "Sleeping for $TEST_TIME to let generator $1 run"
-      sleep $TEST_TIME
-      ./stop_ysb_flink.sh $1
-      echo "Processing $1 is done."
-    else
-      echo "Unknown type of program of $1 you wish to run"
-    fi
+  if [[ "$2" == "workload" ]] ; then
+    ./start_workload.sh "$EXPERIMENTS_DIR/$1.yaml"
+    echo "Sleeping for $TEST_TIME to let generator $1 run"
+    sleep $TEST_TIME
+    ./stop_workload.sh $workload_type
+    echo "Workload $1 is done."
+  elif [[ "$2" == "processing" ]]; then
+    ./start_processing.sh "$EXPERIMENTS_DIR/$1.yaml"
+    echo "Sleeping for $TEST_TIME to let generator $1 run"
+    sleep $TEST_TIME
+    ./stop_processing.sh "$workload_type"
+    echo "Processing $1 is done."
   else
-    echo "Unknown Workload!"
+    echo "Unknown type of program of $1 you wish to run"
   fi
 
-  sleep 5
+  sleep 3
 }
 
 if [[ $# -lt 3 ]]; then

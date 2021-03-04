@@ -14,12 +14,6 @@ stop_zk() {
 }
 
 stop_kafka() {
-  local curr_kafka_topic="$KAFKA_TOPIC_PREFIX-1"
-  #"$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "$curr_kafka_topic"
-  sleep 2
-  #"$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "stragglers"
-  sleep 2
-  #"$KAFKA_DIR"/bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic "stragglers-2"
   stop_if_needed kafka\.Kafka Kafka
   rm -rf /tmp/kafka-logs/
 }
@@ -43,13 +37,6 @@ stop_flink_processing_local() {
 
 stop_flink_processing() {
   stop_flink_processing_local $FLINK_DIR/bin/flink
-}
-
-pull_stdout() {
-  local task_manager_id=$(curl -s "http://localhost:8081/taskmanagers/" | jq '.taskmanagers[0].id')
-  echo "$task_manager_id"
-  curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" >"$1_output.txt"
-  sleep 3
 }
 
 pull_stdout_from_flink_taskmanager() {
@@ -76,13 +63,12 @@ stop() {
   stop_zk
 }
 
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || exit
 if [[ $# -lt 1 ]]; then
-  echo "Invalid use: ./stop_ysb_2.sh <experiment_name>"
+  echo "Invalid use: ./stop_processing.sh <experiment_name>"
 elif [[ $# -lt 2 ]]; then
   stop "$EXPERIMENTS_DIR/$1"
 else
-  #stop_load
   stop "$EXPERIMENTS_DIR/$1" $2 # $1: experiment name, $2: Time to sleep
   echo "do nothing"
 fi

@@ -23,7 +23,7 @@ start_kafka(){
     start_if_needed kafka\.Kafka Kafka 10 "$KAFKA_DIR/bin/kafka-server-start.sh" "$KAFKA_DIR/config/server.properties"
     sleep 5
     create_kafka_topic "ad-events-1"
-    create_kafka_topic "ad-events-2"
+    create_kafka_topic "nyt-events"
     create_kafka_topic "stragglers"
     bash "$KAFKA_DIR"/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
     echo "Finish Starting KAFKA"
@@ -40,7 +40,7 @@ start_flink(){
 start_flink_processing(){
     echo "Deploying Flink Client"
     # bash "$FLINK_DIR/bin/flink run --detached $WORKLOAD_PROCESSOR_JAR_FILE --setup $SETUP_FILE --experiment $1 &"
-    "$FLINK_DIR/bin/flink" run "$WORKLOAD_PROCESSOR_JAR_FILE" --setup $SETUP_FILE --experiment $1 &
+    "$FLINK_DIR/bin/flink" run "$WORKLOAD_PROCESSOR_JAR_FILE" --setup $SETUP_FILE --experiment "$1" &
     sleep 5
     echo "Finish Deploying Flink Client"
 }

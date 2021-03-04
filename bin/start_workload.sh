@@ -40,13 +40,16 @@ start() {
     maven_clean_install_no_tests $PROJECT_DIR/workload-generator
   fi
 
-  start_redis $1
+  SUB='ysb'
+  if [[ "$1" == *"$SUB"* ]]; then
+    start_redis $1
+  fi
   read -n 1 -s -r -p "Press any key to continue"
   start_load $1
 }
 
 if [[ $# -lt 1 ]]; then
-  echo "Invalid use: ./start_ysb.sh <experiment_name>"
+  echo "Invalid use: ./start_workload.sh <experiment_name>"
 else
   cd "$PROJECT_DIR" || exit
   start $1 # $1: experiment file

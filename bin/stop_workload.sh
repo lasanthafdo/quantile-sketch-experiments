@@ -15,9 +15,12 @@ stop_load(){
 }
 
 stop(){
-    stop_load
+  stop_load
+  if [[ "$1" == "ysb" ]]; then
+    echo "Stopping redis"
     #stop_redis
+  fi
 }
 
 cd "$PROJECT_DIR" || exit
-stop
+stop $1
