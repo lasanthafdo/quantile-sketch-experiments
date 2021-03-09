@@ -53,7 +53,6 @@ stop_sdv() {
 
 stop() {
   stop_sdv
-  sleep 1
   stop_flink_processing
   sleep 5
   pull_stdout_from_flink_taskmanager $1
@@ -66,9 +65,6 @@ stop() {
 cd "$PROJECT_DIR" || exit
 if [[ $# -lt 1 ]]; then
   echo "Invalid use: ./stop_processing.sh <experiment_name>"
-elif [[ $# -lt 2 ]]; then
-  stop "$EXPERIMENTS_DIR/$1"
 else
-  stop "$EXPERIMENTS_DIR/$1" $2 # $1: experiment name, $2: Time to sleep
-  echo "do nothing"
+  stop "$EXPERIMENTS_DIR/$1" # $1: experiment name, $2: Time to sleep
 fi
