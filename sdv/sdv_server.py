@@ -17,28 +17,37 @@ import sys
 import uuid
 
 
-
 if socket.gethostname() == "Harshs-MBP":
     dir_path = os.path.dirname(os.path.realpath(__file__))
 else:
     dir_path = "/hdd2/sdv"
 print("dir_path: " + dir_path)
 
-KAFKA_SEND_TOPIC = "ad-events-1"
 KAFKA_RECEIVE_TOPIC = "stragglers"
 # KAFKA_RECEIVE_TOPIC = "ad-events-1"
 
-#locks
+# Data file and locks
 DATA_FILE = dir_path + "/" + sys.argv[1]
 LOCK_PATH_DATA = DATA_FILE + ".lock"
-
-GAUSSIAN_MODEL_FILE = dir_path + "/" + 'gaussian_model.pkl'
-LOCK_PATH_MODEL = GAUSSIAN_MODEL_FILE + ".lock"
-
 lock_data = FileLock(LOCK_PATH_DATA)
-lock_model = FileLock(LOCK_PATH_MODEL)
 
-GAN_MODEL_FILE = 'gan_model.pkl'
+MODEL_FILE = "-"
+workload_type = "unknown"
+KAFKA_SEND_TOPIC = "-"
+if "ysb" in sys.argv[1]:
+    workload_type = "ysb"
+    MODEL_FILE = dir_path + "/" + 'ysb_gaussian_model.pkl'
+    KAFKA_SEND_TOPIC = "ad-events-1"
+elif "nyt" in sys.argv[1]:
+    workload_type = "nyt"
+    MODEL_FILE = dir_path + "/" + 'nyt_gaussian_model.pkl'
+    KAFKA_SEND_TOPIC = "nyt-events"
+else:
+    print("workload type unknown")
+    exit()
+
+LOCK_PATH_MODEL = MODEL_FILE + ".lock"
+lock_model = FileLock(LOCK_PATH_MODEL)
 
 SAMPLE_AMOUNT = 800
 
@@ -79,7 +88,7 @@ def create_fake_data_model(df, lock):
     print("Acquiring Lock to save")
     lock.acquire()
     print("Lock Acquired")
-    ctgan_model.save(GAUSSIAN_MODEL_FILE)
+    ctgan_model.save(MODEL_FILE)
     print("File Saved")
     lock.release()
     print("Lock Released")
@@ -90,23 +99,6 @@ def create_fake_data_model(df, lock):
     execution_time = round(time_diff.seconds, 4)
     print("Training took " + str(execution_time) + " seconds")
 
-def sample_data(num_to_sample, last_watermark):
-    sdv_instance = sdv.SDV()
-    lock.acquire()
-    model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
-    lock.release()
-    sampled_data = model.sample(int(num_to_sample))
-    for sampled_data_point in sampled_data.iterrows():
-        new_data_point = {}
-        new_data_point["user_id"] = "-"
-        new_data_point["page_id"] = "-"
-        new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
-        new_data_point["ad_type"] = sampled_data_point[1]["ad_type"]
-        new_data_point["event_type"] = sampled_data_point[1]["event_type"]
-        new_data_point["event_time"] = last_watermark
-        new_data_point["ip_address"] = "-"
-        new_data_point["gen_time"] = current_milli_time();
-        producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
 def current_milli_time():
     return round(time.time() * 1000)
@@ -123,18 +115,25 @@ if __name__ == "__main__":
         num_to_sample = event.get("EventsDiscardedSinceLastWatermark")
         if (num_to_sample is None):  # is straggler event
             curr_data_points = curr_data_points + 1
-            tmp_dict = {}
-            tmp_dict.update({"ad_id" : event["ad_id"]})
-            tmp_dict.update({"event_type" : event["event_type"]})
-            tmp_dict.update({"ad_type" : event["ad_type"]})
-            tmp_data.append(tmp_dict)
-            if len(tmp_data) > 11000:
+            if workload_type == "ysb":
+                tmp_dict = {}
+                tmp_dict.update({"ad_id": event["ad_id"]})
+                tmp_dict.update({"event_type": event["event_type"]})
+                tmp_dict.update({"ad_type": event["ad_type"]})
+                tmp_data.append(tmp_dict)
+            elif workload_type == "nyt":
+                tmp_dict = {}
+                tmp_dict.update({"trip_time_in_secs": event["trip_time_in_secs"]})
+                tmp_dict.update({"trip_distance": event["trip_distance"]})
+                tmp_dict.update({"fare_amount": event["fare_amount"]})
+                tmp_data.append(tmp_dict)
+            if len(tmp_data) > 10000:
                 tmp_data.pop()
         else:  # is watermark event
-            if os.path.exists(GAUSSIAN_MODEL_FILE) and num_to_sample > 0:
+            if os.path.exists(MODEL_FILE) and num_to_sample > 0:
                 sdv_instance = sdv.SDV()
                 lock_model.acquire()
-                model = sdv_instance.load(GAUSSIAN_MODEL_FILE)
+                model = sdv_instance.load(MODEL_FILE)
                 lock_model.release()
                 sampled_data = model.sample(int(num_to_sample))
                 last_watermark = event["lastWatermark"]
@@ -143,23 +142,48 @@ if __name__ == "__main__":
 
                 for sampled_data_point in sampled_data.iterrows():
                     new_data_point = {}
-                    new_data_point["uniqueId"] = uuid.uuid4().hex
-                    new_data_point["user_id"] = "-"
-                    new_data_point["page_id"] = "-"
-                    new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
-                    new_data_point["ad_type"] = sampled_data_point[1]["ad_type"]
-                    new_data_point["event_type"] = sampled_data_point[1]["event_type"]
-                    new_data_point["event_time"] = last_watermark
-                    new_data_point["ip_address"] = "-"
-                    new_data_point["fake"] = "true"
-                    new_data_point["current_milli_time"] = current_milli_time()
+                    if workload_type == "ysb":
+                        new_data_point["uniqueId"] = uuid.uuid4().hex
+                        new_data_point["user_id"] = "-"
+                        new_data_point["page_id"] = "-"
+                        new_data_point["ad_id"] = sampled_data_point[1]["ad_id"]
+                        new_data_point["ad_type"] = sampled_data_point[1]["ad_type"]
+                        new_data_point["event_type"] = sampled_data_point[1]["event_type"]
+                        new_data_point["event_time"] = last_watermark
+                        new_data_point["ip_address"] = "-"
+                        new_data_point["fake"] = "true"
+                        new_data_point["current_milli_time"] = current_milli_time()
+                    elif workload_type == "nyt":
+                        new_data_point["medallion"] = "-"
+                        new_data_point["hack_license"] = "-"
+                        new_data_point["pickup_datetime"] = "-"
+                        new_data_point["dropoff_datetime"] = "-"
+                        new_data_point["trip_time_in_secs"] = str(sampled_data_point[1]["trip_time_in_secs"])
+                        new_data_point["trip_distance"] = str(sampled_data_point[1]["trip_distance"])
+                        new_data_point["pickup_longitude"] = "-"
+                        new_data_point["pickup_latitude"] = "-"
+                        new_data_point["dropoff_longitude"] = "-"
+                        new_data_point["dropoff_latitude"] = "-"
+                        new_data_point["payment_type"] = "-"
+                        new_data_point["fare_amount"] = str(sampled_data_point[1]["fare_amount"])
+                        new_data_point["surcharge"] = "-"
+                        new_data_point["mta_tax"] = "-"
+                        new_data_point["tip_amount"] = "-"
+                        new_data_point["tolls_amount"] = "-"
+                        new_data_point["total_amount"] = "-"
+                        new_data_point["event_time"] = last_watermark
+                        new_data_point["fake"] = "true"
+                        new_data_point["current_milli_time"] = current_milli_time()
                     producer_regular.send(KAFKA_SEND_TOPIC, dumps(new_data_point), dumps(new_data_point))
 
         time_since_last_model = current_milli_time() - last_model_start_time
         if curr_data_points > 10000 and time_since_last_model > 15000:
             print("length of data being converted to csv file" + str(len(tmp_data)))
             last_model_start_time = current_milli_time()
-            df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
+            if workload_type == "ysb":
+                df = pd.DataFrame(tmp_data, columns=["ad_id", "event_type", "ad_type"])
+            elif workload_type == "nyt":
+                df = pd.DataFrame(tmp_data, columns=["trip_time_in_secs", "trip_distance", "fare_amount"])
 
             lock_data.acquire()
             df.to_csv(DATA_FILE, index=False)
