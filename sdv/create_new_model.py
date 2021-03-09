@@ -12,12 +12,12 @@ import os
 import socket
 
 
-if socket.gethostname() == "Harshs-MBP":
+if "Harshs" in socket.gethostname():
     dir_path = os.path.dirname(os.path.realpath(__file__))
 else:
     dir_path = "/hdd2/sdv"
-print("dir_path: " + dir_path)
 
+print("dir_path: " + dir_path)
 
 HEADERS = ["ad_id", "ad_type", "event_type"]
 
@@ -92,9 +92,9 @@ if __name__ == "__main__":
     curr_data_points = 0
     while True:
         if (current_milli_time() - last_model_start_time) > 10000:
+            print("Checking for " + DATA_FILE)
             if os.path.exists(DATA_FILE):
                 lock_data.acquire()
-                print(DATA_FILE)
                 with open(DATA_FILE, 'r+') as csvfile:
                     sha1 = hashlib.sha1()
                     reader = csv.DictReader(csvfile)

@@ -17,10 +17,13 @@ import sys
 import uuid
 
 
-if socket.gethostname() == "Harshs-MBP":
+if "Harshs" in socket.gethostname():
+    kafka_broker = "localhost"
     dir_path = os.path.dirname(os.path.realpath(__file__))
 else:
+    kafka_broker = "tem75.tembo-domain.cs.uwaterloo.ca"
     dir_path = "/hdd2/sdv"
+
 print("dir_path: " + dir_path)
 
 KAFKA_RECEIVE_TOPIC = "stragglers"
@@ -52,13 +55,9 @@ lock_model = FileLock(LOCK_PATH_MODEL)
 SAMPLE_AMOUNT = 800
 
 kafka_port = 9092
-if socket.gethostname() == "Harshs-MBP":
-    kafka_broker = "localhost"
-else:
-    kafka_broker = "tem75.tembo-domain.cs.uwaterloo.ca"
 
 server = kafka_broker + ":" + str(kafka_port)
-bootstrap_servers = [server]
+print("connecting to kafka server: " + str(server))
 
 consumer_regular = KafkaConsumer(
     KAFKA_RECEIVE_TOPIC,
@@ -104,7 +103,6 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 if __name__ == "__main__":
-    #lock = mp.Lock()
     tmp_data = []
     curr_data_points = 0
     last_model_start_time = current_milli_time() - 1000000

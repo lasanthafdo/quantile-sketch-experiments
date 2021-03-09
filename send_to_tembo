@@ -1,5 +1,6 @@
 #!/bin/bash
 
-scp -r workload-processor-flink hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks
-scp -r workload-generator hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks
+scp -r workload-processor-flink/target hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-processor-flink
+scp -r workload-generator/target hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-generator
+scp -r nyt-data.csv hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks
 
