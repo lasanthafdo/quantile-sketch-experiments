@@ -88,7 +88,7 @@ public class TaxiQuery implements Runnable {
                 .map(new DeserializeAdsFromkafka())
                 .name("DeserializeInput ")
                 .disableChaining()
-                .<Tuple6<String, String, String, String, String, String>>project(11, 2, 3, 4, 5, 17)
+                .<Tuple7<String, String, String, String, String, String, Boolean>>project(11, 2, 3, 4, 5, 17, 19)
                 // 11 - fare_amount
                 // 2 - pickup_datetime
                 // 3 - dropoff_datetime
@@ -140,34 +140,38 @@ public class TaxiQuery implements Runnable {
         }
     }
 
-    private class WindowAdsAggregator implements AggregateFunction<Tuple6<String, String, String, String, String, String>, Tuple3<Long, Double, Long>, Tuple3<Long, Double, Long>> {
+    private class WindowAdsAggregator implements AggregateFunction<Tuple7<String, String, String, String, String, String, Boolean>, Tuple4<Long, Double, Double, Long>, Tuple4<Long, Double, Double, Long>> {
 
         @Override
-        public Tuple3<Long, Double, Long> createAccumulator() {
-            return new Tuple3<>((long)1, (double)0, (long)0);
+        public Tuple4<Long, Double, Double, Long> createAccumulator() {
+            return new Tuple4<>((long)1, (double)0, (double)0,  (long)0);
         }
 
         @Override
-        public Tuple3<Long, Double, Long> add(Tuple6<String, String, String, String, String, String> value, Tuple3<Long, Double, Long> accumulator) {
+        public Tuple4<Long, Double, Double, Long> add(Tuple7<String, String, String, String, String, String, Boolean> value, Tuple4<Long, Double, Double, Long> accumulator) {
             //windowSize
             int WINDOW_SIZE = 3000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
             accumulator.f1 += Double.parseDouble(value.f0);
-            accumulator.f2 += 1;
+            if (!value.f6){
+                accumulator.f2 += Double.parseDouble(value.f0);
+            }
+            accumulator.f3 += 1;
             return accumulator;
         }
 
         @Override
-        public Tuple3<Long, Double, Long> merge(Tuple3<Long, Double, Long> acc0, Tuple3<Long, Double, Long> acc1) {
+        public Tuple4<Long, Double, Double, Long> merge(Tuple4<Long, Double, Double, Long> acc0, Tuple4<Long, Double, Double, Long> acc1) {
             assert acc0.f0.equals(acc1.f0);
-            return new Tuple3<>(acc0.f0, acc0.f1 + acc1.f1, acc0.f2 + acc1.f2);
+            return new Tuple4<>(acc0.f0, acc0.f1 + acc1.f1, acc0.f2 + acc1.f2, acc0.f3 + acc1.f3);
         }
 
         @Override
-        public Tuple3<Long, Double, Long> getResult(Tuple3<Long, Double, Long> accumulator) {
+        public Tuple4<Long, Double, Double, Long> getResult(Tuple4<Long, Double, Double, Long> accumulator) {
             //return new Tuple3<>(accumulator.f0, accumulator.f1, accumulator.f2);
-            Double d_output = round(accumulator.f1, 2);
-            return new Tuple3<>(accumulator.f0, d_output, accumulator.f2);
+            Double d_output_1 = round(accumulator.f1, 2);
+            Double d_output_2 = round(accumulator.f2, 2);
+            return new Tuple4<>(accumulator.f0, d_output_1, d_output_2, accumulator.f3);
         }
 
         private double round(double value, int places) {

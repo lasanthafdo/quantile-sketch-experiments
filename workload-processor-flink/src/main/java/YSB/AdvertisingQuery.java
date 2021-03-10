@@ -205,10 +205,4 @@ public class AdvertisingQuery implements Runnable {
         }
     }
 
-    private class PrintCampaignAdClicks implements SinkFunction<Tuple2<String, Integer>> {
-
-        @Override
-        public void invoke(Tuple2<String, Integer> value, Context context) {
-        }
-    }
 }

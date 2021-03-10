@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import redis.clients.jedis.Jedis;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
@@ -128,8 +129,11 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
+        String currentUsersHomeDir = System.getProperty("user.home");
+        String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator + "nyt-data.csv";
+        System.out.println(dataFile);
 
-        new Thread(new NYTWorkloadGenerator(kafkaProducer, NYT_KAFKA_TOPIC_PREFIX, "nyt-data.csv", throughput))
+        new Thread(new NYTWorkloadGenerator(kafkaProducer, NYT_KAFKA_TOPIC_PREFIX, dataFile, throughput))
                 .start();
 
     }
