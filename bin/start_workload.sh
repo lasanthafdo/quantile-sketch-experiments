@@ -39,7 +39,9 @@ start() {
   if [[ "$hname" == *"Harshs"*  ]]; then
     maven_clean_install_no_tests $PROJECT_DIR/workload-generator
   else
-    mvn -Dmaven.repo.local=/hdd2/.m2 clean install $PROJECT_DIR/workload-generator
+    cd $PROJECT_DIR/workload-generator || exit
+    mvn -Dmaven.repo.local=/hdd2/.m2/ clean install
+    cd $PROJECT_DIR
   fi
 
   SUB='ysb'
