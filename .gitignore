@@ -40,6 +40,7 @@ sdv.out
 sdv/*
 !sdv/sdv_server.py
 !sdv/create_new_model.py
+!sdv/process_results.py
 setup.yaml
 nyt-data*
 sorted_data.csv
