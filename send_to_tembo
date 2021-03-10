@@ -2,5 +2,3 @@
 
 scp -r workload-processor-flink/target hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-processor-flink
 scp -r workload-generator/target hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-generator
-scp -r nyt-data.csv hbindra@tembo.cs.uwaterloo.ca:~/flink-benchmarks
-
