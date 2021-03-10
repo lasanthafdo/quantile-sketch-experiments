@@ -97,7 +97,7 @@ public class TaxiQuery implements Runnable {
                 .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
                 .aggregate(new WindowAdsAggregator())
                 .name("Window")
-                .writeAsText("results_nyt.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-nyt.txt", FileSystem.WriteMode.OVERWRITE);
                 // sink function
                 //.addSink(new PrintCampaignAdClicks())
                 //.name("Sink(" + queryInstance + ")");

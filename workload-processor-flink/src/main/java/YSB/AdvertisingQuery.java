@@ -111,7 +111,7 @@ public class AdvertisingQuery implements Runnable {
                 .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
                 .aggregate(new WindowAdsAggregator())
                 .name("Window (" + queryInstance + ")")
-                .writeAsText("results.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-ysb.txt", FileSystem.WriteMode.OVERWRITE);
                 // sink function
                 //.addSink(new PrintCampaignAdClicks())
                 //.name("Sink(" + queryInstance + ")");
