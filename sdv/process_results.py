@@ -10,23 +10,23 @@ last_one = ""
 
 if workload == "ysb":
     real_results_dict = {}
-    with open(processing_results) as real_results_file:
+    with open(real_results_file) as rfile:
         print("real results")
-        for row in real_results_file:
+        for row in rfile:
             if cur_skip_real < SKIP_NUM:
                 cur_skip_real = cur_skip_real + 1
                 continue
             row_values = row.split(',')
-            print(row_values[0])
-            print(row_values[1])
+            print(row_values)
             real_results_dict[row_values[0]] = int(row_values[1])
 
 
     with_fake_data = {}
     without_fake_data = {}
-    with open(real_results) as flink_results:
+    print(real_results_file)
+    with open(processing_results_file) as pfile:
         print("flink results")
-        for row in flink_results:
+        for row in pfile:
             if cur_skip_results < SKIP_NUM:
                 cur_skip_results = cur_skip_results + 1
                 continue

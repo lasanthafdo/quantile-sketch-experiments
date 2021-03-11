@@ -46,16 +46,16 @@ lock_model = FileLock(LOCK_PATH_MODEL)
 def create_fake_data_model(df, workload_type):
     # create a new model here
     if workload_type == "ysb":
+        #ctgan_model = GaussianCopula(field_transformers={
+        #    'ad_id': 'label_encoding',
+        #    "event_type": "label_encoding",
+        #    "ad_type": "label_encoding",
+        #})
         ctgan_model = GaussianCopula(field_transformers={
-            'ad_id': 'label_encoding',
-            "event_type": "label_encoding",
-            "ad_type": "label_encoding",
+           'ad_id': 'categorical',
+           "event_type": "categorical",
+           "ad_type": "categorical",
         })
-        # ctgan_model = GaussianCopula(field_transformers={
-        #    'ad_id': 'categorical',
-        #    "event_type": "categorical",
-        #    "ad_type": "categorical",
-        # })
     elif workload_type == "nyt":
         ctgan_model = GaussianCopula(field_transformers={
             'fare_amount': 'float',
