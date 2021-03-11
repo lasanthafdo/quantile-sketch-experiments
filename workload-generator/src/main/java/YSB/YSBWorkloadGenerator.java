@@ -81,7 +81,7 @@ public class YSBWorkloadGenerator implements Runnable {
 
         //TODO add network and inter-event generation delay here in Milliseconds
         NormalDistribution nD = new NormalDistribution(150.0, 10.0);
-        ExponentialDistribution eD = new ExponentialDistribution(250);
+        ExponentialDistribution eD = new ExponentialDistribution(240);
         PoissonDistribution pD = new PoissonDistribution(250);
         GammaDistribution gD = new GammaDistribution(60, 4);
 
