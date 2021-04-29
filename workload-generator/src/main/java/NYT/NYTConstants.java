@@ -6,11 +6,24 @@ import java.util.Arrays;
 public class NYTConstants {
     public static final String NYT_KAFKA_TOPIC_PREFIX = "nyt-events";
     public static final ArrayList<String> HEADERS = new ArrayList<>(Arrays.asList(
-            "medallion", "hack_license", "pickup_datetime", "dropoff_datetime", "trip_time_in_secs", "trip_distance",
-            "pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude", "payment_type", "fare_amount",
-            "surcharge", "mta_tax", "tip_amount", "tolls_amount", "total_amount"
+            "medallion",
+            "hack_license",
+            "pickup_datetime",
+            "dropoff_datetime",
+            "trip_time_in_secs",
+            "trip_distance",
+            "pickup_longitude",
+            "pickup_latitude",
+            "dropoff_longitude",
+            "dropoff_latitude",
+            "payment_type",
+            "fare_amount",
+            "surcharge",
+            "mta_tax",
+            "tip_amount",
+            "tolls_amount",
+            "total_amount"
             ));
-
 }
 
 /*
