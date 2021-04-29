@@ -13,6 +13,8 @@ target/*
 workload-analyzer/target
 workload-generator/target
 workload-processor-flink/target
+workload-processor-flink/slack_results.txt
+workload-processor-flink/late_events.txt
 tmp
 *.class
 *.iml
