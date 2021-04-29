@@ -13,6 +13,14 @@ import sys
 
 workload_type = "-"
 MODEL_FILE = "-"
+
+if "Harshs" in socket.gethostname():
+    kafka_broker = "localhost"
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+else:
+    kafka_broker = "tem75.tembo-domain.cs.uwaterloo.ca"
+    dir_path = "/hdd2/sdv"
+
 if "ysb" in sys.argv[1]:
     MODEL_FILE = 'ysb_gaussian_model.pkl'
     workload_type = "ysb"

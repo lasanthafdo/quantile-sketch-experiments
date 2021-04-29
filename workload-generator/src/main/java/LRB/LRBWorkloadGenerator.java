@@ -29,25 +29,6 @@ public class LRBWorkloadGenerator implements Runnable {
         this.throughput = throughput;
     }
 
-    JSONObject createKafkaEvent(String userId, String pageId, String adId, String adType, String eventType, long eventTimeInMsec, boolean hasWatermark) {
-        Map<String, String> eventMap = new HashMap<>();
-        eventMap.put("user_id", userId);
-        eventMap.put("page_id", pageId);
-        eventMap.put("ad_id", adId);
-        eventMap.put("ad_type", adType);
-        eventMap.put("event_type", eventType);
-        eventMap.put("event_time", String.valueOf(eventTimeInMsec));
-        if (hasWatermark) {
-            long watermarkTime = eventTimeInMsec - (5 * 1000); // 5 seconds before
-            eventMap.put("watermark_time", String.valueOf(watermarkTime));
-        } else {
-            eventMap.put("watermark_time", String.valueOf(0));
-        }
-
-        eventMap.put("ip_address", "1.2.3.4");
-        return new JSONObject(eventMap);
-    }
-
     boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws IOException {
         // Transform timestamp to seconds
         long now = System.currentTimeMillis();
