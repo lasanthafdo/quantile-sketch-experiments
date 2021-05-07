@@ -105,6 +105,12 @@ Licensed under the terms of the Apache License 2.0. Please see LICENSE file in t
                 <version>4.12</version>
                 <scope>test</scope>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.github.stanford-futuredata.momentsketch/momentsketch-solver -->
+            <dependency>
+                <groupId>com.github.stanford-futuredata.momentsketch</groupId>
+                <artifactId>momentsketch-solver</artifactId>
+                <version>0.1.1</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
