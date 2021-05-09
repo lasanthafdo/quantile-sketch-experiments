@@ -42,6 +42,11 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.stanford-futuredata.momentsketch</groupId>
+            <artifactId>momentsketch-solver</artifactId>
+            <version>0.1.1</version>
+        </dependency>
     </dependencies>
 
     <properties>

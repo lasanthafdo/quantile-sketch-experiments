@@ -19,6 +19,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.json.JSONObject;
+import com.github.stanfordfuturedata.momentsketch.*;
 
 import java.lang.reflect.Array;
 import java.time.Duration;
@@ -105,7 +106,7 @@ public class TaxiQuery implements Runnable {
                 .name("project ")
                 //.keyBy(0)
                 .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-                .aggregate(new WindowAdsAggregatorCLT())
+                .aggregate(new WindowAdsAggregatorMSketch())
                 .name("DeserializeInput ")
                 .name("Window")
                 .writeAsText("results-nyt.txt", FileSystem.WriteMode.OVERWRITE);
@@ -157,129 +158,57 @@ public class TaxiQuery implements Runnable {
         return sort_values.get(index-1);
     }
 
-    private class WindowAdsAggregator implements AggregateFunction<Tuple7<String, String, String, String, String, String, Boolean>, ArrayList<Double>, ArrayList<Double>> {
-
-        @Override
-        public ArrayList<Double> createAccumulator() {
-            return new ArrayList<Double>();
-        }
-
-        @Override
-        public ArrayList<Double> add(Tuple7<String, String, String, String, String, String, Boolean> value, ArrayList<Double> accumulator) {
-            accumulator.add(parseDouble(value.f0));
-            return accumulator;
-        }
-
-        @Override
-        public ArrayList<Double> merge(ArrayList<Double> acc0, ArrayList<Double> acc1) {
-            acc0.addAll(acc1);
-            return acc0;
-        }
-
-        @Override
-        public ArrayList<Double> getResult(ArrayList<Double> accumulator) {
-            //return new Tuple3<>(accumulator.f0, accumulator.f1, accumulator.f2);
-            long start = System.currentTimeMillis();
-// some time passes
-            Collections.sort(accumulator);
-            ArrayList<Double> percentiles =  new ArrayList<>();
-            percentiles.add(percentile(accumulator, 25));
-            percentiles.add(percentile(accumulator, 50));
-            percentiles.add(percentile(accumulator, 75));
-            percentiles.add(percentile(accumulator, 90));
-            long end = System.currentTimeMillis();
-            long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            return percentiles;
-        }
-
-        private double round(double value, int places) {
-            if (places < 0) throw new IllegalArgumentException();
-
-            BigDecimal bd = new BigDecimal(Double.toString(value));
-            bd = bd.setScale(places, RoundingMode.HALF_UP);
-            return bd.doubleValue();
-        }
-
-    }
-
-    private class WindowAdsAggregatorCLT implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
             Tuple7<String, String, String, String, String, String, Boolean>,
-            Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>>,
+            Tuple2<Long, MomentStruct>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        int[] myNum = {25, 50, 75, 90, 95};
+        double[] percentiles = {.1, .25, .50, .75, .90, .95};
 
         @Override
-        public Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> createAccumulator() {
-            Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> acc_tmp = new Tuple3<>();
-            acc_tmp.f1 = new HashMap<Integer, ArrayList<Double>>();
-            for (int j : myNum) {
-                acc_tmp.f1.put(j, new ArrayList<Double>());
-            }
-            acc_tmp.f2 = new ArrayList<Double>();
-            return acc_tmp;
+        public Tuple2<Long, MomentStruct> createAccumulator() {
+            MomentStruct ms = new MomentStruct(14);
+            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(14));
+            ms_tuple.f1 = ms;
+
+            return ms_tuple;
         }
 
         @Override
-        public Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> add(Tuple7<String, String, String, String, String, String, Boolean> value,
-                                                                                        Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> accumulator) {
-            System.out.println("Received event " + value.f0);
-            int WINDOW_SIZE = 3000; // in milliseconds
+        public Tuple2<Long, MomentStruct> add(Tuple7<String, String, String, String, String, String, Boolean> value,
+                                              Tuple2<Long, MomentStruct> accumulator) {
+            accumulator.f1.add(parseDouble(value.f0));
+            int WINDOW_SIZE = 6000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
-
-            System.out.println("accumulator.f2 size greater than 400? :" + accumulator.f2.size() );
-            if(accumulator.f2.size() > 400){
-                Collections.sort(accumulator.f2);
-                for (int j: myNum){
-                    double p = percentile(accumulator.f2, j);
-                    (accumulator.f1.get(j)).add(p);
-                }
-                accumulator.f2 = new ArrayList<>();
-            }
-            System.out.println("add TaxiQuery accumulator 25th percentile:");
-            System.out.println((accumulator.f1.get(25)));
-
-            accumulator.f2.add(parseDouble(value.f0));
             return accumulator;
         }
 
         @Override
-        public Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> merge(Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> acc0,
-                                                                                          Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> acc1) {
-            acc0.f2.addAll(acc1.f2);
-            for (int j :myNum){
-                (acc0.f1.get(j)).addAll(acc1.f1.get(j));
-            }
+        public Tuple2<Long, MomentStruct> merge(Tuple2<Long, MomentStruct> acc0,
+                                                Tuple2<Long, MomentStruct> acc1) {
+            acc0.f1.merge(acc1.f1);
             return acc0;
         }
 
         @Override
-        public Tuple2<Long, ArrayList<Double>> getResult(Tuple3<Long, HashMap<Integer, ArrayList<Double>>, ArrayList<Double>> accumulator) {
+        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, MomentStruct> accumulator) {
             //return new Tuple3<>(accumulator.f0, accumulator.f1, accumulator.f2);
             long start = System.currentTimeMillis();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
+            MomentSolver ms = new MomentSolver(accumulator.f1);
+            ms.setGridSize(1024);
+            ms.solve();
 
+            double[] results = ms.getQuantiles(percentiles);
 
-            for (int j : myNum){
-                double average = 0.0;
-                ArrayList<Double> al = accumulator.f1.get(j);
-                //System.out.println("First element of [" + j + "] in hashtable: " + al.get(0));
-                for( double k : al){
-                   average += k;
-                }
-                if(al.size() == 0){
-                    ret_tuple.f1.add(0.0);
-                }else{
-                    average = average/al.size();
-                    ret_tuple.f1.add(round(average, 2));
-                }
-            }
+            for(double d : results) ret_tuple.f1.add(round(d, 2));
+
             long end = System.currentTimeMillis();
             long elapsed_time = end - start;
             System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
+            ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }
 
