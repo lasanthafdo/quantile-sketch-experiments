@@ -59,7 +59,8 @@ start(){
     echo $1
 
     hname=$(hostname)
-    if [[ $hname == "Harshs-MBP"  ]]; then
+    if [[ $hname == *"Harshs"*  ]]; then
+      echo "IF STATEMENT ACTIVATED"
       maven_clean_install_with_tests $PROJECT_DIR/workload-processor-flink
     fi
     start_zk

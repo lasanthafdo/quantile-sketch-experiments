@@ -20,6 +20,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.json.JSONObject;
 import com.github.stanfordfuturedata.momentsketch.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Array;
 import java.time.Duration;
@@ -48,6 +50,9 @@ public class TaxiQuery implements Runnable {
     /* The window size */
     private final int windowSize;
     private JSONObject js;
+
+    protected static final Logger LOG = LoggerFactory.getLogger(TaxiQuery.class);
+
 
     public TaxiQuery(
             ParameterTool setupParams, int numQueries, int windowSize) {
@@ -208,6 +213,7 @@ public class TaxiQuery implements Runnable {
             long end = System.currentTimeMillis();
             long elapsed_time = end - start;
             System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
+            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }
