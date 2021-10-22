@@ -29,6 +29,7 @@ import java.util.ArrayList;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -168,12 +169,12 @@ public class TaxiQuery implements Runnable {
             Tuple2<Long, MomentStruct>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.1, .25, .50, .75, .90, .95};
+        double[] percentiles = {.1, .5, .25, .50, .75, .90, .95, .98};
 
         @Override
         public Tuple2<Long, MomentStruct> createAccumulator() {
             MomentStruct ms = new MomentStruct(14);
-            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(14));
+            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(15));
             ms_tuple.f1 = ms;
 
             return ms_tuple;
@@ -197,7 +198,6 @@ public class TaxiQuery implements Runnable {
 
         @Override
         public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, MomentStruct> accumulator) {
-            //return new Tuple3<>(accumulator.f0, accumulator.f1, accumulator.f2);
             long start = System.currentTimeMillis();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
