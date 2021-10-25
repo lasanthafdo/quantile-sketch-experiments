@@ -25,6 +25,8 @@ start_kafka(){
     create_kafka_topic "ad-events-1"
     create_kafka_topic "nyt-events"
     create_kafka_topic "stragglers"
+    create_kafka_topic "syn-events"
+    create_kafka_topic "power-events"
     bash "$KAFKA_DIR"/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
     echo "Finish Starting KAFKA"
 }

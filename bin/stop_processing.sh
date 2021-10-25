@@ -43,7 +43,7 @@ pull_stdout_from_flink_taskmanager() {
   local task_manager_id=-1
   task_manager_id=$(curl -s "http://localhost:8081/taskmanagers/" | jq '.taskmanagers[0].id' | tr -d '"')
   echo "Retrieving Output from TaskManager: $task_manager_id"
-  curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" >"$1_output.txt"
+  curl -s "http://localhost:8081/taskmanagers/$task_manager_id/stdout" >"output_$1.txt"
   sleep 3
 }
 

@@ -71,6 +71,8 @@ public class TaxiQuery implements Runnable {
         //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 //        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
+        System.out.println("Running Taxi Query");
+        LOG.info("Running Taxi Query");
 
         // Add queries
         addQuery(env);
@@ -115,7 +117,7 @@ public class TaxiQuery implements Runnable {
                 .aggregate(new WindowAdsAggregatorMSketch())
                 .name("DeserializeInput ")
                 .name("Window")
-                .writeAsText("results-nyt.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-nyt-moments.txt", FileSystem.WriteMode.OVERWRITE);
                 // sink function
                 //.addSink(new PrintCampaignAdClicks())
                 //.name("Sink(" + queryInstance + ")");
@@ -169,7 +171,7 @@ public class TaxiQuery implements Runnable {
             Tuple2<Long, MomentStruct>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.1, .5, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
 
         @Override
         public Tuple2<Long, MomentStruct> createAccumulator() {
