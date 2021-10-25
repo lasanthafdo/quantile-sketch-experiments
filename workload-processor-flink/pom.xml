@@ -47,6 +47,16 @@
             <artifactId>momentsketch-solver</artifactId>
             <version>0.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.datadoghq</groupId>
+            <artifactId>sketches-java</artifactId>
+            <version>0.8.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.datasketches</groupId>
+            <artifactId>datasketches-java</artifactId>
+            <version>3.0.0</version>
+        </dependency>
     </dependencies>
 
     <properties>

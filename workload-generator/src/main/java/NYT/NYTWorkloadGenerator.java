@@ -30,7 +30,7 @@ public class NYTWorkloadGenerator implements Runnable {
     // Experiment parameters
     private final int throughput;
     NormalDistribution nD = new NormalDistribution(150.0, 10.0);
-    ExponentialDistribution eD = new ExponentialDistribution(250);
+    ExponentialDistribution eD = new ExponentialDistribution(150);
     PoissonDistribution pD = new PoissonDistribution(250);
     GammaDistribution gD = new GammaDistribution(60, 4);
 
@@ -41,6 +41,8 @@ public class NYTWorkloadGenerator implements Runnable {
         this.fileName = fileName;
         // Experiment parameters
         this.throughput = throughput;
+        System.out.println("NetworkDelayExponential Mean:" + Double.toString(eD.getMean()));
+        System.out.println("NetworkDelayNormal Mean:" + Double.toString(nD.getMean()));
     }
 
     boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws IOException {

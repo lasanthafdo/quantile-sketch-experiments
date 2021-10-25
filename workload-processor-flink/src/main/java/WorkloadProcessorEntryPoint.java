@@ -1,6 +1,9 @@
+import DDSketch.TaxiQueryDDSketch;
+import KLLSketch.TaxiQueryKLLSketch;
 import LRB.LinearRoadQuery;
+import Moments.SyntheticQuery;
 import YSB.AdvertisingQuery;
-import NYT.TaxiQuery;
+import Moments.TaxiQuery;
 import org.apache.flink.api.java.utils.ParameterTool;
 //import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
 
@@ -26,6 +29,8 @@ public class WorkloadProcessorEntryPoint {
             createLRBInstances(setupParams, experimentMap);
         }else if (workloadType.equalsIgnoreCase("nyt")) {
             createNYTInstances(setupParams, experimentMap);
+        }else if (workloadType.equalsIgnoreCase("syn")) {
+            createSYNInstances(setupParams, experimentMap);
         }else{
             System.out.println("no matching workload type found");
         }
@@ -71,9 +76,39 @@ public class WorkloadProcessorEntryPoint {
             // Window size
             int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
 
+            String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
+
+            if(algorithm.equals("moments")){
+                TaxiQuery taxiQuery = new TaxiQuery(setupParams, numQueries, windowSize);
+                taxiQuery.run();
+            }else if (algorithm.equals("ddsketch")){
+                TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
+                taxiQueryDDSketch.run();
+            }else if (algorithm.equals("kllsketch")) {
+                TaxiQueryKLLSketch taxiQueryDDSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
+                taxiQueryDDSketch.run();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private static void createSYNInstances(ParameterTool setupParams, Map experimentMap) {
+        try {
+            // Number of queries
+            int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
+
+            // Window size
+            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
+
+            String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
+
             // Run YSB query
-            TaxiQuery taxiQuery = new TaxiQuery(setupParams, numQueries, windowSize);
-            taxiQuery.run();
+            if (algorithm.equals("moments")){
+                SyntheticQuery synQuery = new SyntheticQuery(setupParams, numQueries, windowSize);
+                synQuery.run();
+            }else if (algorithm.equals("ddsketch")){
+                //TODO
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

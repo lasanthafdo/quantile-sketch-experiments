@@ -1,4 +1,5 @@
 import LRB.LRBWorkloadGenerator;
+import Synthetic.SyntheticWorkloadGenerator;
 import YSB.YSBWorkloadGenerator;
 import NYT.NYTWorkloadGenerator;
 import YSB.YSBWorkloadSetup;
@@ -76,6 +77,8 @@ public class WorkloadGeneratorEntryPoint {
             runLRBWorkloadGenerator(setupMap, benchMap);
         }else if (workloadType.equalsIgnoreCase("nyt")) {
             runNYTWorkloadGenerator(setupMap, benchMap);
+        }else if (workloadType.equalsIgnoreCase("syn")) {
+            runSyntheticWorkloadGenerator(setupMap, benchMap);
         }
     }
 
@@ -135,7 +138,26 @@ public class WorkloadGeneratorEntryPoint {
 
         new Thread(new NYTWorkloadGenerator(kafkaProducer, NYT_KAFKA_TOPIC_PREFIX, dataFile, throughput))
                 .start();
+    }
 
+    private static void runSyntheticWorkloadGenerator(Map setupMap, Map benchMap) {
+        /* Create Kafka Producer */
+        Properties props = new Properties();
+        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
+
+        Producer<byte[], byte[]> kafkaProducer =
+                new KafkaProducer<>(props,
+                        new ByteArraySerializer(),
+                        new ByteArraySerializer());
+
+
+        /* Get Benchmark properties */
+        int throughput = (Integer) benchMap.get("throughput");
+        String currentUsersHomeDir = System.getProperty("user.home");
+        String dataFile = "";
+
+        new Thread(new SyntheticWorkloadGenerator(kafkaProducer, "syn-events", throughput))
+                .start();
     }
 
     private static void runLRBWorkloadGenerator(Map setupMap, Map benchMap) {
