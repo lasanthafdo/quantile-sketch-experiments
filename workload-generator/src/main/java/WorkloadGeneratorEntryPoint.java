@@ -1,4 +1,5 @@
 import LRB.LRBWorkloadGenerator;
+import Power.PowerWorkloadGenerator;
 import Synthetic.SyntheticWorkloadGenerator;
 import YSB.YSBWorkloadGenerator;
 import NYT.NYTWorkloadGenerator;
@@ -16,6 +17,7 @@ import java.util.Properties;
 import static LRB.LRBConstants.LRB_KAFKA_TOPIC_PREFIX;
 import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
 import static NYT.NYTConstants.NYT_KAFKA_TOPIC_PREFIX;
+import static Power.PowerConstants.POWER_KAFKA_TOPIC_PREFIX;
 
 public class WorkloadGeneratorEntryPoint {
 
@@ -79,6 +81,8 @@ public class WorkloadGeneratorEntryPoint {
             runNYTWorkloadGenerator(setupMap, benchMap);
         }else if (workloadType.equalsIgnoreCase("syn")) {
             runSyntheticWorkloadGenerator(setupMap, benchMap);
+        }else if (workloadType.equalsIgnoreCase("power")) {
+            runPowerWorkloadGenerator(setupMap, benchMap);
         }
     }
 
@@ -137,6 +141,27 @@ public class WorkloadGeneratorEntryPoint {
         System.out.println(dataFile);
 
         new Thread(new NYTWorkloadGenerator(kafkaProducer, NYT_KAFKA_TOPIC_PREFIX, dataFile, throughput))
+                .start();
+    }
+
+    private static void runPowerWorkloadGenerator(Map setupMap, Map benchMap) {
+        /* Create Kafka Producer */
+        Properties props = new Properties();
+        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
+
+        Producer<byte[], byte[]> kafkaProducer =
+                new KafkaProducer<>(props,
+                        new ByteArraySerializer(),
+                        new ByteArraySerializer());
+
+
+        /* Get Benchmark properties */
+        int throughput = (Integer) benchMap.get("throughput");
+        String currentUsersHomeDir = System.getProperty("user.home");
+        String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator + "household_power_consumption.txt";
+        System.out.println(dataFile);
+
+        new Thread(new PowerWorkloadGenerator(kafkaProducer, POWER_KAFKA_TOPIC_PREFIX, dataFile, throughput))
                 .start();
     }
 

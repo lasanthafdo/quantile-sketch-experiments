@@ -1,6 +1,9 @@
+import DDSketch.PowerQueryDDSketch;
 import DDSketch.TaxiQueryDDSketch;
+import KLLSketch.PowerQueryKLLSketch;
 import KLLSketch.TaxiQueryKLLSketch;
 import LRB.LinearRoadQuery;
+import Moments.PowerQueryMomentsSketch;
 import Moments.SyntheticQuery;
 import YSB.AdvertisingQuery;
 import Moments.TaxiQuery;
@@ -31,6 +34,8 @@ public class WorkloadProcessorEntryPoint {
             createNYTInstances(setupParams, experimentMap);
         }else if (workloadType.equalsIgnoreCase("syn")) {
             createSYNInstances(setupParams, experimentMap);
+        }else if (workloadType.equalsIgnoreCase("power")) {
+            createPowerInstances(setupParams, experimentMap);
         }else{
             System.out.println("no matching workload type found");
         }
@@ -92,6 +97,32 @@ public class WorkloadProcessorEntryPoint {
             e.printStackTrace();
         }
     }
+
+    private static void createPowerInstances(ParameterTool setupParams, Map experimentMap) {
+        try {
+            // Number of queries
+            int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
+
+            // Window size
+            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
+
+            String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
+
+            if(algorithm.equals("moments")){
+                PowerQueryMomentsSketch powerQuery = new PowerQueryMomentsSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            }else if (algorithm.equals("ddsketch")){
+                PowerQueryDDSketch powerQuery = new PowerQueryDDSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            }else if (algorithm.equals("kllsketch")) {
+                PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void createSYNInstances(ParameterTool setupParams, Map experimentMap) {
         try {
             // Number of queries
