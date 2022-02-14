@@ -48,3 +48,5 @@ setup.yaml
 nyt-data*
 sorted_data.csv
 results*
+*.png
+*.txt
