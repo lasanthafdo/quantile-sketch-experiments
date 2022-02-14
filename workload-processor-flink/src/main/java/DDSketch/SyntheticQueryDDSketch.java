@@ -1,5 +1,6 @@
 package DDSketch;
 
+import com.datadoghq.sketch.ddsketch.DDSketch;
 import com.github.stanfordfuturedata.momentsketch.MomentSolver;
 import com.github.stanfordfuturedata.momentsketch.MomentStruct;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -105,7 +106,7 @@ public class SyntheticQueryDDSketch implements Runnable {
                 .aggregate(new SyntheticQueryDDSketch.WindowAdsAggregatorMSketch())
                 .name("DeserializeInput ")
                 .name("Window")
-                .writeAsText("results-synthetic-dds.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-syn-dds.txt", FileSystem.WriteMode.OVERWRITE);
         // sink function
         //.addSink(new PrintCampaignAdClicks())
         //.name("Sink(" + queryInstance + ")");
@@ -142,61 +143,51 @@ public class SyntheticQueryDDSketch implements Runnable {
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
             Tuple5<String, String, String, String, String>,
-            Tuple2<Long, MomentStruct>,
+            Tuple2<Long, DDSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
-        public Tuple2<Long, MomentStruct> createAccumulator() {
-            MomentStruct ms = new MomentStruct(15);
-            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(15));
-            ms_tuple.f1 = ms;
-
-            return ms_tuple;
+        public Tuple2<Long, DDSketch> createAccumulator() {
+            double relativeAccuracy = 0.005;
+            DDSketch sketch = new DDSketch(relativeAccuracy);
+            return new Tuple2<Long, DDSketch>(0L, sketch);
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> add(Tuple5<String, String, String, String, String> value,
-                                              Tuple2<Long, MomentStruct> accumulator) {
-            accumulator.f1.add(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
-            if (ThreadLocalRandom.current().nextInt(0,100) > 90){
-                System.out.println("Adding-value " + Double.toString(parseDouble(value.f0)));
-            }
-            int WINDOW_SIZE = 6000; // in milliseconds
+        public Tuple2<Long, DDSketch> add(Tuple5<String, String, String, String, String> value,
+                                              Tuple2<Long, DDSketch> accumulator) {
+            accumulator.f1.accept(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> merge(Tuple2<Long, MomentStruct> acc0,
-                                                Tuple2<Long, MomentStruct> acc1) {
-            acc0.f1.merge(acc1.f1);
+        public Tuple2<Long, DDSketch> merge(Tuple2<Long, DDSketch> acc0,
+                                                Tuple2<Long, DDSketch> acc1) {
+            acc0.f1.mergeWith(acc1.f1);
             return acc0;
         }
 
         @Override
-        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, MomentStruct> accumulator) {
-            long start = System.currentTimeMillis();
+        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, DDSketch> accumulator) {
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
 
-            System.out.println("Moments Struct");
-            System.out.println(accumulator.f1);
+            double[] results = accumulator.f1.getValuesAtQuantiles(percentiles);
 
-            MomentSolver ms = new MomentSolver(accumulator.f1);
-            ms.setGridSize(1024);
-            ms.solve();
+            for(double d : results) ret_tuple.f1.add(round(d, 4));
 
-            double[] results = ms.getQuantiles(percentiles);
-
-            for(double d : results) ret_tuple.f1.add(round(d, 2));
-
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+            System.out.println("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
+            LOG.info("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }

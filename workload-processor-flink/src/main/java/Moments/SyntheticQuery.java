@@ -2,6 +2,7 @@ package Moments;
 
 import com.github.stanfordfuturedata.momentsketch.MomentSolver;
 import com.github.stanfordfuturedata.momentsketch.MomentStruct;
+import com.github.stanfordfuturedata.momentsketch.SimpleMomentSketch;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -66,8 +67,8 @@ public class SyntheticQuery implements Runnable {
         //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 //        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
-        System.out.println("Running Synthetic Query");
-        LOG.info("Running Synthetic Query");
+        System.out.println("Running Synthetic Moments Query");
+        LOG.info("Running Synthetic Moments Query");
 
         // Add queries
         addQuery(env);
@@ -107,7 +108,7 @@ public class SyntheticQuery implements Runnable {
                 .aggregate(new SyntheticQuery.WindowAdsAggregatorMSketch())
                 .name("DeserializeInput ")
                 .name("Window")
-                .writeAsText("results-synthetic-moments.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-syn-moments.txt", FileSystem.WriteMode.OVERWRITE);
         // sink function
         //.addSink(new PrintCampaignAdClicks())
         //.name("Sink(" + queryInstance + ")");
@@ -121,10 +122,6 @@ public class SyntheticQuery implements Runnable {
         @Override
         public Tuple5<String, String, String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
-            Boolean fake = false;
-            if (obj.has("fake")){
-                fake = true;
-            }
             return new Tuple5<>(
                     obj.getString("pareto_value"), // 0
                     obj.getString("uniform_value"), // 1
@@ -144,42 +141,46 @@ public class SyntheticQuery implements Runnable {
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
             Tuple5<String, String, String, String, String>,
-            Tuple2<Long, MomentStruct>,
+            Tuple2<Long, SimpleMomentSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {0.01, 0.05, 0.25, 0.5, 0.75, 0.90, 0.95, 0.98, 0.99};
+
 
         @Override
-        public Tuple2<Long, MomentStruct> createAccumulator() {
-            MomentStruct ms = new MomentStruct(15);
-            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(15));
-            ms_tuple.f1 = ms;
-
-            return ms_tuple;
+        public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
+            SimpleMomentSketch msketch = new SimpleMomentSketch(23);
+            msketch.setCompressed(true);
+            return new Tuple2<>(0L, msketch);
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> add(Tuple5<String, String, String, String, String> value,
-                                              Tuple2<Long, MomentStruct> accumulator) {
+        public Tuple2<Long, SimpleMomentSketch> add(Tuple5<String, String, String, String, String> value,
+                                              Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
-            if (ThreadLocalRandom.current().nextInt(0,100) > 90){
-                System.out.println("Adding-value " + Double.toString(parseDouble(value.f0)));
+            /*
+            if (!(parseDouble(value.f1) > 2000)) {
+                accumulator.f1.add(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
             }
+            if (ThreadLocalRandom.current().nextInt(0,100) >= 95){
+                System.out.println("Adding-value " + Double.toString(parseDouble(value.f1)));
+            }
+             */
             int WINDOW_SIZE = 6000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> merge(Tuple2<Long, MomentStruct> acc0,
-                                                Tuple2<Long, MomentStruct> acc1) {
+        public Tuple2<Long, SimpleMomentSketch> merge(Tuple2<Long, SimpleMomentSketch> acc0,
+                                                Tuple2<Long, SimpleMomentSketch> acc1) {
             acc0.f1.merge(acc1.f1);
             return acc0;
         }
 
         @Override
-        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, MomentStruct> accumulator) {
-            long start = System.currentTimeMillis();
+        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, SimpleMomentSketch> accumulator) {
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
@@ -187,18 +188,14 @@ public class SyntheticQuery implements Runnable {
             System.out.println("Moments Struct");
             System.out.println(accumulator.f1);
 
-            MomentSolver ms = new MomentSolver(accumulator.f1);
-            ms.setGridSize(1024);
-            ms.solve();
+            double[] results = accumulator.f1.getQuantiles(percentiles);
 
-            double[] results = ms.getQuantiles(percentiles);
+            for(double d : results) ret_tuple.f1.add(round(d, 4));
 
-            for(double d : results) ret_tuple.f1.add(round(d, 2));
-
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
+            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }

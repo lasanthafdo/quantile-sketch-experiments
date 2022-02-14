@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.datasketches.kll.KllFloatsSketch;
 
@@ -97,7 +98,7 @@ public class TaxiQueryKLLSketch implements Runnable {
                 .map(new DeserializeAdsFromkafka())
                 .name("DeserializeInput ")
                 .disableChaining()
-                .<Tuple7<String, String, String, String, String, String, Boolean>>project(11, 2, 3, 4, 5, 17, 19)
+                .<Tuple7<String, String, String, String, String, String, Boolean>>project(16, 2, 3, 4, 5, 17, 19)
                 // 11 - fare_amount
                 // 2 - pickup_datetime
                 // 3 - dropoff_datetime
@@ -161,11 +162,11 @@ public class TaxiQueryKLLSketch implements Runnable {
             Tuple2<Long, KllFloatsSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
-            KllFloatsSketch kllFloatsSketch = new KllFloatsSketch();
+            KllFloatsSketch kllFloatsSketch = new KllFloatsSketch(350);
             return new Tuple2<Long, KllFloatsSketch>(0L, kllFloatsSketch);
         }
 
@@ -173,7 +174,7 @@ public class TaxiQueryKLLSketch implements Runnable {
         public Tuple2<Long, KllFloatsSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                               Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 6000; // in milliseconds
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
             return accumulator;
         }
@@ -187,19 +188,19 @@ public class TaxiQueryKLLSketch implements Runnable {
 
         @Override
         public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, KllFloatsSketch> accumulator) {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
 
             float[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(float d : results) ret_tuple.f1.add(round(d, 2));
+            for(float d : results) ret_tuple.f1.add(round(d, 4));
 
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+            System.out.println("Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
+            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }

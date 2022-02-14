@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Double.parseDouble;
 
@@ -98,7 +99,7 @@ public class TaxiQuery implements Runnable {
                 .map(new DeserializeAdsFromkafka())
                 .name("DeserializeInput ")
                 .disableChaining()
-                .<Tuple7<String, String, String, String, String, String, Boolean>>project(11, 2, 3, 4, 5, 17, 19)
+                .<Tuple7<String, String, String, String, String, String, Boolean>>project(16, 2, 3, 4, 5, 17, 19)
                 // 11 - fare_amount
                 // 2 - pickup_datetime
                 // 3 - dropoff_datetime
@@ -159,23 +160,22 @@ public class TaxiQuery implements Runnable {
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
             Tuple7<String, String, String, String, String, String, Boolean>,
-            Tuple2<Long, MomentStruct>,
+            Tuple2<Long, SimpleMomentSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
-        public Tuple2<Long, MomentStruct> createAccumulator() {
-            MomentStruct ms = new MomentStruct(14);
-            Tuple2<Long, MomentStruct> ms_tuple = new Tuple2<>(0L, new MomentStruct(15));
-            ms_tuple.f1 = ms;
-
+        public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
+            SimpleMomentSketch sms =  new SimpleMomentSketch(18);
+            sms.setCompressed(true);
+            Tuple2<Long, SimpleMomentSketch> ms_tuple = new Tuple2<>(0L, sms);
             return ms_tuple;
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> add(Tuple7<String, String, String, String, String, String, Boolean> value,
-                                              Tuple2<Long, MomentStruct> accumulator) {
+        public Tuple2<Long, SimpleMomentSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
+                                              Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(parseDouble(value.f0));
             int WINDOW_SIZE = 6000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
@@ -183,30 +183,30 @@ public class TaxiQuery implements Runnable {
         }
 
         @Override
-        public Tuple2<Long, MomentStruct> merge(Tuple2<Long, MomentStruct> acc0,
-                                                Tuple2<Long, MomentStruct> acc1) {
+        public Tuple2<Long, SimpleMomentSketch> merge(Tuple2<Long, SimpleMomentSketch> acc0,
+                                                Tuple2<Long, SimpleMomentSketch> acc1) {
             acc0.f1.merge(acc1.f1);
             return acc0;
         }
 
         @Override
-        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, MomentStruct> accumulator) {
-            long start = System.currentTimeMillis();
+        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, SimpleMomentSketch> accumulator) {
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
-            MomentSolver ms = new MomentSolver(accumulator.f1);
-            ms.setGridSize(1024);
-            ms.solve();
 
-            double[] results = ms.getQuantiles(percentiles);
+            double[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(double d : results) ret_tuple.f1.add(round(d, 2));
+            for(double d : results) ret_tuple.f1.add(round(d, 4));
 
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+
+            System.out.println("Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
+            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
+            LOG.info("Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
+            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }

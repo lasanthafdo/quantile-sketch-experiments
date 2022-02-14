@@ -104,7 +104,7 @@ public class SyntheticQueryKLLSketch implements Runnable {
                 .aggregate(new SyntheticQueryKLLSketch.WindowAdsAggregatorMSketch())
                 .name("DeserializeInput ")
                 .name("Window")
-                .writeAsText("results-synthetic-kll.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("results-syn-kll.txt", FileSystem.WriteMode.OVERWRITE);
         // sink function
         //.addSink(new PrintCampaignAdClicks())
         //.name("Sink(" + queryInstance + ")");
@@ -144,18 +144,18 @@ public class SyntheticQueryKLLSketch implements Runnable {
             Tuple2<Long, KllFloatsSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
-            return new Tuple2<>(0L, new KllFloatsSketch());
+            return new Tuple2<>(0L, new KllFloatsSketch(600));
         }
 
         @Override
         public Tuple2<Long, KllFloatsSketch> add(Tuple5<String, String, String, String, String> value,
                                               Tuple2<Long, KllFloatsSketch> accumulator) {
-            accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 6000; // in milliseconds
+            accumulator.f1.update(Float.parseFloat(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;
         }
@@ -169,7 +169,7 @@ public class SyntheticQueryKLLSketch implements Runnable {
 
         @Override
         public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, KllFloatsSketch> accumulator) {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
@@ -179,13 +179,18 @@ public class SyntheticQueryKLLSketch implements Runnable {
 
             float[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(float d : results) ret_tuple.f1.add(round(d, 2));
+            for(float d : results) ret_tuple.f1.add(round(d, 4));
 
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            LOG.info("Retrieving result took " + elapsed_time/1000 + "microseconds");
             ret_tuple.f1.add((double) elapsed_time);
+            double numRetained = (double) accumulator.f1.getNumRetained();
+            ret_tuple.f1.add(numRetained);
+            System.out.println(accumulator.f1.toString());
+            System.out.println("-------------------------------------------------------------");
             return ret_tuple;
         }
 

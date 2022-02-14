@@ -1,6 +1,8 @@
 import DDSketch.PowerQueryDDSketch;
+import DDSketch.SyntheticQueryDDSketch;
 import DDSketch.TaxiQueryDDSketch;
 import KLLSketch.PowerQueryKLLSketch;
+import KLLSketch.SyntheticQueryKLLSketch;
 import KLLSketch.TaxiQueryKLLSketch;
 import LRB.LinearRoadQuery;
 import Moments.PowerQueryMomentsSketch;
@@ -138,7 +140,12 @@ public class WorkloadProcessorEntryPoint {
                 SyntheticQuery synQuery = new SyntheticQuery(setupParams, numQueries, windowSize);
                 synQuery.run();
             }else if (algorithm.equals("ddsketch")){
-                //TODO
+                SyntheticQueryDDSketch synQuery = new SyntheticQueryDDSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            }else if (algorithm.equals("kllsketch")){
+                SyntheticQueryKLLSketch synQuery = new SyntheticQueryKLLSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+
             }
         } catch (Exception e) {
             e.printStackTrace();

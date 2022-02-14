@@ -21,10 +21,16 @@ public class SyntheticWorkloadGenerator implements Runnable {
     // Experiment parameters
     private final int throughput;
 
-    NormalDistribution nD = new NormalDistribution(100.0, 15.0);
+    NormalDistribution nD = new NormalDistribution(150.0, 15.0);
+    NormalDistribution paretoNormal = new NormalDistribution(1, 0.05);
+    NormalDistribution uniformNormal = new NormalDistribution(100, 25);
+    NormalDistribution uniformNormal2 = new NormalDistribution(1000, 100);
+
+    NormalDistribution randomizedNormalMean = new NormalDistribution(150, 20);
+    NormalDistribution randomizedNormalStd = new NormalDistribution(20, 4);
 
     // Network Delays
-    ExponentialDistribution eD = new ExponentialDistribution(250);
+    ExponentialDistribution eD = new ExponentialDistribution(150);
     PoissonDistribution pD = new PoissonDistribution(250);
     GammaDistribution gD = new GammaDistribution(60, 4);
     ZipfDistribution zD = new ZipfDistribution(100, 0.2);
@@ -32,7 +38,7 @@ public class SyntheticWorkloadGenerator implements Runnable {
 
     // Values
     ParetoDistribution ptoD = new ParetoDistribution(1, 1);
-    UniformRealDistribution uD = new UniformRealDistribution(1, 10000);
+    UniformRealDistribution uD = new UniformRealDistribution(1, 1000);
     NormalDistribution valnD = new NormalDistribution(100, 15);
 
     public SyntheticWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, int throughput) {
@@ -67,18 +73,29 @@ public class SyntheticWorkloadGenerator implements Runnable {
         }
         //TODO inter-event generation delay here in Milliseconds
 
+        double shapeParam = paretoNormal.sample();
+        while (shapeParam < 0.01)
+            shapeParam = paretoNormal.sample();
+
+        ptoD = new ParetoDistribution(shapeParam, shapeParam);
+
+        double std = randomizedNormalStd.sample();
+        while (std < 0)
+            std = randomizedNormalStd.sample();
+
+        uD = new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
+
+        valnD = new NormalDistribution(randomizedNormalMean.sample(), std);
+
         int numOfEventsPerMsInt = (int) Math.ceil(numOfEventsPerMS);
         boolean ret = true;
         for (int i = 0; i < numOfEventsPerMsInt; i++) {
-            double b = round(ptoD.sample(), 3);
-            double b2 = round(uD.sample(), 3);
-            double b3 = round(valnD.sample(), 3);
 
             Map<String, String> eventMap = new HashMap<>();
 
-            eventMap.put("pareto_value", String.valueOf(b));
-            eventMap.put("uniform_value", String.valueOf(b2));
-            eventMap.put("normal_value", String.valueOf(b3));
+            eventMap.put("pareto_value" , String.valueOf(round(ptoD.sample(), 4)));
+            eventMap.put("uniform_value", String.valueOf(round(uD.sample(), 4)));
+            eventMap.put("normal_value" , String.valueOf(round(valnD.sample(), 4)));
             // Network Delay
             int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
             //int sampled_value = (int) nD.sample();
@@ -86,8 +103,8 @@ public class SyntheticWorkloadGenerator implements Runnable {
             //int sampled_value = (int) zD.sample();
             //int sampled_value = (int) pD.sample();
             //int sampled_value = (int) gD.sample();
-            int sampled_value = bD.sample();
-            long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
+            int sampled_value = (int) eD.sample();
+            long eventTime = currTimeInMsec; // - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaOutput.getBytes(), kafkaOutput.getBytes()));

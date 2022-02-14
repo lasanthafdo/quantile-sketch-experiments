@@ -1,10 +1,7 @@
 package Power;
 
 import NYT.NYTConstants;
-import org.apache.commons.math3.distribution.ExponentialDistribution;
-import org.apache.commons.math3.distribution.GammaDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import org.apache.commons.math3.distribution.PoissonDistribution;
+import org.apache.commons.math3.distribution.*;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
@@ -46,10 +43,22 @@ public class PowerWorkloadGenerator implements Runnable {
     private final String fileName;
     // Experiment parameters
     private final int throughput;
-    NormalDistribution nD = new NormalDistribution(150.0, 10.0);
     ExponentialDistribution eD = new ExponentialDistribution(150);
     PoissonDistribution pD = new PoissonDistribution(250);
     GammaDistribution gD = new GammaDistribution(60, 4);
+
+    NormalDistribution nD = new NormalDistribution(150.0, 15.0);
+    NormalDistribution paretoNormal = new NormalDistribution(1, 0.05);
+    NormalDistribution uniformNormal = new NormalDistribution(150, 25);
+    NormalDistribution uniformNormal2 = new NormalDistribution(1000, 50);
+
+    NormalDistribution randomizedNormalMean = new NormalDistribution(150, 20);
+    NormalDistribution randomizedNormalStd = new NormalDistribution(20, 4);
+
+    // Values
+    ParetoDistribution ptoD = new ParetoDistribution(1, 1);
+    UniformRealDistribution uD = new UniformRealDistribution(50, 10000);
+    NormalDistribution valnD = new NormalDistribution(100, 15);
 
     public PowerWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName, int throughput) {
         // System parameters
@@ -101,7 +110,7 @@ public class PowerWorkloadGenerator implements Runnable {
             int sampled_value = (int) eD.sample();
             //int sampled_value = (int) pD.sample();
             //int sampled_value = (int) gD.sample();
-            long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
+            long eventTime = currTimeInMsec; //  - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaOutput.getBytes(), kafkaOutput.getBytes()));

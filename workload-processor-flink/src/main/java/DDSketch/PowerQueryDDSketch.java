@@ -62,8 +62,8 @@ public class PowerQueryDDSketch implements Runnable {
         //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 //        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
-        System.out.println("Running Taxi Query");
-        LOG.info("Running Taxi Query");
+        System.out.println("Running Power Query");
+        LOG.info("Running Power Query");
 
         // Add queries
         addQuery(env);
@@ -137,7 +137,7 @@ public class PowerQueryDDSketch implements Runnable {
             Tuple2<Long, DDSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
-        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98};
+        double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
         public Tuple2<Long, DDSketch> createAccumulator() {
@@ -150,7 +150,7 @@ public class PowerQueryDDSketch implements Runnable {
         public Tuple2<Long, DDSketch> add(Tuple3<String, String, String> value,
                                               Tuple2<Long, DDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0));
-            int WINDOW_SIZE = 6000; // in milliseconds
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f1)/WINDOW_SIZE;
             return accumulator;
         }
@@ -164,19 +164,21 @@ public class PowerQueryDDSketch implements Runnable {
 
         @Override
         public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, DDSketch> accumulator) {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
 
             double[] results = accumulator.f1.getValuesAtQuantiles(percentiles);
 
-            for(double d : results) ret_tuple.f1.add(round(d, 2));
+            for(double d : results) ret_tuple.f1.add(round(d, 4));
 
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "milliseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "milliseconds");
+            System.out.println("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
+            LOG.info("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }
