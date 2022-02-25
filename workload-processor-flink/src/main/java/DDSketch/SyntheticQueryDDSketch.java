@@ -158,7 +158,7 @@ public class SyntheticQueryDDSketch implements Runnable {
         @Override
         public Tuple2<Long, DDSketch> add(Tuple5<String, String, String, String, String> value,
                                               Tuple2<Long, DDSketch> accumulator) {
-            accumulator.f1.accept(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
+            accumulator.f1.accept(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
             int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;

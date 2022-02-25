@@ -78,6 +78,10 @@
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
+          <artifactId>momentsketch-solver</artifactId>
+          <groupId>com.github.stanford-futuredata.momentsketch</groupId>
+        </exclusion>
+        <exclusion>
           <artifactId>jsr305</artifactId>
           <groupId>com.google.code.findbugs</groupId>
         </exclusion>

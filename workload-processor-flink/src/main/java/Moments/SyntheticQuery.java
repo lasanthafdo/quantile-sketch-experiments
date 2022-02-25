@@ -157,7 +157,7 @@ public class SyntheticQuery implements Runnable {
         @Override
         public Tuple2<Long, SimpleMomentSketch> add(Tuple5<String, String, String, String, String> value,
                                               Tuple2<Long, SimpleMomentSketch> accumulator) {
-            accumulator.f1.add(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
+            accumulator.f1.add(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
             /*
             if (!(parseDouble(value.f1) > 2000)) {
                 accumulator.f1.add(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
@@ -166,7 +166,7 @@ public class SyntheticQuery implements Runnable {
                 System.out.println("Adding-value " + Double.toString(parseDouble(value.f1)));
             }
              */
-            int WINDOW_SIZE = 6000; // in milliseconds
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;
         }
