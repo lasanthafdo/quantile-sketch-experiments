@@ -25,27 +25,27 @@ init_setup_file(){
     echo 'kafka.brokers:' > $SETUP_FILE
     hname=$(hostname)
 
-    if [[ $hname == *"Harshs"*  ]]; then
+    if [[ $hname == *"scslt"*  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
     else
-      echo '    - "'tem75.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
+      echo '    - "'tem103.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
     echo 'zookeeper.servers:' >> $SETUP_FILE
 
-    if [[ $hname == *"Harshs"*  ]]; then
+    if [[ $hname == *"scslt"*  ]]; then
       echo '    - "localhost"' >> $SETUP_FILE
     else
-      echo '    - "'tem75.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
+      echo '    - "'tem103.tembo-domain.cs.uwaterloo.ca'"' >> $SETUP_FILE
     fi
     echo >> $SETUP_FILE
 
     echo 'kafka.port: 9092' >> $SETUP_FILE
     echo 'zookeeper.port: '$ZK_PORT >> $SETUP_FILE
-    if [[ $hname == *"Harshs"*  ]]; then
+    if [[ $hname == *"scslt"*  ]]; then
       echo 'redis.host: "localhost"' >> $SETUP_FILE
     else
-      echo 'redis.host: "tem102.tembo-domain.cs.uwaterloo.ca"' >> $SETUP_FILE
+      echo 'redis.host: "tem103.tembo-domain.cs.uwaterloo.ca"' >> $SETUP_FILE
     fi
     echo 'kafka.partitions: '1 >> $SETUP_FILE
 }
@@ -131,7 +131,7 @@ setup(){
     elif [[ $1 = "syn" ]]; then
         init_synthetic_analytics $1
     else
-      echo "unrecogized option"
+      echo "unrecognized option"
     fi
 }
 

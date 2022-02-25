@@ -36,7 +36,7 @@ start_load() {
 
 start() {
   hname=$(hostname)
-  if [[ "$hname" == *"Harshs"*  ]]; then
+  if [[ "$hname" == *"scslt"*  ]]; then
     maven_clean_install_no_tests $PROJECT_DIR/workload-generator
   else
     cd $PROJECT_DIR/workload-generator || exit

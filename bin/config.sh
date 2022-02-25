@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 ## Projects Directories
-PROJECT_DIR="$HOME/flink-benchmarks"
+SRC_ROOT_DIR="$HOME/src/quantiles_streaming"
+PROJECT_DIR="$SRC_ROOT_DIR/flinkBenchmarks"
 
 ## flink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
@@ -44,7 +45,7 @@ KAFKA_TOPIC_PREFIX="ad-events"
 # Commands
 MAKE=${MAKE:-make}
 GIT=${GIT:-git}
-MVN=${MVN:-sudo mvn}
+MVN=${MVN:-mvn}
 
 pid_match() {
    local VAL=$(ps -aef | grep "$1" | grep -v grep | awk '{print $2}' | head -1)
@@ -125,13 +126,18 @@ maven_clean_install_no_tests(){
     $MVN clean install -DskipTests -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true
 }
 
+maven_clean_install_no_tests_no_npm(){
+    cd $1
+    $MVN clean install -DskipTests -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true -Dskip.npm
+}
+
 maven_install_no_tests(){
     cd $1
     $MVN install -DskipTests -Dcheckstyle.skip -Drat.skip=true -Dmaven.javadoc.skip=true
 }
 
 yaml() {
-    sudo python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
+    python3 -c "import yaml;print(yaml.load(open('$1'))$2)"
 }
 
 zk_connect(){

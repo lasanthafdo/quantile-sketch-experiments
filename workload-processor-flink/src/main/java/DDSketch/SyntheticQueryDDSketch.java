@@ -184,10 +184,10 @@ public class SyntheticQueryDDSketch implements Runnable {
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time/1000 + "microseconds");
-            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
-            LOG.info("Retrieving result took " + elapsed_time/1000 + "microseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
+            System.out.println("Retrieving result took " + elapsed_time/1000 + " microseconds");
+            System.out.println("Retrieving result took " + elapsed_time + " nanoseconds");
+            LOG.info("Retrieving result took " + elapsed_time/1000 + " microseconds");
+            LOG.info("Retrieving result took " + elapsed_time + " nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }
