@@ -155,18 +155,18 @@ if __name__ == '__main__':
         for algo in algos:
             f_algo_ds_real = report_folder + '/' + algo + '-' + dataset + '-real-cleaned.csv'
             f_algo_ds_sketch = report_folder + '/' + algo + '-' + dataset + '-sketch-cleaned.csv'
-            algo_pareto_real = pd.read_csv(f_algo_ds_real, skiprows=1, header=None, names=real_names)
+            algo_pareto_real = pd.read_csv(f_algo_ds_real, header=None, names=real_names)
             if algo == 'kll':
                 algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll)
             else:
                 algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names)
-            if algo == 'moments':
-                algo_ds_sketch['window_id'] = algo_ds_sketch['window_id'] // 5
+            # if algo == 'moments':
+            #     algo_ds_sketch['window_id'] = algo_ds_sketch['window_id'] // 5
 
             algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy = calc_accuracy(algo_ds_sketch, algo_pareto_real)
             print(algo_ds_accuracy)
-            mid_q_dict[algo] = np.mean(mid_q_accuracy)
-            upper_q_dict[algo] = np.mean(upper_q_accuracy)
+            mid_q_dict[algo] = np.round(np.mean(mid_q_accuracy), 4)
+            upper_q_dict[algo] = np.round(np.mean(upper_q_accuracy), 4)
 
         print(mid_q_dict)
         print(upper_q_dict)

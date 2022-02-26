@@ -177,7 +177,7 @@ public class TaxiQuery implements Runnable {
         public Tuple2<Long, SimpleMomentSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                               Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(parseDouble(value.f0));
-            int WINDOW_SIZE = 6000; // in milliseconds
+            int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
             return accumulator;
         }
