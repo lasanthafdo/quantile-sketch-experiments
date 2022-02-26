@@ -73,33 +73,37 @@ def produce_cdf_plot(data, x_label, y_label, plot_title, filename):
     plt.clf()
 
 
-def produce_bar_plot(data, plot_title, x_label, y_label, filename):
-    x = np.sort(data)
-    x_range = np.amax(x) - np.amin(x)
-    y = np.arange(1, len(x) + 1) / float(len(x))
-    percentile50 = np.percentile(x, 50)
-    percentile95 = np.percentile(x, 95)
-    percentile99 = np.percentile(x, 99)
-    plt.plot(x, y, color='red', ls="--", label="CDF")
-    plt.axvline(x=percentile50, color='k', linestyle='--')
-    plt.text(percentile50 + x_range / 100, 0.6, '50th percentile', rotation=90)
-    plt.axvline(x=percentile95, color='b', linestyle='--')
-    plt.text(percentile95 + x_range / 100, 0.6, '95th percentile', rotation=90)
-    plt.axvline(x=percentile99, color='g', linestyle='--')
-    plt.text(percentile99 + x_range / 100, 0.6, '99th percentile', rotation=90)
-    # weights = np.ones_like(data) / len(data)
-    # plt.hist(data, bins=100, weights=weights, label='Probability density function', alpha=0.8)
-    sns.histplot(data, stat='probability', binwidth=100, label="PMF")
-    if np.amax(x) <= 1500:
-        plt.xlim(0, 1500)
-    else:
-        plt.xlim(0, 2500)
-    plt.title(plot_title)
+def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, plot_filename):
+    print(mid_q_dict)
+    print(upper_q_dict)
+    plot_data = [["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['kll']],
+                 ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['kll']]]
+    print(plot_data)
+    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL"])
+    df.plot(x="Quantile range", y=["Moments", "DDS", "KLL"], kind="bar")
+
+    # df = pd.DataFrame(data, columns=["Name", "Age", "Height(cm)", "Weight(kg)"])
+    # df.plot(x="Name", y=["Age", "Height(cm)", "Weight(kg)"], kind="bar", figsize=(9, 8))
+    # plt.show()
+    # tput_tbs_dict = collections.OrderedDict(sorted(mid_q_dict.items()))
+    # tput_sbs_dict = collections.OrderedDict(sorted(upper_q_dict.items()))
+    # input_rates_tbs = tput_tbs_dict.keys()
+    # input_rates_sbs = tput_sbs_dict.keys()
+    # tp_tbs = tput_tbs_dict.values()
+    # tp_sbs = tput_sbs_dict.values()
+    # X_axis = np.arange(len(input_rates_tbs))
+    # plt.bar(X_axis - 0.2, tp_tbs, 0.4, label='GS')
+    # plt.bar(X_axis + 0.2, tp_sbs, 0.4, label='SBS')
+
+    # plt.xticks(X_axis, input_rates_tbs)
+    plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.legend(loc='best')
-    plt.tight_layout()
-    plt.savefig(filename)
+    plt.title(plot_title)
+    # plt.legend(loc="lower right")
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
     # plt.show()
     plt.clf()
 
@@ -135,18 +139,41 @@ def calc_accuracy(approx_df, real_df):
 
 if __name__ == '__main__':
     report_folder = sys.argv[1]
-    f_dds_pareto_real = report_folder + '/' + 'dds-pareto-real-cleaned.csv'
-    f_dds_pareto_sketch = report_folder + '/' + 'dds-pareto-sketch-cleaned.csv'
-    real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98', 'pct_99',
-                  'win_size', 'slack_events']
-    sketch_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
-                    'pct_99', 'query_time']
-    dds_pareto_real = pd.read_csv(f_dds_pareto_real, skiprows=1, header=None, names=real_names)
-    dds_pareto_sketch = pd.read_csv(f_dds_pareto_sketch, header=None, names=sketch_names)
-    print(dds_pareto_real)
-    print(dds_pareto_sketch)
-    dds_pareto_accuracy, mid_q_accuracy, upper_q_accuracy = calc_accuracy(dds_pareto_sketch, dds_pareto_real)
-    print(dds_pareto_accuracy)
+    datasets = ['pareto', 'uniform', 'nyt', 'power']
+    ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
+    for dataset in datasets:
+        algos = ['moments', 'dds', 'kll']
+        real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
+                      'pct_99',
+                      'win_size', 'slack_events']
+        sketch_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
+                        'pct_99', 'query_time']
+        sketch_names_kll = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
+                            'pct_99', 'query_time', 'num_retained']
+        mid_q_dict = {}
+        upper_q_dict = {}
+        for algo in algos:
+            f_algo_ds_real = report_folder + '/' + algo + '-' + dataset + '-real-cleaned.csv'
+            f_algo_ds_sketch = report_folder + '/' + algo + '-' + dataset + '-sketch-cleaned.csv'
+            algo_pareto_real = pd.read_csv(f_algo_ds_real, skiprows=1, header=None, names=real_names)
+            if algo == 'kll':
+                algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll)
+            else:
+                algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names)
+            if algo == 'moments':
+                algo_ds_sketch['window_id'] = algo_ds_sketch['window_id'] // 5
+
+            algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy = calc_accuracy(algo_ds_sketch, algo_pareto_real)
+            print(algo_ds_accuracy)
+            mid_q_dict[algo] = np.mean(mid_q_accuracy)
+            upper_q_dict[algo] = np.mean(upper_q_accuracy)
+
+        print(mid_q_dict)
+        print(upper_q_dict)
+        plot_file_path = report_folder + '/plots/' + dataset + '.png'
+        produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantile Range', 'Avg. Relative Error',
+                         plot_file_path)
+        input("Press Enter to continue...")
 
     # if graph_from_outputs:
     #     print('Metrics folder:' + report_folder)
