@@ -4,25 +4,28 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.tuple.*;
+import org.apache.flink.api.java.tuple.Tuple14;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+
+import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
+
+import com.github.stanfordfuturedata.momentsketch.SimpleMomentSketch;
 import org.json.JSONObject;
-import com.github.stanfordfuturedata.momentsketch.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.ArrayList;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Double.parseDouble;
@@ -42,15 +45,13 @@ public class TaxiQuery implements Runnable {
     private final int numQueries;
     /* The window size */
     private final int windowSize;
-    private JSONObject js;
 
     protected static final Logger LOG = LoggerFactory.getLogger(TaxiQuery.class);
 
 
     public TaxiQuery(
-            ParameterTool setupParams, int numQueries, int windowSize) {
+        ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -60,8 +61,6 @@ public class TaxiQuery implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
         System.out.println("Running Taxi Query");
         LOG.info("Running Taxi Query");
@@ -81,73 +80,65 @@ public class TaxiQuery implements Runnable {
     private void addQuery(StreamExecutionEnvironment env) {
 
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
-                .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
+            .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
-                        // Different topics for different query queryInstances
-                        KAFKA_PREFIX_TOPIC,
-                        new SimpleStringSchema(),
-                        setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
-                .name("Source").setParallelism(1);
-                // Chain all operators before a watermark is emitted.
-                //.disableChaining();
+                    // Different topics for different query queryInstances
+                    KAFKA_PREFIX_TOPIC,
+                    new SimpleStringSchema(),
+                    setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
+            .name("Source").setParallelism(1);
+        // Chain all operators before a watermark is emitted.
+        //.disableChaining();
 
         messageStream
-                // Parse the JSON string from Kafka as an ad
-                .map(new DeserializeAdsFromkafka())
-                .name("DeserializeInput ")
-                .disableChaining()
-                .<Tuple7<String, String, String, String, String, String, Boolean>>project(16, 2, 3, 4, 5, 17, 19)
-                // 11 - fare_amount
-                // 2 - pickup_datetime
-                // 3 - dropoff_datetime
-                .name("project ")
-                //.keyBy(0)
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-                .aggregate(new WindowAdsAggregatorMSketch())
-                .name("DeserializeInput ")
-                .name("Window")
-                .writeAsText("results-nyt-moments.txt", FileSystem.WriteMode.OVERWRITE);
-                // sink function
-                //.addSink(new PrintCampaignAdClicks())
-                //.name("Sink(" + queryInstance + ")");
+            // Parse the JSON string from Kafka as an ad
+            .map(new DeserializeMessagesFromKafka())
+            .name("DeserializeInput ")
+            .disableChaining()
+            .<Tuple7<String, String, String, String, String, String, Boolean>>project(10, 2, 3, 4, 5, 11, 13)
+            // 10 - total_amount
+            // 2 - vendor_id
+            // 3 - pickup_datetime
+            // 4 - payment_type
+            // 5 - fare_amount
+            .name("project ")
+            .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+            .aggregate(new WindowAdsAggregatorMSketch())
+            .name("DeserializeInput ")
+            .name("Window")
+            .writeAsText("results-nyt-moments.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 
-    private class DeserializeAdsFromkafka implements
-            MapFunction<String,
-                        Tuple20<String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean>> {
+    private static class DeserializeMessagesFromKafka implements
+        MapFunction<String,
+            Tuple14<String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean>> {
 
         @Override
-        public Tuple20<String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean> map(String input) {
+        public Tuple14<String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean> map(
+            String input) {
             JSONObject obj = new JSONObject(input);
             Boolean fake = false;
-            if (obj.has("fake")){
+            if (obj.has("fake")) {
                 fake = true;
             }
-            return new Tuple20<>(
-                    obj.getString("medallion"), // 0
-                    obj.getString("hack_license"), // 1
-                    obj.getString("pickup_datetime"), // 2
-                    obj.getString("dropoff_datetime"), // 3
-                    obj.getString("trip_time_in_secs"), // 4
-                    obj.getString("trip_distance"), // 5
-                    obj.getString("pickup_longitude"), // 6
-                    obj.getString("pickup_latitude"), // 7
-                    obj.getString("dropoff_longitude"), // 8
-                    obj.getString("dropoff_latitude"), // 9
-                    obj.getString("payment_type"), // 10
-                    obj.getString("fare_amount"), // 11
-                    obj.getString("surcharge"), // 12
-                    obj.getString("mta_tax"), // 13
-                    obj.getString("tip_amount"), // 14
-                    obj.getString("tolls_amount"), // 15
-                    obj.getString("total_amount"), // 16
-                    obj.getString("event_time"), // 17
-                    String.valueOf(System.currentTimeMillis()), // 18 ingestion_time
-                    fake); // 19
+            return new Tuple14<>(
+                obj.getString("medallion"), // 0
+                obj.getString("hack_license"), // 1
+                obj.getString("vendor_id"), // 2
+                obj.getString("pickup_datetime"), // 3
+                obj.getString("payment_type"), // 4
+                obj.getString("fare_amount"), // 5
+                obj.getString("surcharge"), // 6
+                obj.getString("mta_tax"), // 7
+                obj.getString("tip_amount"), // 8
+                obj.getString("tolls_amount"), // 9
+                obj.getString("total_amount"), // 10
+                obj.getString("event_time"), // 11
+                String.valueOf(System.currentTimeMillis()), // 18 ingestion_time
+                fake); // 19
         }
     }
 
@@ -155,36 +146,37 @@ public class TaxiQuery implements Runnable {
         Preconditions.checkArgument(percentile > 0);
         Preconditions.checkArgument(percentile < 100);
         int index = (int) Math.ceil(percentile / 100.0 * sort_values.size());
-        return sort_values.get(index-1);
+        return sort_values.get(index - 1);
     }
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
-            Tuple7<String, String, String, String, String, String, Boolean>,
-            Tuple2<Long, SimpleMomentSketch>,
-            Tuple2<Long, ArrayList<Double>>> {
+        Tuple7<String, String, String, String, String, String, Boolean>,
+        Tuple2<Long, SimpleMomentSketch>,
+        Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
-            SimpleMomentSketch sms =  new SimpleMomentSketch(18);
+            SimpleMomentSketch sms = new SimpleMomentSketch(18);
             sms.setCompressed(true);
             Tuple2<Long, SimpleMomentSketch> ms_tuple = new Tuple2<>(0L, sms);
             return ms_tuple;
         }
 
         @Override
-        public Tuple2<Long, SimpleMomentSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
-                                              Tuple2<Long, SimpleMomentSketch> accumulator) {
+        public Tuple2<Long, SimpleMomentSketch> add(
+            Tuple7<String, String, String, String, String, String, Boolean> value,
+            Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(parseDouble(value.f0));
             int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f5)/WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f5) / WINDOW_SIZE;
             return accumulator;
         }
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> merge(Tuple2<Long, SimpleMomentSketch> acc0,
-                                                Tuple2<Long, SimpleMomentSketch> acc1) {
+                                                      Tuple2<Long, SimpleMomentSketch> acc1) {
             acc0.f1.merge(acc1.f1);
             return acc0;
         }
@@ -198,12 +190,15 @@ public class TaxiQuery implements Runnable {
 
             double[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(double d : results) ret_tuple.f1.add(round(d, 4));
+            for (double d : results) {
+                ret_tuple.f1.add(round(d, 4));
+            }
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
 
-            System.out.println("Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
+            System.out.println(
+                "Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
             System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
             LOG.info("Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + "microseconds");
             LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
@@ -212,7 +207,9 @@ public class TaxiQuery implements Runnable {
         }
 
         private double round(double value, int places) {
-            if (places < 0) throw new IllegalArgumentException();
+            if (places < 0) {
+                throw new IllegalArgumentException();
+            }
 
             BigDecimal bd = new BigDecimal(Double.toString(value));
             bd = bd.setScale(places, RoundingMode.HALF_UP);

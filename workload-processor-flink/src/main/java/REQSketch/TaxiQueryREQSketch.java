@@ -4,8 +4,8 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple14;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple20;
 import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
@@ -49,7 +49,6 @@ public class TaxiQueryREQSketch implements Runnable {
 
     public TaxiQueryREQSketch(ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -75,10 +74,8 @@ public class TaxiQueryREQSketch implements Runnable {
     }
 
     private void addQuery(StreamExecutionEnvironment env) {
-
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
             .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
@@ -92,50 +89,43 @@ public class TaxiQueryREQSketch implements Runnable {
         messageStream
             // Parse the JSON string from Kafka as an ad
             .map(new DeserializeMessageFromKafka()).name("DeserializeInput ").disableChaining()
-            .<Tuple7<String, String, String, String, String, String, Boolean>>project(16, 2, 3, 4, 5, 17, 19)
-            // 11 - fare_amount
-            // 2 - pickup_datetime
-            // 3 - dropoff_datetime
+            .<Tuple7<String, String, String, String, String, String, Boolean>>project(10, 2, 3, 4, 5, 11, 13)
+            // 10 - total_amount
+            // 2 - vendor_id
+            // 3 - pickup_datetime
+            // 4 - payment_type
+            // 5 - fare_amount
             .name("project ")
-            //.keyBy(0)
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
             .aggregate(new WindowAdsAggregatorMSketch()).name("DeserializeInput ").name("Window")
             .writeAsText("results-nyt-req.txt", FileSystem.WriteMode.OVERWRITE);
-        // sink function
-        //.addSink(new PrintCampaignAdClicks())
-        //.name("Sink(" + queryInstance + ")");
     }
 
 
     private static class DeserializeMessageFromKafka implements
-        MapFunction<String, Tuple20<String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean>> {
+        MapFunction<String, Tuple14<String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean>> {
 
         @Override
-        public Tuple20<String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean> map(
+        public Tuple14<String, String, String, String, String, String, String, String, String, String, String, String, String, Boolean> map(
             String input) {
             JSONObject obj = new JSONObject(input);
             Boolean fake = false;
             if (obj.has("fake")) {
                 fake = true;
             }
-            return new Tuple20<>(obj.getString("medallion"), // 0
+            return new Tuple14<>(
+                obj.getString("medallion"), // 0
                 obj.getString("hack_license"), // 1
-                obj.getString("pickup_datetime"), // 2
-                obj.getString("dropoff_datetime"), // 3
-                obj.getString("trip_time_in_secs"), // 4
-                obj.getString("trip_distance"), // 5
-                obj.getString("pickup_longitude"), // 6
-                obj.getString("pickup_latitude"), // 7
-                obj.getString("dropoff_longitude"), // 8
-                obj.getString("dropoff_latitude"), // 9
-                obj.getString("payment_type"), // 10
-                obj.getString("fare_amount"), // 11
-                obj.getString("surcharge"), // 12
-                obj.getString("mta_tax"), // 13
-                obj.getString("tip_amount"), // 14
-                obj.getString("tolls_amount"), // 15
-                obj.getString("total_amount"), // 16
-                obj.getString("event_time"), // 17
+                obj.getString("vendor_id"), // 2
+                obj.getString("pickup_datetime"), // 3
+                obj.getString("payment_type"), // 4
+                obj.getString("fare_amount"), // 5
+                obj.getString("surcharge"), // 6
+                obj.getString("mta_tax"), // 7
+                obj.getString("tip_amount"), // 8
+                obj.getString("tolls_amount"), // 9
+                obj.getString("total_amount"), // 10
+                obj.getString("event_time"), // 11
                 String.valueOf(System.currentTimeMillis()), // 18 ingestion_time
                 fake); // 19
         }

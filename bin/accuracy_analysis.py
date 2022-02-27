@@ -89,7 +89,7 @@ def calc_accuracy(approx_df, real_df):
 
 if __name__ == '__main__':
     report_folder = sys.argv[1]
-    datasets = ['uniform', 'power']
+    datasets = ['pareto', 'uniform', 'power']
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
     for dataset in datasets:
         algos = ['moments', 'dds', 'kll']
