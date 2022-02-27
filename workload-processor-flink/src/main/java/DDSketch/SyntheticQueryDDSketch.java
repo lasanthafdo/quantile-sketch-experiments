@@ -150,7 +150,7 @@ public class SyntheticQueryDDSketch implements Runnable {
 
         @Override
         public Tuple2<Long, DDSketch> createAccumulator() {
-            double relativeAccuracy = 0.005;
+            double relativeAccuracy = 0.01;
             DDSketch sketch = new DDSketch(relativeAccuracy);
             return new Tuple2<Long, DDSketch>(0L, sketch);
         }

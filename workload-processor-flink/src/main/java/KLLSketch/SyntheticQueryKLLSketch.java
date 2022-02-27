@@ -148,7 +148,7 @@ public class SyntheticQueryKLLSketch implements Runnable {
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
-            return new Tuple2<>(0L, new KllFloatsSketch(600));
+            return new Tuple2<>(0L, new KllFloatsSketch(350));
         }
 
         @Override

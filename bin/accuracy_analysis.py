@@ -37,13 +37,17 @@ def produce_cdf_plot(data, x_label, y_label, plot_title, filename):
 
 
 def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, plot_filename):
-    print(mid_q_dict)
-    print(upper_q_dict)
     plot_data = [["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['kll']],
                  ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['kll']]]
-    print(plot_data)
     df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL"])
-    df.plot(x="Quantile range", y=["Moments", "DDS", "KLL"], kind="bar")
+    print(df)
+    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "KLL"], kind="bar")
+    for p in ax.patches:
+        ax.annotate(str(p.get_height()), (p.get_x() + 0.05, 0.01), rotation=90)
+    # y = pd.concat([pd.concat([df.iloc[:, 1], df.iloc[:, 2]]), df.iloc[:, 3]])
+    # print(y)
+    # for i, v in enumerate(y):
+    #     plt.text(v + 3, i + .25, str(v), color='blue', fontweight='bold')
 
     plt.ylim(0, 0.06)
     plt.xticks(rotation=0)
@@ -89,7 +93,7 @@ def calc_accuracy(approx_df, real_df):
 
 if __name__ == '__main__':
     report_folder = sys.argv[1]
-    datasets = ['pareto', 'uniform', 'power']
+    datasets = ['pareto', 'uniform', 'power', 'nyt']
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
     for dataset in datasets:
         algos = ['moments', 'dds', 'kll']
