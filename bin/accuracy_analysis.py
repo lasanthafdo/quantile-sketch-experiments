@@ -2,44 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import glob
 import sys
-import re
-
-
-def produce_graph(graph_df, x_axis, y_axis, x_label, y_label, plot_title, filename):
-    fig, ax = plt.subplots()
-
-    for key, grp in graph_df.groupby(['id']):
-        ax = grp.plot(ax=ax, kind='line', x=x_axis, y=y_axis, label=key, marker='.')
-
-    plt.title(plot_title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend(loc='best')
-    plt.tight_layout()
-    plt.savefig(filename)
-    # plt.show()
-    plt.clf()
-
-
-def produce_univariate_plot(x, y, x_label, y_label, y_top, plot_title, filename):
-    plt.plot(x, y, marker='.')
-    y_avg = [np.mean(y)] * len(y)
-    plt.plot(x, y_avg, ls="--")
-    plt.title(plot_title)
-    if y_top > 0:
-        plt.ylim(0, y_top)
-    else:
-        y_top = np.max(y) * 1.2
-        plt.ylim(0, y_top)
-    plt.xlim(right=300)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.tight_layout()
-    plt.savefig(filename)
-    # plt.show()
-    plt.clf()
 
 
 def produce_cdf_plot(data, x_label, y_label, plot_title, filename):
@@ -82,20 +45,7 @@ def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, plo
     df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL"])
     df.plot(x="Quantile range", y=["Moments", "DDS", "KLL"], kind="bar")
 
-    # df = pd.DataFrame(data, columns=["Name", "Age", "Height(cm)", "Weight(kg)"])
-    # df.plot(x="Name", y=["Age", "Height(cm)", "Weight(kg)"], kind="bar", figsize=(9, 8))
-    # plt.show()
-    # tput_tbs_dict = collections.OrderedDict(sorted(mid_q_dict.items()))
-    # tput_sbs_dict = collections.OrderedDict(sorted(upper_q_dict.items()))
-    # input_rates_tbs = tput_tbs_dict.keys()
-    # input_rates_sbs = tput_sbs_dict.keys()
-    # tp_tbs = tput_tbs_dict.values()
-    # tp_sbs = tput_sbs_dict.values()
-    # X_axis = np.arange(len(input_rates_tbs))
-    # plt.bar(X_axis - 0.2, tp_tbs, 0.4, label='GS')
-    # plt.bar(X_axis + 0.2, tp_sbs, 0.4, label='SBS')
-
-    # plt.xticks(X_axis, input_rates_tbs)
+    plt.ylim(0, 0.06)
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
@@ -139,7 +89,7 @@ def calc_accuracy(approx_df, real_df):
 
 if __name__ == '__main__':
     report_folder = sys.argv[1]
-    datasets = ['pareto', 'uniform', 'nyt', 'power']
+    datasets = ['uniform', 'power']
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
     for dataset in datasets:
         algos = ['moments', 'dds', 'kll']

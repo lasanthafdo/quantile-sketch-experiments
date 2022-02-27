@@ -154,7 +154,7 @@ public class SyntheticQueryKLLSketch implements Runnable {
         @Override
         public Tuple2<Long, KllFloatsSketch> add(Tuple5<String, String, String, String, String> value,
                                               Tuple2<Long, KllFloatsSketch> accumulator) {
-            accumulator.f1.update(Float.parseFloat(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
+            accumulator.f1.update(Float.parseFloat(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
             int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
             return accumulator;
