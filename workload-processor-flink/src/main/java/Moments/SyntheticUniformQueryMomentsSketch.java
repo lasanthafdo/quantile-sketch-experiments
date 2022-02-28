@@ -1,20 +1,22 @@
 package Moments;
 
-import com.github.stanfordfuturedata.momentsketch.MomentSolver;
-import com.github.stanfordfuturedata.momentsketch.MomentStruct;
-import com.github.stanfordfuturedata.momentsketch.SimpleMomentSketch;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+
+import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
+
+import com.github.stanfordfuturedata.momentsketch.SimpleMomentSketch;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +28,7 @@ import java.util.ArrayList;
 
 import static java.lang.Double.parseDouble;
 
-
-import org.apache.flink.api.java.tuple.*;
-
-import java.util.concurrent.ThreadLocalRandom;
-
-public class SyntheticQuery implements Runnable {
+public class SyntheticUniformQueryMomentsSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
     private final String KAFKA_PREFIX_TOPIC = "syn-events";
@@ -40,21 +37,17 @@ public class SyntheticQuery implements Runnable {
     // arguments from different sources.
     // Only single value parameter could be supported in args.
     private final ParameterTool setupParams;
-    /* The scheduler policy */
-//    private final StreamTaskSchedulerPolicy schedulerPolicy;
     /* The num of queries */
     private final int numQueries;
     /* The window size */
     private final int windowSize;
-    private JSONObject js;
 
-    protected static final Logger LOG = LoggerFactory.getLogger(SyntheticQuery.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(SyntheticUniformQueryMomentsSketch.class);
 
 
-    public SyntheticQuery(
-            ParameterTool setupParams, int numQueries, int windowSize) {
+    public SyntheticUniformQueryMomentsSketch(
+        ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -64,8 +57,6 @@ public class SyntheticQuery implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
         System.out.println("Running Synthetic Moments Query");
         LOG.info("Running Synthetic Moments Query");
@@ -81,53 +72,48 @@ public class SyntheticQuery implements Runnable {
         }
     }
 
-    private void addQuery(StreamExecutionEnvironment env){
+    private void addQuery(StreamExecutionEnvironment env) {
 
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
-                .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
+            .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
-                        // Different topics for different query queryInstances
-                        KAFKA_PREFIX_TOPIC,
-                        new SimpleStringSchema(),
-                        setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
-                .name("Source").setParallelism(1);
+                    // Different topics for different query queryInstances
+                    KAFKA_PREFIX_TOPIC,
+                    new SimpleStringSchema(),
+                    setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
+            .name("Source").setParallelism(1);
         // Chain all operators before a watermark is emitted.
         //.disableChaining();
 
         messageStream
-                // Parse the JSON string from Kafka as an ad
-                .map(new SyntheticQuery.DeserializeFromkafka())
-                .name("DeserializeInput ")
-                .disableChaining()
-                .name("project ")
-                //.keyBy(0)
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-                .aggregate(new SyntheticQuery.WindowAdsAggregatorMSketch())
-                .name("DeserializeInput ")
-                .name("Window")
-                .writeAsText("results-syn-moments.txt", FileSystem.WriteMode.OVERWRITE);
-        // sink function
-        //.addSink(new PrintCampaignAdClicks())
-        //.name("Sink(" + queryInstance + ")");
+            // Parse the JSON string from Kafka as an ad
+            .map(new SyntheticUniformQueryMomentsSketch.DeserializeFromkafka())
+            .name("DeserializeInput ")
+            .disableChaining()
+            .name("project ")
+            .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+            .aggregate(new SyntheticUniformQueryMomentsSketch.WindowAdsAggregatorMSketch())
+            .name("DeserializeInput ")
+            .name("Window")
+            .writeAsText("results-synu-moments.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 
     private class DeserializeFromkafka implements
-            MapFunction<String,
-                    Tuple5<String, String, String, String, String>> {
+        MapFunction<String,
+            Tuple5<String, String, String, String, String>> {
 
         @Override
         public Tuple5<String, String, String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             return new Tuple5<>(
-                    obj.getString("pareto_value"), // 0
-                    obj.getString("uniform_value"), // 1
-                    obj.getString("normal_value"), // 2
-                    obj.getString("event_time"), // 3
-                    String.valueOf(System.currentTimeMillis()) // 4 ingestion_time
+                obj.getString("pareto_value"), // 0
+                obj.getString("uniform_value"), // 1
+                obj.getString("normal_value"), // 2
+                obj.getString("event_time"), // 3
+                String.valueOf(System.currentTimeMillis()) // 4 ingestion_time
             );
         }
     }
@@ -136,13 +122,13 @@ public class SyntheticQuery implements Runnable {
         Preconditions.checkArgument(percentile > 0);
         Preconditions.checkArgument(percentile < 100);
         int index = (int) Math.ceil(percentile / 100.0 * sort_values.size());
-        return sort_values.get(index-1);
+        return sort_values.get(index - 1);
     }
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
-            Tuple5<String, String, String, String, String>,
-            Tuple2<Long, SimpleMomentSketch>,
-            Tuple2<Long, ArrayList<Double>>> {
+        Tuple5<String, String, String, String, String>,
+        Tuple2<Long, SimpleMomentSketch>,
+        Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {0.01, 0.05, 0.25, 0.5, 0.75, 0.90, 0.95, 0.98, 0.99};
 
@@ -156,24 +142,16 @@ public class SyntheticQuery implements Runnable {
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> add(Tuple5<String, String, String, String, String> value,
-                                              Tuple2<Long, SimpleMomentSketch> accumulator) {
-            accumulator.f1.add(parseDouble(value.f0)); // f0 is pareto, f1 is uniform, f2 is normal
-            /*
-            if (!(parseDouble(value.f1) > 2000)) {
-                accumulator.f1.add(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
-            }
-            if (ThreadLocalRandom.current().nextInt(0,100) >= 95){
-                System.out.println("Adding-value " + Double.toString(parseDouble(value.f1)));
-            }
-             */
+                                                    Tuple2<Long, SimpleMomentSketch> accumulator) {
+            accumulator.f1.add(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
             int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f3)/WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f3) / WINDOW_SIZE;
             return accumulator;
         }
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> merge(Tuple2<Long, SimpleMomentSketch> acc0,
-                                                Tuple2<Long, SimpleMomentSketch> acc1) {
+                                                      Tuple2<Long, SimpleMomentSketch> acc1) {
             acc0.f1.merge(acc1.f1);
             return acc0;
         }
@@ -190,7 +168,9 @@ public class SyntheticQuery implements Runnable {
 
             double[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(double d : results) ret_tuple.f1.add(round(d, 4));
+            for (double d : results) {
+                ret_tuple.f1.add(round(d, 4));
+            }
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
@@ -201,7 +181,9 @@ public class SyntheticQuery implements Runnable {
         }
 
         private double round(double value, int places) {
-            if (places < 0) throw new IllegalArgumentException();
+            if (places < 0) {
+                throw new IllegalArgumentException();
+            }
 
             BigDecimal bd = new BigDecimal(Double.toString(value));
             bd = bd.setScale(places, RoundingMode.HALF_UP);

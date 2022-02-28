@@ -95,6 +95,8 @@ if __name__ == '__main__':
     report_folder = sys.argv[1]
     datasets = ['pareto', 'uniform', 'power', 'nyt']
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
+    num_windows = 5
+
     for dataset in datasets:
         algos = ['moments', 'dds', 'kll']
         real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
@@ -110,12 +112,14 @@ if __name__ == '__main__':
             f_algo_ds_real = report_folder + '/' + algo + '-' + dataset + '-real-cleaned.csv'
             f_algo_ds_sketch = report_folder + '/' + algo + '-' + dataset + '-sketch-cleaned.csv'
             algo_pareto_real = pd.read_csv(f_algo_ds_real, header=None, names=real_names)
+
             if algo == 'kll':
                 algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll)
             else:
                 algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names)
-            # if algo == 'moments':
-            #     algo_ds_sketch['window_id'] = algo_ds_sketch['window_id'] // 5
+
+            if len(algo_ds_sketch.index) > num_windows:
+                algo_ds_sketch.drop(algo_ds_sketch.tail(1).index, inplace=True)
 
             algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy = calc_accuracy(algo_ds_sketch, algo_pareto_real)
             print(algo_ds_accuracy)
@@ -128,77 +132,3 @@ if __name__ == '__main__':
         produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantile Range', 'Avg. Relative Error',
                          plot_file_path)
         input("Press Enter to continue...")
-
-    # if graph_from_outputs:
-    #     print('Metrics folder:' + report_folder)
-    #     print('Reading from files ' + str(glob.glob(report_folder + app_stat_file_name + '*.csv')))
-    #     app_stat_raw = pd.concat(
-    #         [pd.read_csv(f, names=['timestamp', 'end_timestamp', 'stimulus', 'value', 'watermark', 'latency',
-    #                                'throughput'],
-    #                      dtype={'timestamp': 'int64', 'end_timestamp': 'int64', 'key': 'int64', 'value': 'str',
-    #                             'watermark': 'str', 'latency': 'int64', 'throughput': 'str'}) for f in
-    #          glob.glob(report_folder + app_stat_file_name + '*.csv')], ignore_index=True)
-    #     app_stat_raw.loc[:, ['time_sec_all']] = (app_stat_raw.end_timestamp - min(app_stat_raw.end_timestamp)) / 1000
-    #     app_stats = app_stat_raw[(app_stat_raw['time_sec_all'] >= 90) & (app_stat_raw['time_sec_all'] < 390)]
-    #     app_stats.loc[:, ['time_sec']] = (app_stats.end_timestamp - min(app_stats.end_timestamp)) / 1000
-    #     app_stats.loc[:, ['time_group']] = app_stats.time_sec // 10
-    #     print("Application generated statistics")
-    #     print(app_stats['latency'].describe().apply("{0:.5f}".format))
-    #     print(app_stats)
-    #
-    #     anomalous_stats = app_stats[app_stats['latency'] < 0]
-    #     print("Anomalous application generated statistics")
-    #     print(anomalous_stats)
-    #
-    #     dynamic_graph_title_portion = sched_type_based_title + ', '
-    #     wm_gen_rate = ''
-    #     sched_period = ''
-    #     if sched_type == 'WMBS':
-    #         wm_gen_rate = re.match(r"^.+(WM\d+)", app_stat_file_name).group(1)
-    #         dynamic_graph_title_portion += wm_gen_rate
-    #     else:
-    #         sched_period = re.match(r"^.+(SP\d+)", app_stat_file_name).group(1)
-    #         dynamic_graph_title_portion += sched_period
-    #
-    #     dynamic_filename_portion = re.sub(",", "", re.sub(r"[\s-]+", "_", dynamic_graph_title_portion).lower())
-    #     throughput_graph_title = 'Throughput (' + dynamic_graph_title_portion + ') - ' + n_threads + ' threads'
-    #     latency_graph_title = 'Latency (' + dynamic_graph_title_portion + ') - ' + n_threads + ' threads'
-    #     cdf_graph_title = 'CDF/PMF (' + dynamic_graph_title_portion + ') - ' + n_threads + ' threads'
-    #
-    #     produce_cdf_plot(app_stats.latency, 'Latency (ms)', 'Probability',
-    #                      cdf_graph_title, 'cdf_latency_' + dynamic_filename_portion + '.png')
-    #
-    #     agg_stats = app_stats.groupby('time_group').agg(
-    #         tot_count=('timestamp', 'count'),
-    #         avg_latency=('latency', 'mean'),
-    #         last_timestamp=('timestamp', 'last')
-    #     )
-    #     agg_stats = agg_stats.reset_index()
-    #     agg_stats['time_sec'] = agg_stats['time_group'] * 10
-    #     agg_stats['tp'] = agg_stats.tot_count / 10
-    #     if sched_type == 'WMBS':
-    #         agg_stats['id'] = wm_gen_rate
-    #     else:
-    #         agg_stats['id'] = sched_period
-    #     print("Aggregated statistics")
-    #     print(agg_stats)
-    #
-    #     produce_univariate_plot(agg_stats.time_sec, agg_stats.tp,
-    #                             'Time (sec)', 'Throughput (tuples/sec)',
-    #                             0, throughput_graph_title, 'throughput_' + dynamic_filename_portion + '.png')
-    #     produce_univariate_plot(agg_stats.time_sec, agg_stats.avg_latency,
-    #                             'Time (sec)', 'Avg. Latency (ms)',
-    #                             0, latency_graph_title, 'latency_' + dynamic_filename_portion + '.png')
-    #     agg_stats.to_csv('agg/' + app_stat_file_name + 'aggregated.csv', index=False)
-    # else:
-    #     agg_stat_all = pd.concat([pd.read_csv(f) for f in glob.glob(report_folder + app_stat_file_name + '*.csv')],
-    #                              ignore_index=True)
-    #     print(agg_stat_all)
-    #     agg_dynamic_filename_portion = re.sub(",", "", re.sub(r"[\s-]+", "_", sched_type).lower())
-    #     produce_graph(agg_stat_all, 'time_sec', 'avg_latency', 'Time (sec)', 'Avg. Latency (ms)',
-    #                   'Avg. Latency (' + sched_type + ') - ' + n_threads + ' workers',
-    #                   'latency_' + agg_dynamic_filename_portion + '.png')
-    #
-    #     produce_graph(agg_stat_all, 'time_sec', 'tp', 'Time (sec)', 'Avg. Throughput (per sec)',
-    #                   'Avg. Throughput (' + sched_type + ') - ' + n_threads + ' workers',
-    #                   'throughput_' + agg_dynamic_filename_portion + '.png')

@@ -1,8 +1,8 @@
 import LRB.LRBWorkloadGenerator;
+import NYT.NYTWorkloadGenerator;
 import Power.PowerWorkloadGenerator;
 import Synthetic.SyntheticWorkloadGenerator;
 import YSB.YSBWorkloadGenerator;
-import NYT.NYTWorkloadGenerator;
 import YSB.YSBWorkloadSetup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import static LRB.LRBConstants.LRB_KAFKA_TOPIC_PREFIX;
-import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
 import static NYT.NYTConstants.NYT_KAFKA_TOPIC_PREFIX;
 import static Power.PowerConstants.POWER_KAFKA_TOPIC_PREFIX;
+import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
 
 public class WorkloadGeneratorEntryPoint {
 
@@ -35,10 +35,10 @@ public class WorkloadGeneratorEntryPoint {
         }
 
         /* WorkloadGenerator require both files. Exit if they were not provided */
-        if (setupFile == null ) {
+        if (setupFile == null) {
             System.err.println("Missing setup file (-s)");
             System.exit(-1);
-        }else if(expFile == null){
+        } else if (expFile == null) {
             System.err.println("Missing experiment file (-e)");
             System.exit(-1);
         }
@@ -77,11 +77,12 @@ public class WorkloadGeneratorEntryPoint {
             }
         } else if (workloadType.equalsIgnoreCase("lrb")) {
             runLRBWorkloadGenerator(setupMap, benchMap);
-        }else if (workloadType.equalsIgnoreCase("nyt")) {
+        } else if (workloadType.equalsIgnoreCase("nyt")) {
             runNYTWorkloadGenerator(setupMap, benchMap);
-        }else if (workloadType.equalsIgnoreCase("syn")) {
+        } else if (workloadType.equalsIgnoreCase("syn") || workloadType.equalsIgnoreCase("synp") ||
+            workloadType.equalsIgnoreCase("synu")) {
             runSyntheticWorkloadGenerator(setupMap, benchMap);
-        }else if (workloadType.equalsIgnoreCase("power")) {
+        } else if (workloadType.equalsIgnoreCase("power")) {
             runPowerWorkloadGenerator(setupMap, benchMap);
         }
     }
@@ -97,9 +98,9 @@ public class WorkloadGeneratorEntryPoint {
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
 
         Producer<byte[], byte[]> kafkaProducer =
-                new KafkaProducer<>(props,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
 
         /* Create Redis instance */
@@ -113,9 +114,9 @@ public class WorkloadGeneratorEntryPoint {
         for (int i = 1; i <= numOfInstances; i++) {
             try {
                 new Thread(
-                        new YSBWorkloadGenerator(
-                                kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput))
-                        .start();
+                    new YSBWorkloadGenerator(
+                        kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput))
+                    .start();
                 Thread.sleep(2000);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -129,9 +130,9 @@ public class WorkloadGeneratorEntryPoint {
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
 
         Producer<byte[], byte[]> kafkaProducer =
-                new KafkaProducer<>(props,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
 
         /* Get Benchmark properties */
@@ -141,7 +142,7 @@ public class WorkloadGeneratorEntryPoint {
         System.out.println(dataFile);
 
         new Thread(new NYTWorkloadGenerator(kafkaProducer, NYT_KAFKA_TOPIC_PREFIX, dataFile, throughput))
-                .start();
+            .start();
     }
 
     private static void runPowerWorkloadGenerator(Map setupMap, Map benchMap) {
@@ -150,19 +151,20 @@ public class WorkloadGeneratorEntryPoint {
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
 
         Producer<byte[], byte[]> kafkaProducer =
-                new KafkaProducer<>(props,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
         String currentUsersHomeDir = System.getProperty("user.home");
-        String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator + "household_power_consumption.txt";
+        String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator +
+            "household_power_consumption.txt";
         System.out.println(dataFile);
 
         new Thread(new PowerWorkloadGenerator(kafkaProducer, POWER_KAFKA_TOPIC_PREFIX, dataFile, throughput))
-                .start();
+            .start();
     }
 
     private static void runSyntheticWorkloadGenerator(Map setupMap, Map benchMap) {
@@ -171,9 +173,9 @@ public class WorkloadGeneratorEntryPoint {
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
 
         Producer<byte[], byte[]> kafkaProducer =
-                new KafkaProducer<>(props,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
 
         /* Get Benchmark properties */
@@ -182,7 +184,7 @@ public class WorkloadGeneratorEntryPoint {
         String dataFile = "";
 
         new Thread(new SyntheticWorkloadGenerator(kafkaProducer, "syn-events", throughput))
-                .start();
+            .start();
     }
 
     private static void runLRBWorkloadGenerator(Map setupMap, Map benchMap) {
@@ -191,9 +193,9 @@ public class WorkloadGeneratorEntryPoint {
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
 
         Producer<byte[], byte[]> kafkaProducer =
-                new KafkaProducer<>(props,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
         /* Create Redis instance */
         String jedisServerName = (String) setupMap.get("redis.host");
@@ -206,9 +208,9 @@ public class WorkloadGeneratorEntryPoint {
 
         try {
             new Thread(
-                    new LRBWorkloadGenerator(
-                            kafkaProducer, LRB_KAFKA_TOPIC_PREFIX + "-" + 1, "car.dat", throughput))
-                    .start();
+                new LRBWorkloadGenerator(
+                    kafkaProducer, LRB_KAFKA_TOPIC_PREFIX + "-" + 1, "car.dat", throughput))
+                .start();
             Thread.sleep(2000);
         } catch (Exception e) {
             e.printStackTrace();

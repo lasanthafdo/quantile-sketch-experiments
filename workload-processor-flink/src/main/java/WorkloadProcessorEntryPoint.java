@@ -1,16 +1,19 @@
+import org.apache.flink.api.java.utils.ParameterTool;
+
 import DDSketch.PowerQueryDDSketch;
-import DDSketch.SyntheticQueryDDSketch;
+import DDSketch.SyntheticParetoQueryDDSketch;
+import DDSketch.SyntheticUniformQueryDDSketch;
 import DDSketch.TaxiQueryDDSketch;
 import KLLSketch.PowerQueryKLLSketch;
-import KLLSketch.SyntheticQueryKLLSketch;
+import KLLSketch.SyntheticParetoQueryKLLSketch;
+import KLLSketch.SyntheticUniformQueryKLLSketch;
 import KLLSketch.TaxiQueryKLLSketch;
 import LRB.LinearRoadQuery;
 import Moments.PowerQueryMomentsSketch;
-import Moments.SyntheticQuery;
-import YSB.AdvertisingQuery;
+import Moments.SyntheticParetoQueryMomentsSketch;
+import Moments.SyntheticUniformQueryMomentsSketch;
 import Moments.TaxiQuery;
-import org.apache.flink.api.java.utils.ParameterTool;
-//import org.apache.flink.streaming.runtime.tasks.scheduler.StreamTaskSchedulerPolicy;
+import YSB.AdvertisingQuery;
 
 import java.util.Map;
 
@@ -32,13 +35,15 @@ public class WorkloadProcessorEntryPoint {
             createYSBInstances(setupParams, experimentMap);
         } else if (workloadType.equalsIgnoreCase("lrb")) {
             createLRBInstances(setupParams, experimentMap);
-        }else if (workloadType.equalsIgnoreCase("nyt")) {
+        } else if (workloadType.equalsIgnoreCase("nyt")) {
             createNYTInstances(setupParams, experimentMap);
-        }else if (workloadType.equalsIgnoreCase("syn")) {
-            createSYNInstances(setupParams, experimentMap);
-        }else if (workloadType.equalsIgnoreCase("power")) {
+        } else if (workloadType.equalsIgnoreCase("synp")) {
+            createSYNPInstances(setupParams, experimentMap);
+        } else if (workloadType.equalsIgnoreCase("synu")) {
+            createSYNUInstances(setupParams, experimentMap);
+        } else if (workloadType.equalsIgnoreCase("power")) {
             createPowerInstances(setupParams, experimentMap);
-        }else{
+        } else {
             System.out.println("no matching workload type found");
         }
     }
@@ -85,13 +90,13 @@ public class WorkloadProcessorEntryPoint {
 
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
-            if(algorithm.equals("moments")){
+            if (algorithm.equals("moments")) {
                 TaxiQuery taxiQuery = new TaxiQuery(setupParams, numQueries, windowSize);
                 taxiQuery.run();
-            }else if (algorithm.equals("ddsketch")){
+            } else if (algorithm.equals("ddsketch")) {
                 TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
                 taxiQueryDDSketch.run();
-            }else if (algorithm.equals("kllsketch")) {
+            } else if (algorithm.equals("kllsketch")) {
                 TaxiQueryKLLSketch taxiQueryDDSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
                 taxiQueryDDSketch.run();
             }
@@ -110,13 +115,13 @@ public class WorkloadProcessorEntryPoint {
 
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
-            if(algorithm.equals("moments")){
+            if (algorithm.equals("moments")) {
                 PowerQueryMomentsSketch powerQuery = new PowerQueryMomentsSketch(setupParams, numQueries, windowSize);
                 powerQuery.run();
-            }else if (algorithm.equals("ddsketch")){
+            } else if (algorithm.equals("ddsketch")) {
                 PowerQueryDDSketch powerQuery = new PowerQueryDDSketch(setupParams, numQueries, windowSize);
                 powerQuery.run();
-            }else if (algorithm.equals("kllsketch")) {
+            } else if (algorithm.equals("kllsketch")) {
                 PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
                 powerQuery.run();
             }
@@ -125,7 +130,7 @@ public class WorkloadProcessorEntryPoint {
         }
     }
 
-    private static void createSYNInstances(ParameterTool setupParams, Map experimentMap) {
+    private static void createSYNPInstances(ParameterTool setupParams, Map experimentMap) {
         try {
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
@@ -136,16 +141,48 @@ public class WorkloadProcessorEntryPoint {
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
             // Run YSB query
-            if (algorithm.equals("moments")){
-                SyntheticQuery synQuery = new SyntheticQuery(setupParams, numQueries, windowSize);
+            if (algorithm.equals("moments")) {
+                SyntheticParetoQueryMomentsSketch
+                    synQuery = new SyntheticParetoQueryMomentsSketch(setupParams, numQueries, windowSize);
                 synQuery.run();
-            }else if (algorithm.equals("ddsketch")){
-                SyntheticQueryDDSketch synQuery = new SyntheticQueryDDSketch(setupParams, numQueries, windowSize);
+            } else if (algorithm.equals("ddsketch")) {
+                SyntheticParetoQueryDDSketch
+                    synQuery = new SyntheticParetoQueryDDSketch(setupParams, numQueries, windowSize);
                 synQuery.run();
-            }else if (algorithm.equals("kllsketch")){
-                SyntheticQueryKLLSketch synQuery = new SyntheticQueryKLLSketch(setupParams, numQueries, windowSize);
+            } else if (algorithm.equals("kllsketch")) {
+                SyntheticParetoQueryKLLSketch
+                    synQuery = new SyntheticParetoQueryKLLSketch(setupParams, numQueries, windowSize);
                 synQuery.run();
 
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createSYNUInstances(ParameterTool setupParams, Map experimentMap) {
+        try {
+            // Number of queries
+            int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
+
+            // Window size
+            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
+
+            String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
+
+            // Run YSB query
+            if (algorithm.equals("moments")) {
+                SyntheticUniformQueryMomentsSketch
+                    synQuery = new SyntheticUniformQueryMomentsSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("ddsketch")) {
+                SyntheticUniformQueryDDSketch
+                    synQuery = new SyntheticUniformQueryDDSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("kllsketch")) {
+                SyntheticUniformQueryKLLSketch
+                    synQuery = new SyntheticUniformQueryKLLSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
             }
         } catch (Exception e) {
             e.printStackTrace();
