@@ -31,7 +31,7 @@ import static java.lang.Double.parseDouble;
 public class SyntheticUniformQueryMomentsSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
-    private final String KAFKA_PREFIX_TOPIC = "syn-events";
+    private final String KAFKA_PREFIX_TOPIC = "synu-events";
     /* The Job Parameters */
     //This class provides simple utility methods for reading and parsing program
     // arguments from different sources.

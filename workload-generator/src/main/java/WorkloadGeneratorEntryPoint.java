@@ -178,7 +178,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, "syn-events", throughput))
+        new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, "synp-events", throughput))
             .start();
     }
 
@@ -194,7 +194,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, "syn-events", throughput))
+        new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, "synu-events", throughput))
             .start();
     }
 

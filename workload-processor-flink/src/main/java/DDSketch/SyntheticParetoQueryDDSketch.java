@@ -31,7 +31,7 @@ import static java.lang.Double.parseDouble;
 public class SyntheticParetoQueryDDSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
-    private final String KAFKA_PREFIX_TOPIC = "syn-events";
+    private final String KAFKA_PREFIX_TOPIC = "synp-events";
     /* The Job Parameters */
     //This class provides simple utility methods for reading and parsing program
     // arguments from different sources.

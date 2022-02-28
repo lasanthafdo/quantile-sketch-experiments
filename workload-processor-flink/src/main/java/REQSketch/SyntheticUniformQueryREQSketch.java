@@ -29,7 +29,7 @@ import java.util.ArrayList;
 public class SyntheticUniformQueryREQSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
-    private final String KAFKA_PREFIX_TOPIC = "syn-events";
+    private final String KAFKA_PREFIX_TOPIC = "synu-events";
     /* The Job Parameters */
     //This class provides simple utility methods for reading and parsing program
     // arguments from different sources.
@@ -103,9 +103,9 @@ public class SyntheticUniformQueryREQSketch implements Runnable {
         public Tuple3<String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             return new Tuple3<>(
-                obj.getString("uniform_value"), // 1
-                obj.getString("event_time"), // 3
-                String.valueOf(System.currentTimeMillis()) // 4 ingestion_time
+                obj.getString("uniform_value"), // 0
+                obj.getString("event_time"), // 1
+                String.valueOf(System.currentTimeMillis()) // 2 ingestion_time
             );
         }
     }
