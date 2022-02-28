@@ -1,19 +1,25 @@
 package Synthetic;
 
-import org.apache.commons.math3.distribution.*;
+import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.ParetoDistribution;
+import org.apache.commons.math3.distribution.PoissonDistribution;
+import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.concurrent.ThreadLocalRandom;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class SyntheticWorkloadGenerator implements Runnable {
+public class SyntheticUniformWorkloadGenerator implements Runnable {
 
     // System parameters
     private final Producer<byte[], byte[]> kafkaProducer;
@@ -41,15 +47,14 @@ public class SyntheticWorkloadGenerator implements Runnable {
     UniformRealDistribution uD = new UniformRealDistribution(1, 1000);
     NormalDistribution valnD = new NormalDistribution(100, 15);
 
-    public SyntheticWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, int throughput) {
+    public SyntheticUniformWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic,
+                                             int throughput) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
         // Experiment parameters
         this.throughput = throughput;
-        System.out.println("Pareto Mean: " + pD.getMean());
         System.out.println("Uniform Mean: " + uD.getNumericalMean());
-        System.out.println("Normal Mean: " +valnD.getMean());
     }
 
     boolean emitThroughput(Random random, long currTimeInMsec, double numOfEventsPerMS) {
@@ -74,14 +79,16 @@ public class SyntheticWorkloadGenerator implements Runnable {
         //TODO inter-event generation delay here in Milliseconds
 
         double shapeParam = paretoNormal.sample();
-        while (shapeParam < 0.01)
+        while (shapeParam < 0.01) {
             shapeParam = paretoNormal.sample();
+        }
 
         ptoD = new ParetoDistribution(shapeParam, shapeParam);
 
         double std = randomizedNormalStd.sample();
-        while (std < 0)
+        while (std < 0) {
             std = randomizedNormalStd.sample();
+        }
 
         uD = new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
 
@@ -93,9 +100,7 @@ public class SyntheticWorkloadGenerator implements Runnable {
 
             Map<String, String> eventMap = new HashMap<>();
 
-            eventMap.put("pareto_value" , String.valueOf(round(ptoD.sample(), 4)));
             eventMap.put("uniform_value", String.valueOf(round(uD.sample(), 4)));
-            eventMap.put("normal_value" , String.valueOf(round(valnD.sample(), 4)));
             // Network Delay
             int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
             //int sampled_value = (int) nD.sample();
@@ -104,7 +109,8 @@ public class SyntheticWorkloadGenerator implements Runnable {
             //int sampled_value = (int) pD.sample();
             //int sampled_value = (int) gD.sample();
             int sampled_value = (int) eD.sample();
-            long eventTime = currTimeInMsec; // - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
+            long eventTime =
+                currTimeInMsec; // - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaOutput.getBytes(), kafkaOutput.getBytes()));
@@ -114,7 +120,9 @@ public class SyntheticWorkloadGenerator implements Runnable {
     }
 
     private double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
+        if (places < 0) {
+            throw new IllegalArgumentException();
+        }
 
         BigDecimal bd = new BigDecimal(Double.toString(value));
         bd = bd.setScale(places, RoundingMode.HALF_UP);

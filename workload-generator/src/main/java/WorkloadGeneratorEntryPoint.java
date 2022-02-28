@@ -1,7 +1,8 @@
 import LRB.LRBWorkloadGenerator;
 import NYT.NYTWorkloadGenerator;
 import Power.PowerWorkloadGenerator;
-import Synthetic.SyntheticWorkloadGenerator;
+import Synthetic.SyntheticParetoWorkloadGenerator;
+import Synthetic.SyntheticUniformWorkloadGenerator;
 import YSB.YSBWorkloadGenerator;
 import YSB.YSBWorkloadSetup;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -79,9 +80,10 @@ public class WorkloadGeneratorEntryPoint {
             runLRBWorkloadGenerator(setupMap, benchMap);
         } else if (workloadType.equalsIgnoreCase("nyt")) {
             runNYTWorkloadGenerator(setupMap, benchMap);
-        } else if (workloadType.equalsIgnoreCase("syn") || workloadType.equalsIgnoreCase("synp") ||
-            workloadType.equalsIgnoreCase("synu")) {
-            runSyntheticWorkloadGenerator(setupMap, benchMap);
+        } else if (workloadType.equalsIgnoreCase("syn") || workloadType.equalsIgnoreCase("synp")) {
+            runSyntheticParetoWorkloadGenerator(setupMap, benchMap);
+        } else if (workloadType.equalsIgnoreCase("synu")) {
+            runSyntheticUniformWorkloadGenerator(setupMap, benchMap);
         } else if (workloadType.equalsIgnoreCase("power")) {
             runPowerWorkloadGenerator(setupMap, benchMap);
         }
@@ -101,7 +103,6 @@ public class WorkloadGeneratorEntryPoint {
             new KafkaProducer<>(props,
                 new ByteArraySerializer(),
                 new ByteArraySerializer());
-
 
         /* Create Redis instance */
         String jedisServerName = (String) setupMap.get("redis.host");
@@ -134,7 +135,6 @@ public class WorkloadGeneratorEntryPoint {
                 new ByteArraySerializer(),
                 new ByteArraySerializer());
 
-
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
         String currentUsersHomeDir = System.getProperty("user.home");
@@ -155,7 +155,6 @@ public class WorkloadGeneratorEntryPoint {
                 new ByteArraySerializer(),
                 new ByteArraySerializer());
 
-
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
         String currentUsersHomeDir = System.getProperty("user.home");
@@ -167,7 +166,7 @@ public class WorkloadGeneratorEntryPoint {
             .start();
     }
 
-    private static void runSyntheticWorkloadGenerator(Map setupMap, Map benchMap) {
+    private static void runSyntheticParetoWorkloadGenerator(Map setupMap, Map benchMap) {
         /* Create Kafka Producer */
         Properties props = new Properties();
         props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
@@ -177,13 +176,25 @@ public class WorkloadGeneratorEntryPoint {
                 new ByteArraySerializer(),
                 new ByteArraySerializer());
 
+        /* Get Benchmark properties */
+        int throughput = (Integer) benchMap.get("throughput");
+        new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, "syn-events", throughput))
+            .start();
+    }
+
+    private static void runSyntheticUniformWorkloadGenerator(Map setupMap, Map benchMap) {
+        /* Create Kafka Producer */
+        Properties props = new Properties();
+        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
+
+        Producer<byte[], byte[]> kafkaProducer =
+            new KafkaProducer<>(props,
+                new ByteArraySerializer(),
+                new ByteArraySerializer());
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        String currentUsersHomeDir = System.getProperty("user.home");
-        String dataFile = "";
-
-        new Thread(new SyntheticWorkloadGenerator(kafkaProducer, "syn-events", throughput))
+        new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, "syn-events", throughput))
             .start();
     }
 

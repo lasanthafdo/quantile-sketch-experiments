@@ -5,7 +5,7 @@ import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple5;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -58,8 +58,8 @@ public class SyntheticUniformQueryDDSketch implements Runnable {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().setGlobalJobParameters(setupParams);
-        System.out.println("Running Synthetic Query");
-        LOG.info("Running Synthetic Query");
+        System.out.println("Running Synthetic Uniform Query");
+        LOG.info("Running Synthetic Uniform Query");
 
         // Add queries
         addQuery(env);
@@ -89,31 +89,29 @@ public class SyntheticUniformQueryDDSketch implements Runnable {
 
         messageStream
             // Parse the JSON string from Kafka as an ad
-            .map(new SyntheticUniformQueryDDSketch.DeserializeFromkafka())
+            .map(new DeserializeMessageFromKafka())
             .name("DeserializeInput ")
             .disableChaining()
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new SyntheticUniformQueryDDSketch.WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorMSketch())
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-synu-dds.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 
-    private class DeserializeFromkafka implements
+    private static class DeserializeMessageFromKafka implements
         MapFunction<String,
-            Tuple5<String, String, String, String, String>> {
+            Tuple3<String, String, String>> {
 
         @Override
-        public Tuple5<String, String, String, String, String> map(String input) {
+        public Tuple3<String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
-            return new Tuple5<>(
-                obj.getString("pareto_value"), // 0
-                obj.getString("uniform_value"), // 1
-                obj.getString("normal_value"), // 2
-                obj.getString("event_time"), // 3
-                String.valueOf(System.currentTimeMillis()) // 4 ingestion_time
+            return new Tuple3<>(
+                obj.getString("uniform_value"), // 0
+                obj.getString("event_time"), // 1
+                String.valueOf(System.currentTimeMillis()) // 2 ingestion_time
             );
         }
     }
@@ -125,8 +123,8 @@ public class SyntheticUniformQueryDDSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
-        Tuple5<String, String, String, String, String>,
+    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+        Tuple3<String, String, String>,
         Tuple2<Long, DDSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
@@ -140,11 +138,11 @@ public class SyntheticUniformQueryDDSketch implements Runnable {
         }
 
         @Override
-        public Tuple2<Long, DDSketch> add(Tuple5<String, String, String, String, String> value,
+        public Tuple2<Long, DDSketch> add(Tuple3<String, String, String> value,
                                           Tuple2<Long, DDSketch> accumulator) {
-            accumulator.f1.accept(parseDouble(value.f1)); // f0 is pareto, f1 is uniform, f2 is normal
+            accumulator.f1.accept(parseDouble(value.f0)); // f0 is uniform
             int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f3) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
             return accumulator;
         }
 
