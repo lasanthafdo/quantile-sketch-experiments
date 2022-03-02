@@ -16,7 +16,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 
-import com.datadoghq.sketch.uddsketch.UDDSketch;
+import com.datadoghq.sketch.uddsketch.UniformDDSketch;
+import org.apache.commons.math3.util.FastMath;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,21 +126,23 @@ public class SyntheticParetoQueryUDDSketch implements Runnable {
 
     private static class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
-        Tuple2<Long, UDDSketch>,
+        Tuple2<Long, UniformDDSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
-        public Tuple2<Long, UDDSketch> createAccumulator() {
+        public Tuple2<Long, UniformDDSketch> createAccumulator() {
             double relativeAccuracy = 0.01;
-            UDDSketch sketch = new UDDSketch(relativeAccuracy);
+            int numCollapses = 12;
+            double initialAccuracy = Math.tanh(FastMath.atanh(relativeAccuracy) / Math.pow(2.0, numCollapses - 1));
+            UniformDDSketch sketch = new UniformDDSketch(1024, initialAccuracy);
             return new Tuple2<>(0L, sketch);
         }
 
         @Override
-        public Tuple2<Long, UDDSketch> add(Tuple3<String, String, String> value,
-                                           Tuple2<Long, UDDSketch> accumulator) {
+        public Tuple2<Long, UniformDDSketch> add(Tuple3<String, String, String> value,
+                                                 Tuple2<Long, UniformDDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0)); // f0 is pareto
             int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
@@ -147,14 +150,14 @@ public class SyntheticParetoQueryUDDSketch implements Runnable {
         }
 
         @Override
-        public Tuple2<Long, UDDSketch> merge(Tuple2<Long, UDDSketch> acc0,
-                                             Tuple2<Long, UDDSketch> acc1) {
+        public Tuple2<Long, UniformDDSketch> merge(Tuple2<Long, UniformDDSketch> acc0,
+                                                   Tuple2<Long, UniformDDSketch> acc1) {
             acc0.f1.mergeWith(acc1.f1);
             return acc0;
         }
 
         @Override
-        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, UDDSketch> accumulator) {
+        public Tuple2<Long, ArrayList<Double>> getResult(Tuple2<Long, UniformDDSketch> accumulator) {
             long start = System.nanoTime();
             Tuple2<Long, ArrayList<Double>> ret_tuple = new Tuple2<>();
             ret_tuple.f0 = accumulator.f0;
