@@ -171,6 +171,9 @@ public class TaxiQueryREQSketch implements Runnable {
             ret_tuple.f0 = accumulator.f0;
             ret_tuple.f1 = new ArrayList<>();
 
+            System.out.println("REQ Struct");
+            System.out.println(accumulator.f1);
+
             float[] results = accumulator.f1.getQuantiles(percentiles);
 
             for (float d : results) {
@@ -179,10 +182,14 @@ public class TaxiQueryREQSketch implements Runnable {
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println(
-                "Retrieving result took " + TimeUnit.NANOSECONDS.toMillis(elapsed_time) + " microseconds");
-            System.out.println("Retrieving result took " + elapsed_time + " nanoseconds");
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("Retrieving result took " + elapsed_time / 1000 + " microseconds");
+            LOG.info("Retrieving result took " + elapsed_time / 1000 + " microseconds");
             ret_tuple.f1.add((double) elapsed_time);
+            double numRetained = accumulator.f1.getRetainedItems();
+            ret_tuple.f1.add(numRetained);
+            System.out.println(accumulator.f1.toString());
+            System.out.println("-------------------------------------------------------------");
             return ret_tuple;
         }
 

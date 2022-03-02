@@ -133,7 +133,7 @@ public class SyntheticParetoQueryMomentsSketch implements Runnable {
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
-            SimpleMomentSketch msketch = new SimpleMomentSketch(18);
+            SimpleMomentSketch msketch = new SimpleMomentSketch(15);
             msketch.setCompressed(true);
             return new Tuple2<>(0L, msketch);
         }

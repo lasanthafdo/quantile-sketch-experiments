@@ -37,11 +37,13 @@ def produce_cdf_plot(data, x_label, y_label, plot_title, filename):
 
 
 def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, plot_filename):
-    plot_data = [["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['kll']],
-                 ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['kll']]]
-    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL"])
+    plot_data = [
+        ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['kll'], mid_q_dict['req'], mid_q_dict['udds']],
+        ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['kll'], upper_q_dict['req'],
+         upper_q_dict['udds']]]
+    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL", "REQ", "UDDS"])
     print(df)
-    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "KLL"], kind="bar")
+    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "KLL", "REQ", "UDDS"], kind="bar")
     for p in ax.patches:
         ax.annotate(str(p.get_height()), (p.get_x() + 0.05, 0.01), rotation=90)
     # y = pd.concat([pd.concat([df.iloc[:, 1], df.iloc[:, 2]]), df.iloc[:, 3]])
@@ -98,13 +100,13 @@ if __name__ == '__main__':
     num_windows = 5
 
     for dataset in datasets:
-        algos = ['moments', 'dds', 'kll']
+        algos = ['moments', 'dds', 'kll', 'req', 'udds']
         real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
                       'pct_99',
                       'win_size', 'slack_events']
         sketch_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
                         'pct_99', 'query_time']
-        sketch_names_kll = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
+        sketch_names_kll_req = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
                             'pct_99', 'query_time', 'num_retained']
         mid_q_dict = {}
         upper_q_dict = {}
@@ -113,8 +115,8 @@ if __name__ == '__main__':
             f_algo_ds_sketch = report_folder + '/' + algo + '-' + dataset + '-sketch-cleaned.csv'
             algo_pareto_real = pd.read_csv(f_algo_ds_real, header=None, names=real_names)
 
-            if algo == 'kll':
-                algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll)
+            if algo == 'kll' or algo == 'req':
+                algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll_req)
             else:
                 algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names)
 
