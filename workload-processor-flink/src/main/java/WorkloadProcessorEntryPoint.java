@@ -13,6 +13,14 @@ import Moments.PowerQueryMomentsSketch;
 import Moments.SyntheticParetoQueryMomentsSketch;
 import Moments.SyntheticUniformQueryMomentsSketch;
 import Moments.TaxiQuery;
+import REQSketch.PowerQueryREQSketch;
+import REQSketch.SyntheticParetoQueryREQSketch;
+import REQSketch.SyntheticUniformQueryREQSketch;
+import REQSketch.TaxiQueryREQSketch;
+import UDDSketch.PowerQueryUDDSketch;
+import UDDSketch.SyntheticParetoQueryUDDSketch;
+import UDDSketch.SyntheticUniformQueryUDDSketch;
+import UDDSketch.TaxiQueryUDDSketch;
 import YSB.AdvertisingQuery;
 
 import java.util.Map;
@@ -97,8 +105,14 @@ public class WorkloadProcessorEntryPoint {
                 TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
                 taxiQueryDDSketch.run();
             } else if (algorithm.equals("kllsketch")) {
-                TaxiQueryKLLSketch taxiQueryDDSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
-                taxiQueryDDSketch.run();
+                TaxiQueryKLLSketch taxiQueryKLLSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
+                taxiQueryKLLSketch.run();
+            } else if (algorithm.equals("reqsketch")) {
+                TaxiQueryREQSketch taxiQueryREQSketch = new TaxiQueryREQSketch(setupParams, numQueries, windowSize);
+                taxiQueryREQSketch.run();
+            } else if (algorithm.equals("uddsketch")) {
+                TaxiQueryUDDSketch taxiQueryUDDSketch = new TaxiQueryUDDSketch(setupParams, numQueries, windowSize);
+                taxiQueryUDDSketch.run();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -123,6 +137,12 @@ public class WorkloadProcessorEntryPoint {
                 powerQuery.run();
             } else if (algorithm.equals("kllsketch")) {
                 PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            } else if (algorithm.equals("reqsketch")) {
+                PowerQueryREQSketch powerQuery = new PowerQueryREQSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            } else if (algorithm.equals("uddsketch")) {
+                PowerQueryUDDSketch powerQuery = new PowerQueryUDDSketch(setupParams, numQueries, windowSize);
                 powerQuery.run();
             }
         } catch (Exception e) {
@@ -153,7 +173,14 @@ public class WorkloadProcessorEntryPoint {
                 SyntheticParetoQueryKLLSketch
                     synQuery = new SyntheticParetoQueryKLLSketch(setupParams, numQueries, windowSize);
                 synQuery.run();
-
+            } else if (algorithm.equals("reqsketch")) {
+                SyntheticParetoQueryREQSketch
+                    synQuery = new SyntheticParetoQueryREQSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("uddsketch")) {
+                SyntheticParetoQueryUDDSketch
+                    synQuery = new SyntheticParetoQueryUDDSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -182,6 +209,14 @@ public class WorkloadProcessorEntryPoint {
             } else if (algorithm.equals("kllsketch")) {
                 SyntheticUniformQueryKLLSketch
                     synQuery = new SyntheticUniformQueryKLLSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("reqsketch")) {
+                SyntheticUniformQueryREQSketch
+                    synQuery = new SyntheticUniformQueryREQSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("uddsketch")) {
+                SyntheticUniformQueryUDDSketch
+                    synQuery = new SyntheticUniformQueryUDDSketch(setupParams, numQueries, windowSize);
                 synQuery.run();
             }
         } catch (Exception e) {
