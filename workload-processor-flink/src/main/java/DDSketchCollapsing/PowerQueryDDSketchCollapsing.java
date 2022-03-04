@@ -107,7 +107,7 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
             .aggregate(new WindowAdsAggregatorMSketch())
             .name("DeserializeInput ")
             .name("Window")
-            .writeAsText("results-power-dds.txt", FileSystem.WriteMode.OVERWRITE);
+            .writeAsText("results-power-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
         // sink function
         //.addSink(new PrintCampaignAdClicks())
         //.name("Sink(" + queryInstance + ")");

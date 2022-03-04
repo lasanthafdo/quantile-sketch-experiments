@@ -99,7 +99,7 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
             .aggregate(new WindowAdsAggregatorMSketch())
             .name("DeserializeInput ")
             .name("Window")
-            .writeAsText("results-synu-dds.txt", FileSystem.WriteMode.OVERWRITE);
+            .writeAsText("results-synu-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 

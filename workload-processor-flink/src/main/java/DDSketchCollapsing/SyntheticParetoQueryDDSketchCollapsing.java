@@ -99,7 +99,7 @@ public class SyntheticParetoQueryDDSketchCollapsing implements Runnable {
             .aggregate(new WindowAdsAggregatorMSketch())
             .name("DeserializeInput ")
             .name("Window")
-            .writeAsText("results-synp-dds.txt", FileSystem.WriteMode.OVERWRITE);
+            .writeAsText("results-synp-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 

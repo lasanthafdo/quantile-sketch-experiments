@@ -102,7 +102,7 @@ public class TaxiQueryDDSketchCollapsing implements Runnable {
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
             .aggregate(new WindowAdsAggregatorMSketch()).name("DeserializeInput ").name("Window")
-            .writeAsText("results-nyt-dds.txt", FileSystem.WriteMode.OVERWRITE);
+            .writeAsText("results-nyt-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 
