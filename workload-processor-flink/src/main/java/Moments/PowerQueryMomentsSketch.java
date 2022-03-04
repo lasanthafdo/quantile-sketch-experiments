@@ -143,7 +143,7 @@ public class PowerQueryMomentsSketch implements Runnable {
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
-            SimpleMomentSketch sms =  new SimpleMomentSketch(15);
+            SimpleMomentSketch sms =  new SimpleMomentSketch(12);
             sms.setCompressed(true);
             Tuple2<Long, SimpleMomentSketch> ms_tuple = new Tuple2<>(0L, sms);
             return ms_tuple;

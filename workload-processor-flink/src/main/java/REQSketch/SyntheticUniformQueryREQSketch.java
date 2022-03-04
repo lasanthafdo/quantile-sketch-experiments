@@ -127,7 +127,7 @@ public class SyntheticUniformQueryREQSketch implements Runnable {
 
         @Override
         public Tuple2<Long, ReqSketch> createAccumulator() {
-            ReqSketch sketch = ReqSketch.builder().setK(20).setHighRankAccuracy(false).setLessThanOrEqual(true).build();
+            ReqSketch sketch = ReqSketch.builder().setK(30).setHighRankAccuracy(true).setLessThanOrEqual(false).build();
             return new Tuple2<>(0L, sketch);
         }
 

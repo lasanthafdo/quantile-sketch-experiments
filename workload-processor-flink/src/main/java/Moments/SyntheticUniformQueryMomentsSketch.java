@@ -132,7 +132,7 @@ public class SyntheticUniformQueryMomentsSketch implements Runnable {
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
-            SimpleMomentSketch msketch = new SimpleMomentSketch(15);
+            SimpleMomentSketch msketch = new SimpleMomentSketch(12);
             msketch.setCompressed(true);
             return new Tuple2<>(0L, msketch);
         }
