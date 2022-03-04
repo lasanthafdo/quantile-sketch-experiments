@@ -4,6 +4,10 @@ import DDSketch.PowerQueryDDSketch;
 import DDSketch.SyntheticParetoQueryDDSketch;
 import DDSketch.SyntheticUniformQueryDDSketch;
 import DDSketch.TaxiQueryDDSketch;
+import DDSketchCollapsing.PowerQueryDDSketchCollapsing;
+import DDSketchCollapsing.SyntheticParetoQueryDDSketchCollapsing;
+import DDSketchCollapsing.SyntheticUniformQueryDDSketchCollapsing;
+import DDSketchCollapsing.TaxiQueryDDSketchCollapsing;
 import KLLSketch.PowerQueryKLLSketch;
 import KLLSketch.SyntheticParetoQueryKLLSketch;
 import KLLSketch.SyntheticUniformQueryKLLSketch;
@@ -104,6 +108,10 @@ public class WorkloadProcessorEntryPoint {
             } else if (algorithm.equals("ddsketch")) {
                 TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
                 taxiQueryDDSketch.run();
+            } else if (algorithm.equals("ddsketch_collapsing")) {
+                TaxiQueryDDSketchCollapsing taxiQueryDDSketchCollapsing =
+                    new TaxiQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
+                taxiQueryDDSketchCollapsing.run();
             } else if (algorithm.equals("kllsketch")) {
                 TaxiQueryKLLSketch taxiQueryKLLSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
                 taxiQueryKLLSketch.run();
@@ -134,6 +142,10 @@ public class WorkloadProcessorEntryPoint {
                 powerQuery.run();
             } else if (algorithm.equals("ddsketch")) {
                 PowerQueryDDSketch powerQuery = new PowerQueryDDSketch(setupParams, numQueries, windowSize);
+                powerQuery.run();
+            } else if (algorithm.equals("ddsketch_collapsing")) {
+                PowerQueryDDSketchCollapsing powerQuery =
+                    new PowerQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
                 powerQuery.run();
             } else if (algorithm.equals("kllsketch")) {
                 PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
@@ -168,6 +180,10 @@ public class WorkloadProcessorEntryPoint {
             } else if (algorithm.equals("ddsketch")) {
                 SyntheticParetoQueryDDSketch
                     synQuery = new SyntheticParetoQueryDDSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("ddsketch_collapsing")) {
+                SyntheticParetoQueryDDSketchCollapsing
+                    synQuery = new SyntheticParetoQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
                 synQuery.run();
             } else if (algorithm.equals("kllsketch")) {
                 SyntheticParetoQueryKLLSketch
@@ -205,6 +221,10 @@ public class WorkloadProcessorEntryPoint {
             } else if (algorithm.equals("ddsketch")) {
                 SyntheticUniformQueryDDSketch
                     synQuery = new SyntheticUniformQueryDDSketch(setupParams, numQueries, windowSize);
+                synQuery.run();
+            } else if (algorithm.equals("ddsketch_collapsing")) {
+                SyntheticUniformQueryDDSketchCollapsing
+                    synQuery = new SyntheticUniformQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
                 synQuery.run();
             } else if (algorithm.equals("kllsketch")) {
                 SyntheticUniformQueryKLLSketch
