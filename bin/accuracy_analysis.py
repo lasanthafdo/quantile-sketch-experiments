@@ -1,55 +1,21 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
 import sys
 
-
-def produce_cdf_plot(data, x_label, y_label, plot_title, filename):
-    x = np.sort(data)
-    x_range = np.amax(x) - np.amin(x)
-    y = np.arange(1, len(x) + 1) / float(len(x))
-    percentile50 = np.percentile(x, 50)
-    percentile95 = np.percentile(x, 95)
-    percentile99 = np.percentile(x, 99)
-    plt.plot(x, y, color='red', ls="--", label="CDF")
-    plt.axvline(x=percentile50, color='k', linestyle='--')
-    plt.text(percentile50 + x_range / 100, 0.6, '50th percentile', rotation=90)
-    plt.axvline(x=percentile95, color='b', linestyle='--')
-    plt.text(percentile95 + x_range / 100, 0.6, '95th percentile', rotation=90)
-    plt.axvline(x=percentile99, color='g', linestyle='--')
-    plt.text(percentile99 + x_range / 100, 0.6, '99th percentile', rotation=90)
-    # weights = np.ones_like(data) / len(data)
-    # plt.hist(data, bins=100, weights=weights, label='Probability density function', alpha=0.8)
-    sns.histplot(data, stat='probability', binwidth=100, label="PMF")
-    if np.amax(x) <= 1500:
-        plt.xlim(0, 1500)
-    else:
-        plt.xlim(0, 2500)
-    plt.title(plot_title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend(loc='best')
-    plt.tight_layout()
-    plt.savefig(filename)
-    # plt.show()
-    plt.clf()
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, plot_filename):
     plot_data = [
-        ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['kll'], mid_q_dict['req'], mid_q_dict['udds']],
-        ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['kll'], upper_q_dict['req'],
-         upper_q_dict['udds']]]
-    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "KLL", "REQ", "UDDS"])
+        ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['udds'], mid_q_dict['kll'], mid_q_dict['req']],
+        ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['udds'], upper_q_dict['kll'],
+         upper_q_dict['req']]]
+    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "UDDS", "KLL", "REQ"])
     print(df)
-    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "KLL", "REQ", "UDDS"], kind="bar")
+    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
     for p in ax.patches:
-        ax.annotate(str(p.get_height()), (p.get_x() + 0.05, 0.01), rotation=90)
-    # y = pd.concat([pd.concat([df.iloc[:, 1], df.iloc[:, 2]]), df.iloc[:, 3]])
-    # print(y)
-    # for i, v in enumerate(y):
-    #     plt.text(v + 3, i + .25, str(v), color='blue', fontweight='bold')
+        if p.get_height() > 0.06:
+            ax.annotate(str(p.get_height()), (p.get_x() + 0.03, 0.04), rotation=90)
 
     plt.ylim(0, 0.06)
     plt.xticks(rotation=0)
@@ -100,14 +66,15 @@ if __name__ == '__main__':
     num_windows = 5
 
     for dataset in datasets:
-        algos = ['moments', 'dds', 'kll', 'req', 'udds']
+        algos = ['moments', 'dds', 'ddsc', 'kll', 'req', 'udds']
         real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
                       'pct_99',
                       'win_size', 'slack_events']
         sketch_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
                         'pct_99', 'query_time']
-        sketch_names_kll_req = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
-                            'pct_99', 'query_time', 'num_retained']
+        sketch_names_kll_req = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95',
+                                'pct_98',
+                                'pct_99', 'query_time', 'num_retained']
         mid_q_dict = {}
         upper_q_dict = {}
         for algo in algos:
@@ -130,7 +97,7 @@ if __name__ == '__main__':
 
         print(mid_q_dict)
         print(upper_q_dict)
-        plot_file_path = report_folder + '/plots/' + dataset + '.png'
+        plot_file_path = report_folder + '/plots/' + dataset + '.pdf'
         produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantile Range', 'Avg. Relative Error',
                          plot_file_path)
         input("Press Enter to continue...")
