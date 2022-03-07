@@ -2,6 +2,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from itertools import cycle
 
 
 def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
@@ -40,6 +41,35 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
     plt.ylabel(y_label)
     plt.title(plot_title)
     # plt.legend(loc="lower right")
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+    # plt.show()
+    plt.clf()
+
+
+def produce_imq_scatter_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
+
+    size = 20
+    fig, ax = plt.subplots()
+    for i, alg in enumerate(["DDS","UDDS","KLL","REQ","Moments"]):
+        offset = 0.7 + i * 0.2
+        ax.scatter(data_df[x_axis] * offset, data_df[alg], s=size, label=alg)
+
+    ax.legend()
+
+    if x_axis == "Kurtosis":
+        plt.xscale('symlog')
+        plt.xlim(-2, 1000000)
+        plt.ylim(0, 0.08)
+    elif x_axis == "Data Size":
+        plt.xscale('log')
+
+    # plt.xticks(rotation=0)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
+    # plt.legend()
     plt.savefig(plot_filename)
     plt.clf()
     print("Finished generating plots.")
@@ -96,38 +126,10 @@ if __name__ == '__main__':
     a_plot_file_name = report_folder + '/plots/adaptability.pdf'
     produce_imq_bar_plot(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
                          'Avg. Relative Error', a_plot_file_name, 0.08)
-    # for dataset in datasets:
-    #     algos = ['moments', 'dds', 'kll', 'req', 'udds']
-    #     real_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
-    #                   'pct_99',
-    #                   'win_size', 'slack_events']
-    #     sketch_names = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
-    #                     'pct_99', 'query_time']
-    #     sketch_names_kll_req = ['window_id', 'pct_01', 'pct_05', 'pct_25', 'pct_50', 'pct_75', 'pct_90', 'pct_95', 'pct_98',
-    #                         'pct_99', 'query_time', 'num_retained']
-    #     mid_q_dict = {}
-    #     upper_q_dict = {}
-    #     for algo in algos:
-    #         f_algo_ds_real = report_folder + '/' + algo + '-' + dataset + '-real-cleaned.csv'
-    #         f_algo_ds_sketch = report_folder + '/' + algo + '-' + dataset + '-sketch-cleaned.csv'
-    #         algo_pareto_real = pd.read_csv(f_algo_ds_real, header=None, names=real_names)
-    #
-    #         if algo == 'kll' or algo == 'req':
-    #             algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names_kll_req)
-    #         else:
-    #             algo_ds_sketch = pd.read_csv(f_algo_ds_sketch, header=None, names=sketch_names)
-    #
-    #         if len(algo_ds_sketch.index) > num_windows:
-    #             algo_ds_sketch.drop(algo_ds_sketch.tail(1).index, inplace=True)
-    #
-    #         algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy = calc_accuracy(algo_ds_sketch, algo_pareto_real)
-    #         print(algo_ds_accuracy)
-    #         mid_q_dict[algo] = np.round(np.mean(mid_q_accuracy), 4)
-    #         upper_q_dict[algo] = np.round(np.mean(upper_q_accuracy), 4)
-    #
-    #     print(mid_q_dict)
-    #     print(upper_q_dict)
-    #     plot_file_path = report_folder + '/plots/' + dataset + '.pdf'
-    #     produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantile Range', 'Avg. Relative Error',
-    #                      plot_file_path)
-    #     input("Press Enter to continue...")
+
+    f_query_time_tests = report_folder + '/query_time_tests.csv'
+    query_time_tests_df = pd.read_csv(f_query_time_tests)
+    print(query_time_tests_df)
+    q_plot_file_name = report_folder + '/plots/query_time_tests.png'
+    produce_imq_scatter_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
+                             q_plot_file_name)

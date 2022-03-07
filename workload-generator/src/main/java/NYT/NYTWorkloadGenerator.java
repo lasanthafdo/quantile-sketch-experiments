@@ -1,10 +1,8 @@
 package NYT;
 
-import org.apache.commons.math3.distribution.ExponentialDistribution;
-import org.apache.commons.math3.distribution.GammaDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import org.apache.commons.math3.distribution.PoissonDistribution;
-import org.apache.flink.shaded.netty4.io.netty.handler.codec.json.JsonObjectDecoder;
+import eventtime.generator.EventTimeGenerator;
+import eventtime.generator.ExponentialOffsetEventTimeGenerator;
+import eventtime.generator.NoOffsetEventTimeGenerator;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
@@ -13,13 +11,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
-import NYT.NYTConstants;
-import scala.util.parsing.json.JSON;
 
 public class NYTWorkloadGenerator implements Runnable {
 
@@ -29,23 +22,25 @@ public class NYTWorkloadGenerator implements Runnable {
     private final String fileName;
     // Experiment parameters
     private final int throughput;
-    NormalDistribution nD = new NormalDistribution(150.0, 10.0);
-    ExponentialDistribution eD = new ExponentialDistribution(150);
-    PoissonDistribution pD = new PoissonDistribution(250);
-    GammaDistribution gD = new GammaDistribution(60, 4);
+    private final EventTimeGenerator eventTimeGenerator;
 
-    public NYTWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName, int throughput) {
+    public NYTWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName,
+                                int throughput, boolean missingData) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
         this.fileName = fileName;
         // Experiment parameters
         this.throughput = throughput;
-        System.out.println("NetworkDelayExponential Mean:" + Double.toString(eD.getMean()));
-        System.out.println("NetworkDelayNormal Mean:" + Double.toString(nD.getMean()));
+        if (missingData) {
+            eventTimeGenerator = new ExponentialOffsetEventTimeGenerator();
+        } else {
+            eventTimeGenerator = new NoOffsetEventTimeGenerator();
+        }
     }
 
-    boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws IOException {
+    boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws
+        IOException {
         // Transform timestamp to seconds
         long now = System.currentTimeMillis();
 
@@ -74,18 +69,12 @@ public class NYTWorkloadGenerator implements Runnable {
                 ret = false;
                 break;
             }
-            String[] a =  line.split(",");
+            String[] a = line.split(",");
             Map<String, String> eventMap = new HashMap<>();
-            for (int j = 0; j < a.length; j++){
+            for (int j = 0; j < a.length; j++) {
                 eventMap.put(NYTConstants.HEADERS.get(j), a[j]);
             }
-            // Network Delay
-            int randomNum = ThreadLocalRandom.current().nextInt(0, 150);
-            //int sampled_value = (int) nD.sample();
-            int sampled_value = (int) eD.sample();
-            //int sampled_value = (int) pD.sample();
-            //int sampled_value = (int) gD.sample();
-            long eventTime = currTimeInMsec - sampled_value; //- randomNum; // Normal Distribution Lateness, mean 100msec, sd: 20ms
+            long eventTime = eventTimeGenerator.getEventTimeMillis(currTimeInMsec);
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();
             kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaOutput.getBytes(), kafkaOutput.getBytes()));
