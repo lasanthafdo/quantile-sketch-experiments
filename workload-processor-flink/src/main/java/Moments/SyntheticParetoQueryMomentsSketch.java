@@ -25,8 +25,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
-
-import static java.lang.Double.parseDouble;
+import java.util.Arrays;
 
 public class SyntheticParetoQueryMomentsSketch implements Runnable {
 
@@ -141,7 +140,7 @@ public class SyntheticParetoQueryMomentsSketch implements Runnable {
         @Override
         public Tuple2<Long, SimpleMomentSketch> add(Tuple3<String, String, String> value,
                                                     Tuple2<Long, SimpleMomentSketch> accumulator) {
-            accumulator.f1.add(parseDouble(value.f0)); // f0 is pareto
+            accumulator.f1.add(Math.log(Double.parseDouble(value.f0))); // f0 is pareto
             int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
             return accumulator;
@@ -164,7 +163,7 @@ public class SyntheticParetoQueryMomentsSketch implements Runnable {
             System.out.println("Moments Struct");
             System.out.println(accumulator.f1);
 
-            double[] results = accumulator.f1.getQuantiles(percentiles);
+            double[] results = Arrays.stream(accumulator.f1.getQuantiles(percentiles)).map(Math::exp).toArray();
 
             for (double d : results) {
                 ret_tuple.f1.add(round(d, 4));
@@ -172,8 +171,8 @@ public class SyntheticParetoQueryMomentsSketch implements Runnable {
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
-            LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
+            System.out.println("Retrieving result took " + elapsed_time + " nanoseconds");
+            LOG.info("Retrieving result took " + elapsed_time + " nanoseconds");
             ret_tuple.f1.add((double) elapsed_time);
             return ret_tuple;
         }

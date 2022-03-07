@@ -26,8 +26,6 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
 
-import static java.lang.Double.parseDouble;
-
 public class SyntheticUniformQueryMomentsSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
@@ -140,7 +138,7 @@ public class SyntheticUniformQueryMomentsSketch implements Runnable {
         @Override
         public Tuple2<Long, SimpleMomentSketch> add(Tuple3<String, String, String> value,
                                                     Tuple2<Long, SimpleMomentSketch> accumulator) {
-            accumulator.f1.add(parseDouble(value.f0)); // f0 is uniform
+            accumulator.f1.add(Double.parseDouble(value.f0)); // f0 is uniform
             int WINDOW_SIZE = 30000; // in milliseconds
             accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
             return accumulator;
