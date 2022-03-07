@@ -137,7 +137,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        boolean missingData = (boolean) setupMap.get("missing.data");
+        boolean missingData = (boolean) setupMap.get("missing_data");
         String currentUsersHomeDir = System.getProperty("user.home");
         String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator + "nyt-data.csv";
         System.out.println(dataFile);
@@ -158,7 +158,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        boolean missingData = (boolean) setupMap.get("missing.data");
+        boolean missingData = (boolean) setupMap.get("missing_data");
         String currentUsersHomeDir = System.getProperty("user.home");
         String dataFile = currentUsersHomeDir + File.separator + "flink-benchmarks" + File.separator +
             "household_power_consumption.txt";
@@ -181,7 +181,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        boolean missingData = (boolean) setupMap.get("missing.data");
+        boolean missingData = (boolean) setupMap.get("missing_data");
         new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, "synp-events", throughput, missingData))
             .start();
     }
@@ -198,7 +198,7 @@ public class WorkloadGeneratorEntryPoint {
 
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
-        boolean missingData = (boolean) setupMap.get("missing.data");
+        boolean missingData = (boolean) setupMap.get("missing_data");
         new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, "synu-events", throughput, missingData))
             .start();
     }
