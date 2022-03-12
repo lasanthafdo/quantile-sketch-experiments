@@ -1,6 +1,7 @@
 import sys
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 
@@ -39,13 +40,31 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
         plt.ylim(-1e-4, 0.2)
     elif x_axis == "Data Size":
         ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.ylim(bottom=1)
 
-    # plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
-    # plt.legend(loc="lower right")
-    # plt.show()
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+
+
+def produce_imq_line_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
+    mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
+    print(mean_data_df)
+    two_times_std = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 2
+    print(two_times_std)
+    ax = mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
+    # ax.errorbar(x=x_axis, y=["Moments"], yerr=two_times_std["Moments"])
+    plt.errorbar('Data Size', "Moments", yerr=two_times_std['Moments'], data=mean_data_df, linestyle="None")
+    if x_axis == "Data Size":
+        ax.set_xscale('log')
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
     plt.savefig(plot_filename)
     plt.clf()
     print("Finished generating plots.")
@@ -77,12 +96,42 @@ def produce_imq_scatter_plot(data_df, plot_title, x_axis, x_label, y_label, plot
     print("Finished generating plots.")
 
 
+def produce_imq_scatter_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
+    mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
+    ci = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 1.96
+    fmt_style = {'Moments':'o', 'DDS':'v', 'UDDS':'^', 'KLL':'|', 'REQ':'x'}
+    print(ci)
+    fig, ax = plt.subplots()
+    for i, alg in enumerate(["DDS", "UDDS", "KLL"]):
+        offset = 0.7 + i * 0.2
+        ax.errorbar(mean_data_df[x_axis] * 1, mean_data_df[alg], label=alg, yerr=ci[alg], fmt='o--', ms=3, capsize=3)
+
+    ax.legend(loc="upper left")
+
+    if x_axis == "Kurtosis":
+        plt.xscale('symlog')
+        plt.xlim(-2, 1000000)
+        plt.ylim(0, 0.08)
+    elif x_axis == "Data Size":
+        plt.xscale('log')
+        # plt.yscale('log')
+
+    # plt.xticks(rotation=0)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
+    # plt.legend()
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+
+
 if __name__ == '__main__':
     report_folder = sys.argv[1]
     pd.set_option('display.max_columns', 12)
 
-    graphs_to_plot = ['query']
-    plot_file_ext = '.pdf'
+    graphs_to_plot = ['query', 'query_time_scatter']
+    plot_file_ext = '.png'
 
     if 'query' in graphs_to_plot:
         f_query_times = report_folder + '/query_times.csv'
@@ -91,7 +140,7 @@ if __name__ == '__main__':
         print(query_times_df)
         q_plot_file_name = report_folder + '/plots/query_times' + plot_file_ext
         produce_imq_line_plot(query_times_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
-                              q_plot_file_name)
+                                  q_plot_file_name)
 
     if 'insert' in graphs_to_plot:
         f_insert_times = report_folder + '/insert_times.csv'
@@ -145,10 +194,10 @@ if __name__ == '__main__':
         produce_imq_bar_plot(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
                              'Avg. Relative Error', a_plot_file_name)
 
-    if 'query_time_tests' in graphs_to_plot:
-        f_query_time_tests = report_folder + '/query_time_tests.csv'
+    if 'query_time_scatter' in graphs_to_plot:
+        f_query_time_tests = report_folder + '/query_times.csv'
         query_time_tests_df = pd.read_csv(f_query_time_tests)
         print(query_time_tests_df)
-        q_plot_file_name = report_folder + '/plots/query_time_tests' + plot_file_ext
-        produce_imq_scatter_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
+        q_plot_file_name = report_folder + '/plots/query_time_scatter' + plot_file_ext
+        produce_imq_scatter_err_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
                                  q_plot_file_name)

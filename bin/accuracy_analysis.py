@@ -90,7 +90,10 @@ if __name__ == '__main__':
         nyt_file = '/home/m34ferna/flink-benchmarks/nyt-data.csv'
         nyt_names = ['medallion', 'hack_license', 'vendor_id', 'pickup_datetime', 'payment_type', 'fare_amount',
                      'surcharge', 'mta_tax', 'tip_amount', 'tolls_amount', 'total_amount']
-        nyt_ds = pd.read_csv(nyt_file, header=None, names=nyt_names, nrows=1000000)
+        nyt_ds = pd.read_csv(nyt_file, header=None, names=nyt_names)
+        top_k = nyt_ds['total_amount'].value_counts()[:10]
+        print(top_k)
+        print(top_k.sum())
         # nyt_ds = nyt_ds[(nyt_ds['total_amount'] >= 3.5) & (nyt_ds['total_amount'] <= 12.0)]
         nyt_ds = nyt_ds.groupby('total_amount', as_index=False).count().drop(
             ['medallion', 'hack_license', 'vendor_id', 'pickup_datetime', 'payment_type', 'fare_amount', 'surcharge',
