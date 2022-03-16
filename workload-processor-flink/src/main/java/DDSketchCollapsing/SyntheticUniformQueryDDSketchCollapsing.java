@@ -125,7 +125,7 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, DDSketch>,
         Tuple2<Long, ArrayList<Double>>> {
@@ -144,8 +144,7 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
         public Tuple2<Long, DDSketch> add(Tuple3<String, String, String> value,
                                           Tuple2<Long, DDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0)); // f0 is uniform
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

@@ -1,6 +1,5 @@
 package KLLSketch;
 
-import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -9,12 +8,15 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+
+import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
+
+import org.apache.datasketches.kll.KllFloatsSketch;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +47,7 @@ public class PowerQueryKLLSketch implements Runnable {
 
 
     public PowerQueryKLLSketch(
-            ParameterTool setupParams, int numQueries, int windowSize) {
+        ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
 //        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
@@ -57,8 +59,6 @@ public class PowerQueryKLLSketch implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
         System.out.println("Running Power Query");
         LOG.info("Running Power Query");
@@ -77,49 +77,44 @@ public class PowerQueryKLLSketch implements Runnable {
     private void addQuery(StreamExecutionEnvironment env) {
 
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
-                .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
+            .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
-                        // Different topics for different query queryInstances
-                        KAFKA_PREFIX_TOPIC,
-                        new SimpleStringSchema(),
-                        setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
-                .name("Source").setParallelism(1);
-                // Chain all operators before a watermark is emitted.
-                //.disableChaining();
+                    // Different topics for different query queryInstances
+                    KAFKA_PREFIX_TOPIC,
+                    new SimpleStringSchema(),
+                    setupParams.getProperties()).assignTimestampsAndWatermarks(wt).setStartFromEarliest())
+            .name("Source").setParallelism(1);
+        // Chain all operators before a watermark is emitted.
+        //.disableChaining();
 
         messageStream
-                // Parse the JSON string from Kafka as an ad
-                .map(new DeserializeAdsFromkafka())
-                .name("DeserializeInput ")
-                .disableChaining()
-                .name("project ")
-                //.keyBy(0)
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-                .aggregate(new WindowAdsAggregatorMSketch())
-                .name("DeserializeInput ")
-                .name("Window")
-                .writeAsText("results-power-kll.txt", FileSystem.WriteMode.OVERWRITE);
-                // sink function
-                //.addSink(new PrintCampaignAdClicks())
-                //.name("Sink(" + queryInstance + ")");
+            // Parse the JSON string from Kafka as an ad
+            .map(new DeserializeMessagesFromKafka())
+            .name("DeserializeInput ")
+            .disableChaining()
+            .name("project ")
+            .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+            .aggregate(new WindowAdsAggregatorMSketch())
+            .name("DeserializeInput ")
+            .name("Window")
+            .writeAsText("results-power-kll.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
 
-    private class DeserializeAdsFromkafka implements
-            MapFunction<String,
-                        Tuple3<String, String, String>> {
+    private static class DeserializeMessagesFromKafka implements
+        MapFunction<String,
+            Tuple3<String, String, String>> {
 
         @Override
-        public Tuple3< String, String, String> map(String input) {
+        public Tuple3<String, String, String> map(String input) {
             JSONObject obj = new JSONObject(input);
             return new Tuple3<>(
-                    obj.getString("Global_active_power"), // 0
-                    obj.getString("event_time"), // 1
-                    String.valueOf(System.currentTimeMillis()) // 2 ingestion_time
-                    );
+                obj.getString("Global_active_power"), // 0
+                obj.getString("event_time"), // 1
+                String.valueOf(System.currentTimeMillis()) // 2 ingestion_time
+            );
         }
     }
 
@@ -127,34 +122,33 @@ public class PowerQueryKLLSketch implements Runnable {
         Preconditions.checkArgument(percentile > 0);
         Preconditions.checkArgument(percentile < 100);
         int index = (int) Math.ceil(percentile / 100.0 * sort_values.size());
-        return sort_values.get(index-1);
+        return sort_values.get(index - 1);
     }
 
     private class WindowAdsAggregatorMSketch implements AggregateFunction<
-            Tuple3<String, String, String>,
-            Tuple2<Long, KllFloatsSketch>,
-            Tuple2<Long, ArrayList<Double>>> {
+        Tuple3<String, String, String>,
+        Tuple2<Long, KllFloatsSketch>,
+        Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
             KllFloatsSketch sketch = new KllFloatsSketch(350);
-            return new Tuple2<Long, KllFloatsSketch>(0L, sketch);
+            return new Tuple2<>(0L, sketch);
         }
 
         @Override
         public Tuple2<Long, KllFloatsSketch> add(Tuple3<String, String, String> value,
-                                              Tuple2<Long, KllFloatsSketch> accumulator) {
+                                                 Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1)/WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 
         @Override
         public Tuple2<Long, KllFloatsSketch> merge(Tuple2<Long, KllFloatsSketch> acc0,
-                                                Tuple2<Long, KllFloatsSketch> acc1) {
+                                                   Tuple2<Long, KllFloatsSketch> acc1) {
             acc0.f1.merge(acc1.f1);
             return acc0;
         }
@@ -168,13 +162,15 @@ public class PowerQueryKLLSketch implements Runnable {
 
             float[] results = accumulator.f1.getQuantiles(percentiles);
 
-            for(float d : results) ret_tuple.f1.add(round(d, 4));
+            for (float d : results) {
+                ret_tuple.f1.add(round(d, 4));
+            }
 
             long end = System.nanoTime();
             long elapsed_time = end - start;
-            System.out.println("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            System.out.println("Retrieving result took " + elapsed_time / 1000 + "microseconds");
             System.out.println("Retrieving result took " + elapsed_time + "nanoseconds");
-            LOG.info("Retrieving result took " + elapsed_time/1000 + "microseconds");
+            LOG.info("Retrieving result took " + elapsed_time / 1000 + "microseconds");
             LOG.info("Retrieving result took " + elapsed_time + "nanoseconds");
             double numRetained = (double) accumulator.f1.getNumRetained();
             ret_tuple.f1.add((double) elapsed_time);
@@ -183,7 +179,9 @@ public class PowerQueryKLLSketch implements Runnable {
         }
 
         private double round(double value, int places) {
-            if (places < 0) throw new IllegalArgumentException();
+            if (places < 0) {
+                throw new IllegalArgumentException();
+            }
 
             BigDecimal bd = new BigDecimal(Double.toString(value));
             bd = bd.setScale(places, RoundingMode.HALF_UP);

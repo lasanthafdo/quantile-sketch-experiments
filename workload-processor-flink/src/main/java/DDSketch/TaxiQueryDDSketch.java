@@ -140,7 +140,7 @@ public class TaxiQueryDDSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements
+    private class WindowAdsAggregatorMSketch implements
         AggregateFunction<Tuple7<String, String, String, String, String, String, Boolean>, Tuple2<Long, DDSketch>, Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
@@ -156,8 +156,7 @@ public class TaxiQueryDDSketch implements Runnable {
         public Tuple2<Long, DDSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                           Tuple2<Long, DDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f5) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
             return accumulator;
         }
 

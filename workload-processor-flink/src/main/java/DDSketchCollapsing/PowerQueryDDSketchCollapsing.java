@@ -53,7 +53,6 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
     public PowerQueryDDSketchCollapsing(
         ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -63,8 +62,6 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
         System.out.println("Running Power Query");
         LOG.info("Running Power Query");
@@ -84,7 +81,6 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
 
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
             .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
@@ -102,15 +98,11 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
             .name("DeserializeInput ")
             .disableChaining()
             .name("project ")
-            //.keyBy(0)
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
             .aggregate(new WindowAdsAggregatorMSketch())
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-power-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
-        // sink function
-        //.addSink(new PrintCampaignAdClicks())
-        //.name("Sink(" + queryInstance + ")");
     }
 
 
@@ -155,8 +147,7 @@ public class PowerQueryDDSketchCollapsing implements Runnable {
         public Tuple2<Long, DDSketch> add(Tuple3<String, String, String> value,
                                           Tuple2<Long, DDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

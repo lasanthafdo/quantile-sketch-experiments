@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 public class TaxiQueryKLLSketch implements Runnable {
 
@@ -146,7 +145,7 @@ public class TaxiQueryKLLSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple7<String, String, String, String, String, String, Boolean>,
         Tuple2<Long, KllFloatsSketch>,
         Tuple2<Long, ArrayList<Double>>> {
@@ -163,8 +162,7 @@ public class TaxiQueryKLLSketch implements Runnable {
         public Tuple2<Long, KllFloatsSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                                  Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f5) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
             return accumulator;
         }
 

@@ -120,7 +120,7 @@ public class SyntheticUniformQueryMomentsSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, SimpleMomentSketch>,
         Tuple2<Long, ArrayList<Double>>> {
@@ -139,8 +139,7 @@ public class SyntheticUniformQueryMomentsSketch implements Runnable {
         public Tuple2<Long, SimpleMomentSketch> add(Tuple3<String, String, String> value,
                                                     Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(Double.parseDouble(value.f0)); // f0 is uniform
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

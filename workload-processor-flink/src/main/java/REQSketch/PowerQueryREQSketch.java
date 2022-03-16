@@ -122,7 +122,7 @@ public class PowerQueryREQSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, ReqSketch>,
         Tuple2<Long, ArrayList<Double>>> {
@@ -139,8 +139,7 @@ public class PowerQueryREQSketch implements Runnable {
         public Tuple2<Long, ReqSketch> add(Tuple3<String, String, String> value,
                                            Tuple2<Long, ReqSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

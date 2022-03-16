@@ -121,7 +121,7 @@ public class SyntheticUniformQueryKLLSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, KllFloatsSketch>,
         Tuple2<Long, ArrayList<Double>>> {
@@ -137,8 +137,7 @@ public class SyntheticUniformQueryKLLSketch implements Runnable {
         public Tuple2<Long, KllFloatsSketch> add(Tuple3<String, String, String> value,
                                                  Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0)); // f0 is uniform
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

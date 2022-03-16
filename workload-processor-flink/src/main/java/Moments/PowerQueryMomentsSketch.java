@@ -153,8 +153,7 @@ public class PowerQueryMomentsSketch implements Runnable {
         public Tuple2<Long, SimpleMomentSketch> add(Tuple3<String, String, String> value,
                                                     Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(Math.log(Double.parseDouble(value.f0)));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f1) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
             return accumulator;
         }
 

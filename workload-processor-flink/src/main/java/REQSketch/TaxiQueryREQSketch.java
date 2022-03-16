@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 public class TaxiQueryREQSketch implements Runnable {
 
@@ -153,8 +152,7 @@ public class TaxiQueryREQSketch implements Runnable {
         public Tuple2<Long, ReqSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                            Tuple2<Long, ReqSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            int WINDOW_SIZE = 30000; // in milliseconds
-            accumulator.f0 = Long.parseLong(value.f5) / WINDOW_SIZE;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
             return accumulator;
         }
 
