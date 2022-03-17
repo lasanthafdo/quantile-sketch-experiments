@@ -96,7 +96,7 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
             .disableChaining()
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorMSketch(windowSize))
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-synu-ddsc.txt", FileSystem.WriteMode.OVERWRITE);
@@ -125,12 +125,17 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, DDSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorMSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, DDSketch> createAccumulator() {
@@ -144,7 +149,7 @@ public class SyntheticUniformQueryDDSketchCollapsing implements Runnable {
         public Tuple2<Long, DDSketch> add(Tuple3<String, String, String> value,
                                           Tuple2<Long, DDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0)); // f0 is uniform
-            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSizeAgg;
             return accumulator;
         }
 

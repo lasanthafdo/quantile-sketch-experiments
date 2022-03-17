@@ -51,7 +51,6 @@ public class PowerQueryMomentsSketch implements Runnable {
     public PowerQueryMomentsSketch(
         ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
-//        this.schedulerPolicy = schedulerPolicy;
         this.numQueries = numQueries;
         this.windowSize = windowSize;
     }
@@ -61,8 +60,6 @@ public class PowerQueryMomentsSketch implements Runnable {
     public void run() {
         // Setup Flink
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.setStreamTaskSchedulerPolicy(schedulerPolicy);
         env.getConfig().setGlobalJobParameters(setupParams);
         System.out.println("Running Power Query");
         LOG.info("Running Power Query");
@@ -82,7 +79,6 @@ public class PowerQueryMomentsSketch implements Runnable {
 
         WatermarkStrategy<String> wt = WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofMillis(0))
             .withTimestampAssigner((event, timestamp) -> Long.parseLong(new JSONObject(event).getString("event_time")));
-        //Long.parseLong(new JSONObject(event).getString("event_time")
         DataStream<String> messageStream = env.addSource(
                 // Every source is a Kafka Consumer
                 new FlinkKafkaConsumer<>(
@@ -96,23 +92,19 @@ public class PowerQueryMomentsSketch implements Runnable {
 
         messageStream
             // Parse the JSON string from Kafka as an ad
-            .map(new DeserializeAdsFromkafka())
+            .map(new DeserializeMessageFromKafka())
             .name("DeserializeInput ")
             .disableChaining()
             .name("project ")
-            //.keyBy(0)
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorMSketch(windowSize))
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-power-moments.txt", FileSystem.WriteMode.OVERWRITE);
-        // sink function
-        //.addSink(new PrintCampaignAdClicks())
-        //.name("Sink(" + queryInstance + ")");
     }
 
 
-    private class DeserializeAdsFromkafka implements
+    private class DeserializeMessageFromKafka implements
         MapFunction<String,
             Tuple3<String, String, String>> {
 
@@ -134,12 +126,17 @@ public class PowerQueryMomentsSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, SimpleMomentSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {0.01, 0.05, 0.25, 0.5, 0.75, 0.90, 0.95, 0.98, 0.99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorMSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
@@ -153,7 +150,7 @@ public class PowerQueryMomentsSketch implements Runnable {
         public Tuple2<Long, SimpleMomentSketch> add(Tuple3<String, String, String> value,
                                                     Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(Math.log(Double.parseDouble(value.f0)));
-            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSizeAgg;
             return accumulator;
         }
 

@@ -86,10 +86,11 @@ public class SyntheticParetoQueryREQSketch implements Runnable {
             // Parse the JSON string from Kafka as an ad
             .map(new DeserializeMessageFromKafka()).name("DeserializeInput ").disableChaining().name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch()).name("DeserializeInput ").name("Window")
+            .aggregate(new WindowAdsAggregatorMSketch(windowSize))
+            .name("DeserializeInput ")
+            .name("Window")
             .writeAsText("results-synp-req.txt", FileSystem.WriteMode.OVERWRITE);
     }
-
 
     private static class DeserializeMessageFromKafka implements
         MapFunction<String, Tuple3<String, String, String>> {
@@ -112,13 +113,18 @@ public class SyntheticParetoQueryREQSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements
+    private static class WindowAdsAggregatorMSketch implements
         AggregateFunction<
             Tuple3<String, String, String>,
             Tuple2<Long, ReqSketch>,
             Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorMSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, ReqSketch> createAccumulator() {
@@ -130,7 +136,7 @@ public class SyntheticParetoQueryREQSketch implements Runnable {
         public Tuple2<Long, ReqSketch> add(Tuple3<String, String, String> value,
                                            Tuple2<Long, ReqSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0)); // f0 is pareto
-            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSizeAgg;
             return accumulator;
         }
 

@@ -92,7 +92,7 @@ public class SyntheticUniformQueryKLLSketch implements Runnable {
             .disableChaining()
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorKLLSketch(windowSize))
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-synu-kll.txt", FileSystem.WriteMode.OVERWRITE);
@@ -121,12 +121,17 @@ public class SyntheticUniformQueryKLLSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private static class WindowAdsAggregatorKLLSketch implements AggregateFunction<
         Tuple3<String, String, String>,
         Tuple2<Long, KllFloatsSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorKLLSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
@@ -137,7 +142,7 @@ public class SyntheticUniformQueryKLLSketch implements Runnable {
         public Tuple2<Long, KllFloatsSketch> add(Tuple3<String, String, String> value,
                                                  Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0)); // f0 is uniform
-            accumulator.f0 = Long.parseLong(value.f1) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f1) / windowSizeAgg;
             return accumulator;
         }
 

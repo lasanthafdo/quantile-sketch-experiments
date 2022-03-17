@@ -28,7 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class TaxiQuery implements Runnable {
+public class TaxiQueryMomentsSketch implements Runnable {
 
     /* The Kafka topic the source operators are pulling the results from */
     private final String KAFKA_PREFIX_TOPIC = "nyt-events";
@@ -44,10 +44,10 @@ public class TaxiQuery implements Runnable {
     /* The window size */
     private final int windowSize;
 
-    protected static final Logger LOG = LoggerFactory.getLogger(TaxiQuery.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(TaxiQueryMomentsSketch.class);
 
 
-    public TaxiQuery(
+    public TaxiQueryMomentsSketch(
         ParameterTool setupParams, int numQueries, int windowSize) {
         this.setupParams = setupParams;
         this.numQueries = numQueries;
@@ -103,7 +103,7 @@ public class TaxiQuery implements Runnable {
             // 5 - fare_amount
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorMSketch(windowSize))
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-nyt-moments.txt", FileSystem.WriteMode.OVERWRITE);
@@ -147,12 +147,17 @@ public class TaxiQuery implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private static class WindowAdsAggregatorMSketch implements AggregateFunction<
         Tuple7<String, String, String, String, String, String, Boolean>,
         Tuple2<Long, SimpleMomentSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorMSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, SimpleMomentSketch> createAccumulator() {
@@ -167,7 +172,7 @@ public class TaxiQuery implements Runnable {
             Tuple7<String, String, String, String, String, String, Boolean> value,
             Tuple2<Long, SimpleMomentSketch> accumulator) {
             accumulator.f1.add(Double.parseDouble(value.f0));
-            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSizeAgg;
             return accumulator;
         }
 

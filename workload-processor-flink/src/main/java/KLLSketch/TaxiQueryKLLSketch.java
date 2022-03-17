@@ -101,7 +101,7 @@ public class TaxiQueryKLLSketch implements Runnable {
             // 5 - fare_amount
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch())
+            .aggregate(new WindowAdsAggregatorKLLSketch(windowSize))
             .name("DeserializeInput ")
             .name("Window")
             .writeAsText("results-nyt-kll.txt", FileSystem.WriteMode.OVERWRITE);
@@ -145,12 +145,17 @@ public class TaxiQueryKLLSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements AggregateFunction<
+    private static class WindowAdsAggregatorKLLSketch implements AggregateFunction<
         Tuple7<String, String, String, String, String, String, Boolean>,
         Tuple2<Long, KllFloatsSketch>,
         Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorKLLSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, KllFloatsSketch> createAccumulator() {
@@ -162,7 +167,7 @@ public class TaxiQueryKLLSketch implements Runnable {
         public Tuple2<Long, KllFloatsSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                                  Tuple2<Long, KllFloatsSketch> accumulator) {
             accumulator.f1.update(Float.parseFloat(value.f0));
-            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSizeAgg;
             return accumulator;
         }
 

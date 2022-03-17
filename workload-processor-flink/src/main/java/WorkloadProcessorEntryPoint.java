@@ -16,7 +16,7 @@ import LRB.LinearRoadQuery;
 import Moments.PowerQueryMomentsSketch;
 import Moments.SyntheticParetoQueryMomentsSketch;
 import Moments.SyntheticUniformQueryMomentsSketch;
-import Moments.TaxiQuery;
+import Moments.TaxiQueryMomentsSketch;
 import REQSketch.PowerQueryREQSketch;
 import REQSketch.SyntheticParetoQueryREQSketch;
 import REQSketch.SyntheticUniformQueryREQSketch;
@@ -103,7 +103,7 @@ public class WorkloadProcessorEntryPoint {
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
             if (algorithm.equals("moments")) {
-                TaxiQuery taxiQuery = new TaxiQuery(setupParams, numQueries, windowSize);
+                TaxiQueryMomentsSketch taxiQuery = new TaxiQueryMomentsSketch(setupParams, numQueries, windowSize);
                 taxiQuery.run();
             } else if (algorithm.equals("ddsketch")) {
                 TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);

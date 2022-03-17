@@ -98,7 +98,9 @@ public class TaxiQueryUDDSketch implements Runnable {
             // 5 - fare_amount
             .name("project ")
             .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-            .aggregate(new WindowAdsAggregatorMSketch()).name("DeserializeInput ").name("Window")
+            .aggregate(new WindowAdsAggregatorMSketch(windowSize))
+            .name("DeserializeInput ")
+            .name("Window")
             .writeAsText("results-nyt-udds.txt", FileSystem.WriteMode.OVERWRITE);
     }
 
@@ -139,10 +141,15 @@ public class TaxiQueryUDDSketch implements Runnable {
         return sort_values.get(index - 1);
     }
 
-    private class WindowAdsAggregatorMSketch implements
+    private static class WindowAdsAggregatorMSketch implements
         AggregateFunction<Tuple7<String, String, String, String, String, String, Boolean>, Tuple2<Long, UniformDDSketch>, Tuple2<Long, ArrayList<Double>>> {
 
         double[] percentiles = {.01, .05, .25, .50, .75, .90, .95, .98, .99};
+        int windowSizeAgg;
+
+        public WindowAdsAggregatorMSketch(int windowSize) {
+            this.windowSizeAgg = windowSize * 1000; // convert to milliseconds
+        }
 
         @Override
         public Tuple2<Long, UniformDDSketch> createAccumulator() {
@@ -157,7 +164,7 @@ public class TaxiQueryUDDSketch implements Runnable {
         public Tuple2<Long, UniformDDSketch> add(Tuple7<String, String, String, String, String, String, Boolean> value,
                                                  Tuple2<Long, UniformDDSketch> accumulator) {
             accumulator.f1.accept(parseDouble(value.f0));
-            accumulator.f0 = Long.parseLong(value.f5) / windowSize;
+            accumulator.f0 = Long.parseLong(value.f5) / windowSizeAgg;
             return accumulator;
         }
 
