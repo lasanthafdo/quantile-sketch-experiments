@@ -50,7 +50,7 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
-    plt.savefig(plot_filename.replace(".png","_moments_only.png"))
+    plt.savefig(plot_filename.replace(".png", "_moments_only.png"))
     plt.clf()
 
     ax = data_df.plot(x=x_axis, y=["DDS", "UDDS", "KLL", "REQ"], style=['v-', '^-', '|--', 'x--'],
@@ -68,7 +68,7 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
-    plt.savefig(plot_filename.replace(".png","_wo_moments.png"))
+    plt.savefig(plot_filename.replace(".png", "_wo_moments.png"))
     plt.clf()
     print("Finished generating plots.")
 
@@ -152,7 +152,8 @@ if __name__ == '__main__':
     report_folder = sys.argv[1]
     pd.set_option('display.max_columns', 12)
 
-    graphs_to_plot = ['query', 'query_time_scatter', 'kurtosis']
+    #graphs_to_plot = ['query', 'insert', 'merge', 'query_time_scatter', 'kurtosis', 'adaptability']
+    graphs_to_plot = ['kurtosis']
     plot_file_ext = '.png'
 
     if 'query' in graphs_to_plot:

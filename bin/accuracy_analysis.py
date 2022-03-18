@@ -28,7 +28,7 @@ def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, yli
     print("Finished generating plots for " + plot_title)
 
 
-def produce_line_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, ylim_top, plot_filename):
+def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, ylim_top, plot_filename):
     plot_data = [
         ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['udds'], mid_q_dict['kll'], mid_q_dict['req']],
         ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['udds'], upper_q_dict['kll'],
@@ -53,36 +53,6 @@ def produce_line_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, yl
     plt.ylabel(y_label)
     plt.title(plot_title)
     # plt.legend(loc="lower right")
-    plt.savefig(plot_filename)
-    plt.clf()
-    print("Finished generating plots.")
-
-
-def produce_scatter_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
-    mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
-    ci = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 1.96
-    fmt_style = {'Moments': 'o', 'DDS': 'v', 'UDDS': '^', 'KLL': '|', 'REQ': 'x'}
-    print(ci)
-    fig, ax = plt.subplots()
-    for i, alg in enumerate(["DDS", "UDDS", "KLL"]):
-        offset = 0.7 + i * 0.2
-        ax.errorbar(mean_data_df[x_axis] * 1, mean_data_df[alg], label=alg, yerr=ci[alg], fmt='o--', ms=3, capsize=3)
-
-    ax.legend(loc="upper left")
-
-    if x_axis == "Kurtosis":
-        plt.xscale('symlog')
-        plt.xlim(-2, 1000000)
-        plt.ylim(0, 0.08)
-    elif x_axis == "Data Size":
-        plt.xscale('log')
-        # plt.yscale('log')
-
-    # plt.xticks(rotation=0)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(plot_title)
-    # plt.legend()
     plt.savefig(plot_filename)
     plt.clf()
     print("Finished generating plots.")
@@ -114,13 +84,13 @@ def calc_accuracy(approx_df, real_df):
     acc_calc_df = acc_calc_df.groupby('run_id', as_index=False)[
         ['pct_01_acc', 'pct_05_acc', 'pct_25_acc', 'pct_50_acc', 'pct_75_acc',
          'pct_90_acc', 'pct_95_acc', 'pct_98_acc', 'pct_99_acc', 'query_time', 'win_size']].mean()
-    mid_q_all_accs = np.array([acc_calc_df['pct_01_acc'], acc_calc_df['pct_05_acc'], acc_calc_df['pct_25_acc'],
+    mid_q_all_accs = np.array([acc_calc_df['pct_05_acc'], acc_calc_df['pct_25_acc'],
                                acc_calc_df['pct_50_acc'], acc_calc_df['pct_75_acc'],
                                acc_calc_df['pct_90_acc']]).mean(axis=0)
     upper_q_all_accs = np.array([acc_calc_df['pct_95_acc'], acc_calc_df['pct_98_acc']]).mean(axis=0)
-    mid_quantile_accs = [acc_calc_df['pct_01_acc'].mean(), acc_calc_df['pct_05_acc'].mean(),
-                         acc_calc_df['pct_25_acc'].mean(), acc_calc_df['pct_50_acc'].mean(),
-                         acc_calc_df['pct_75_acc'].mean(), acc_calc_df['pct_90_acc'].mean()]
+    mid_quantile_accs = [acc_calc_df['pct_05_acc'].mean(), acc_calc_df['pct_25_acc'].mean(),
+                         acc_calc_df['pct_50_acc'].mean(), acc_calc_df['pct_75_acc'].mean(),
+                         acc_calc_df['pct_90_acc'].mean()]
     upper_quantile_accs = [acc_calc_df['pct_95_acc'].mean(), acc_calc_df['pct_98_acc'].mean()]
     return acc_calc_df, mid_quantile_accs, upper_quantile_accs, mid_q_all_accs, upper_q_all_accs
 
@@ -223,7 +193,6 @@ if __name__ == '__main__':
             algo_ds_sketch['run_id'] = algo_ds_sketch['window_id'].astype(str).str[:4]
             algo_ds_sketch = algo_ds_sketch.groupby('run_id', as_index=False).apply(
                 lambda x: x.iloc[:-1] if len(x) > num_windows else x)
-            print(algo_ds_sketch[['run_id', 'window_id']])
 
             algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy, mid_q_all, upper_q_all = calc_accuracy(algo_ds_sketch,
                                                                                                        algo_ds_real)
@@ -235,8 +204,10 @@ if __name__ == '__main__':
             algo_ds_acc_dict[algo] = algo_ds_accuracy.drop('run_id', axis=1).mean(axis=1)
             print("==================================================")
 
-        print(mid_q_dict)
-        print(upper_q_dict)
+        print(">>>>>>>>>>>>> Mid quantile accuracy for " + dataset)
+        print(mid_q_all_dict)
+        print(">>>>>>>>>>>>> Upper quantile accuracy for " + dataset)
+        print(upper_q_all_dict)
         ddsc_mid_diff.append(round(abs(mid_q_dict["dds"] - mid_q_dict["ddsc"]), 4))
         ddsc_upper_diff.append(round(abs(upper_q_dict["dds"] - upper_q_dict["ddsc"]), 4))
         ddsc_upper_diff_pcts.append(
@@ -249,8 +220,8 @@ if __name__ == '__main__':
         plot_file_path = report_folder + '/plots/' + dataset + file_name_suffix + file_ext
         y_axis_top = 0.05
         if display_ci:
-            produce_line_plot(mid_q_all_dict, upper_q_all_dict, ds_label_names[dataset], 'Quantiles',
-                              'Avg. Relative Error', y_axis_top, plot_file_path)
+            produce_bar_plot_wt_err_bars(mid_q_all_dict, upper_q_all_dict, ds_label_names[dataset], 'Quantiles',
+                                         'Avg. Relative Error', y_axis_top, plot_file_path)
         else:
             produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantiles',
                              'Avg. Relative Error', y_axis_top, plot_file_path)
