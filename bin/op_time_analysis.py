@@ -32,12 +32,16 @@ def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fil
 
 
 def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
-    ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    ax = data_df.plot(x=x_axis, y=["Moments"], style=['o-'],
+                      color=[colors[0]])
     if x_axis == "Kurtosis":
         ax.set_xscale('symlog')
-        ax.set_yscale('symlog', linthresh=1e-3)
+        # ax.set_yscale('symlog', linthresh=1e-3)
         plt.xlim(-2, 1000000)
-        plt.ylim(-1e-4, 0.2)
+        # plt.ylim(-1e-4, 0.2)
     elif x_axis == "Data Size":
         ax.set_xscale('log')
         ax.set_yscale('log')
@@ -46,7 +50,25 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
-    plt.savefig(plot_filename)
+    plt.savefig(plot_filename.replace(".png","_moments_only.png"))
+    plt.clf()
+
+    ax = data_df.plot(x=x_axis, y=["DDS", "UDDS", "KLL", "REQ"], style=['v-', '^-', '|--', 'x--'],
+                      color=[colors[1], colors[2], colors[3], colors[4]])
+    if x_axis == "Kurtosis":
+        ax.set_xscale('symlog')
+        # ax.set_yscale('symlog', linthresh=1e-3)
+        plt.xlim(-2, 1000000)
+        # plt.ylim(-1e-4, 0.2)
+    elif x_axis == "Data Size":
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.ylim(bottom=1)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
+    plt.savefig(plot_filename.replace(".png","_wo_moments.png"))
     plt.clf()
     print("Finished generating plots.")
 
@@ -99,7 +121,7 @@ def produce_imq_scatter_plot(data_df, plot_title, x_axis, x_label, y_label, plot
 def produce_imq_scatter_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
     mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
     ci = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 1.96
-    fmt_style = {'Moments':'o', 'DDS':'v', 'UDDS':'^', 'KLL':'|', 'REQ':'x'}
+    fmt_style = {'Moments': 'o', 'DDS': 'v', 'UDDS': '^', 'KLL': '|', 'REQ': 'x'}
     print(ci)
     fig, ax = plt.subplots()
     for i, alg in enumerate(["DDS", "UDDS", "KLL"]):
@@ -130,7 +152,7 @@ if __name__ == '__main__':
     report_folder = sys.argv[1]
     pd.set_option('display.max_columns', 12)
 
-    graphs_to_plot = ['query', 'query_time_scatter']
+    graphs_to_plot = ['query', 'query_time_scatter', 'kurtosis']
     plot_file_ext = '.png'
 
     if 'query' in graphs_to_plot:
@@ -140,7 +162,7 @@ if __name__ == '__main__':
         print(query_times_df)
         q_plot_file_name = report_folder + '/plots/query_times' + plot_file_ext
         produce_imq_line_plot(query_times_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
-                                  q_plot_file_name)
+                              q_plot_file_name)
 
     if 'insert' in graphs_to_plot:
         f_insert_times = report_folder + '/insert_times.csv'
@@ -200,4 +222,4 @@ if __name__ == '__main__':
         print(query_time_tests_df)
         q_plot_file_name = report_folder + '/plots/query_time_scatter' + plot_file_ext
         produce_imq_scatter_err_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
-                                 q_plot_file_name)
+                                     q_plot_file_name)
