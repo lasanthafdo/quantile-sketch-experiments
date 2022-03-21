@@ -6,19 +6,54 @@ import pandas as pd
 
 
 def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
+    if x_axis == "Quantile":
+        data_df = data_df.drop('Run ID', axis=1).groupby("Quantile", as_index=False).mean()
+        print(data_df)
     ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
     if y_limit > 0:
         plt.yscale('log')
-        # for p in ax.patches:
-        #     ax.annotate(str(p.get_height()), (p.get_x() + 0.03, p.get_height() * 1.25), rotation=90)
         plt.ylim(top=y_limit)
 
     if x_axis == "Num Sketches":
         plt.yscale('log')
         plt.ylim(top=5000)
         plt.legend(loc="upper right")
+    elif x_axis == "Quantile":
+        ax.set_xticklabels(["Other quantiles", "50th quantile"])
+        plt.legend(loc="upper left")
 
+    plt.xticks(rotation=0)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+
+
+def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
+    mean_data_df = data_df
     if x_axis == "Quantile":
+        mean_data_df = data_df.drop('Run ID', axis=1).groupby("Quantile", as_index=False).mean()
+        print(mean_data_df)
+    x_ci = data_df.drop('Run ID', axis=1).groupby('Quantile', as_index=False).agg(
+        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    print(x_ci)
+
+    ax = mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
+    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+        offset = -0.2 + i * 0.1
+        ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
+                    linestyle="None")
+    if y_limit > 0:
+        plt.yscale('log')
+        plt.ylim(top=y_limit)
+
+    if x_axis == "Num Sketches":
+        plt.yscale('log')
+        plt.ylim(top=5000)
+        plt.legend(loc="upper right")
+    elif x_axis == "Quantile":
         ax.set_xticklabels(["Other quantiles", "50th quantile"])
         plt.legend(loc="upper left")
 
@@ -73,14 +108,38 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
     print("Finished generating plots.")
 
 
+def produce_imq_single_kurt_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
+    ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
+    ax.set_xscale('symlog', linthresh=10)
+    plt.xlim(-4, 500000)
+    # plt.ylim(0, 0.04)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(plot_title)
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+
+
 def produce_imq_line_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
     mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
-    print(mean_data_df)
-    two_times_std = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 2
-    print(two_times_std)
-    ax = mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
-    # ax.errorbar(x=x_axis, y=["Moments"], yerr=two_times_std["Moments"])
-    plt.errorbar('Data Size', "Moments", yerr=two_times_std['Moments'], data=mean_data_df, linestyle="None")
+    x_ci = data_df.groupby('Data Size', as_index=False).agg(
+        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    fmt_style = {'Moments': 'o-', 'DDS': 'v-', 'UDDS': '^-', 'KLL': '|--', 'REQ': 'x--'}
+    print(x_ci)
+    fig, ax = plt.subplots()
+    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+        # if alg == "Moments" or alg == "REQ":
+        #     continue
+        ax.plot(mean_data_df[x_axis], mean_data_df[alg], fmt_style[alg], label=alg, color=colors[i])
+        plt.errorbar(mean_data_df[x_axis], mean_data_df[alg], yerr=x_ci[alg],
+                     ecolor='k', capsize=3, linestyle="None")
+
+    ax.legend(loc="center left")
+
     if x_axis == "Data Size":
         ax.set_xscale('log')
 
@@ -120,13 +179,14 @@ def produce_imq_scatter_plot(data_df, plot_title, x_axis, x_label, y_label, plot
 
 def produce_imq_scatter_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
     mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
-    ci = data_df.groupby('Data Size', as_index=False).std().drop('Data Size', axis=1) * 1.96
-    fmt_style = {'Moments': 'o', 'DDS': 'v', 'UDDS': '^', 'KLL': '|', 'REQ': 'x'}
-    print(ci)
+    x_ci = data_df.groupby('Data Size', as_index=False).agg(
+        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    fmt_style = {'Moments': 'o-', 'DDS': 'v-', 'UDDS': '^-', 'KLL': '|--', 'REQ': 'x--'}
+    print(x_ci)
     fig, ax = plt.subplots()
-    for i, alg in enumerate(["DDS", "UDDS", "KLL"]):
-        offset = 0.7 + i * 0.2
-        ax.errorbar(mean_data_df[x_axis] * 1, mean_data_df[alg], label=alg, yerr=ci[alg], fmt='o--', ms=3, capsize=3)
+    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+        ax.errorbar(mean_data_df[x_axis], mean_data_df[alg], label=alg, yerr=x_ci[alg], fmt=fmt_style[alg],
+                    ecolor='k', capsize=3)
 
     ax.legend(loc="upper left")
 
@@ -152,9 +212,10 @@ if __name__ == '__main__':
     report_folder = sys.argv[1]
     pd.set_option('display.max_columns', 12)
 
-    #graphs_to_plot = ['query', 'insert', 'merge', 'query_time_scatter', 'kurtosis', 'adaptability']
+    # graphs_to_plot = ['query', 'insert', 'merge', 'query_time_ci', 'kurtosis', 'adaptability']
     graphs_to_plot = ['kurtosis']
-    plot_file_ext = '.png'
+    plot_file_ext = '.pdf'
+    display_ci = False
 
     if 'query' in graphs_to_plot:
         f_query_times = report_folder + '/query_times.csv'
@@ -198,29 +259,37 @@ if __name__ == '__main__':
         kurtosis_df = kurtosis_df.sort_values(by=['Kurtosis'])
         print(kurtosis_df)
         k_plot_file_name = report_folder + '/plots/kurtosis_accuracy' + plot_file_ext
-        produce_imq_line_plot(kurtosis_df, 'Kurtosis vs Accuracy', "Kurtosis", 'Kurtosis',
-                              'Avg. Relative Error (98th percentile)', k_plot_file_name)
+        produce_imq_single_kurt_line_plot(kurtosis_df, 'Kurtosis vs Accuracy', "Kurtosis", 'Kurtosis',
+                                          'Avg. Relative Error (98th percentile)', k_plot_file_name)
 
     if 'adaptability' in graphs_to_plot:
         f_adaptability = report_folder + '/adaptability.csv'
         adaptability_df = pd.read_csv(f_adaptability)
+        adaptability_df.drop(
+            adaptability_df[(adaptability_df['Quantile'] == 0.01) | (adaptability_df['Quantile'] == 0.99)].index,
+            inplace=True)
         adaptability_df.iloc[:, 2:] = adaptability_df.iloc[:, 2:].sub(adaptability_df['Actual'], axis=0).div(
             adaptability_df['Actual'], axis=0).abs().round(4)
         adaptability_df = adaptability_df.drop('Actual', axis=1)
-        adaptability_df = adaptability_df.groupby(['Quantile'], as_index=False).mean().round(4)
+        adaptability_df = adaptability_df.groupby(['Run ID', 'Quantile'], as_index=False).mean().round(4)
         print(adaptability_df)
         adaptability_df.loc[adaptability_df['Quantile'] != 0.5, 'Quantile'] = 0
         adaptability_df.loc[adaptability_df['Quantile'] == 0.5, 'Quantile'] = 1
-        adaptability_df = adaptability_df.groupby('Quantile', as_index=False).mean().round(4)
+        adaptability_df = adaptability_df.groupby(['Run ID', 'Quantile'], as_index=False).mean().round(4)
         print(adaptability_df)
-        a_plot_file_name = report_folder + '/plots/adaptability_avg_errors' + plot_file_ext
-        produce_imq_bar_plot(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
-                             'Avg. Relative Error', a_plot_file_name)
+        if display_ci:
+            a_plot_file_name = report_folder + '/plots/adaptability_avg_errors_ci' + plot_file_ext
+            produce_imq_bar_plot_wt_error_bars(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
+                                 'Avg. Relative Error', a_plot_file_name)
+        else:
+            a_plot_file_name = report_folder + '/plots/adaptability_avg_errors' + plot_file_ext
+            produce_imq_bar_plot(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
+                                 'Avg. Relative Error', a_plot_file_name)
 
-    if 'query_time_scatter' in graphs_to_plot:
+    if 'query_time_ci' in graphs_to_plot:
         f_query_time_tests = report_folder + '/query_times.csv'
         query_time_tests_df = pd.read_csv(f_query_time_tests)
         print(query_time_tests_df)
-        q_plot_file_name = report_folder + '/plots/query_time_scatter' + plot_file_ext
-        produce_imq_scatter_err_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
-                                     q_plot_file_name)
+        q_plot_file_name = report_folder + '/plots/query_time_ci' + plot_file_ext
+        produce_imq_line_err_plot(query_time_tests_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
+                                  q_plot_file_name)
