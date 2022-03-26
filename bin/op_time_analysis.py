@@ -8,7 +8,13 @@ import pandas as pd
 def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
     if x_axis == "Quantile":
         data_df = data_df.drop('Run ID', axis=1).groupby("Quantile", as_index=False).mean()
-        print(data_df)
+    if plot_title == "Insertion time for each data point":
+        data_df = data_df.groupby("Data Size", as_index=False).mean()
+    elif plot_title == "Merge time per sketch":
+        data_df = data_df.groupby("Num Sketches", as_index=False).mean()
+
+    print(data_df)
+
     ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
     if y_limit > 0:
         plt.yscale('log')
@@ -35,9 +41,22 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
     mean_data_df = data_df
     if x_axis == "Quantile":
         mean_data_df = data_df.drop('Run ID', axis=1).groupby("Quantile", as_index=False).mean()
-        print(mean_data_df)
-    x_ci = data_df.drop('Run ID', axis=1).groupby('Quantile', as_index=False).agg(
-        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    if plot_title == "Insertion time for each data point":
+        mean_data_df = data_df.groupby("Data Size", as_index=False).mean()
+    elif plot_title == "Merge time per sketch":
+        mean_data_df = data_df.groupby("Num Sketches", as_index=False).mean()
+
+    print(mean_data_df)
+
+    if plot_title == "Insertion time for each data point":
+        x_ci = data_df.groupby('Data Size', as_index=False).agg(
+            lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    elif plot_title == "Merge time per sketch":
+        x_ci = data_df.groupby('Num Sketches', as_index=False).agg(
+            lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    else:
+        x_ci = data_df.drop('Run ID', axis=1).groupby('Quantile', as_index=False).agg(
+            lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
     print(x_ci)
 
     ax = mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
@@ -213,7 +232,7 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', 12)
 
     # graphs_to_plot = ['query', 'insert', 'merge', 'query_time_ci', 'kurtosis', 'adaptability']
-    graphs_to_plot = ['kurtosis']
+    graphs_to_plot = ['insert', 'merge']
     plot_file_ext = '.pdf'
     display_ci = False
 
@@ -232,9 +251,16 @@ if __name__ == '__main__':
         insert_times_df.iloc[:, 1:] = insert_times_df.iloc[:, 1:].div(insert_times_df['Data Size'], axis=0)
         insert_times_df['Data Size'] = insert_times_df['Data Size'] // 1000000
         print(insert_times_df)
-        i_plot_file_name = report_folder + '/plots/insert_times' + plot_file_ext
-        produce_imq_bar_plot(insert_times_df, 'Insertion time for each data point', "Data Size", 'Data size (millions)',
-                             'Time (microseconds)', i_plot_file_name)
+        if display_ci:
+            i_plot_file_name = report_folder + '/plots/insert_times_ci' + plot_file_ext
+            produce_imq_bar_plot_wt_error_bars(insert_times_df, 'Insertion time for each data point', "Data Size",
+                                               'Data size (millions)',
+                                               'Time (microseconds)', i_plot_file_name)
+        else:
+            i_plot_file_name = report_folder + '/plots/insert_times' + plot_file_ext
+            produce_imq_bar_plot(insert_times_df, 'Insertion time for each data point', "Data Size",
+                                 'Data size (millions)',
+                                 'Time (microseconds)', i_plot_file_name)
 
     if 'merge' in graphs_to_plot:
         f_merge_times = report_folder + '/merge_times.csv'
@@ -243,10 +269,14 @@ if __name__ == '__main__':
         merge_times_df.iloc[:, 1:6] = merge_times_df.iloc[:, 1:6].div(merge_times_df['Num Merges'], axis=0).round(4)
         merge_times_df.drop('Num Merges', axis=1, inplace=True)
         print(merge_times_df)
-        i_plot_file_name = report_folder + '/plots/merge_times' + plot_file_ext
-        produce_imq_bar_plot(merge_times_df, 'Merge time per sketch', "Num Sketches", 'Number of sketches',
-                             'Time (microseconds)',
-                             i_plot_file_name)
+        if display_ci:
+            m_plot_file_name = report_folder + '/plots/merge_times_ci' + plot_file_ext
+            produce_imq_bar_plot_wt_error_bars(merge_times_df, 'Merge time per sketch', "Num Sketches",
+                                               'Number of sketches', 'Time (microseconds)', m_plot_file_name)
+        else:
+            m_plot_file_name = report_folder + '/plots/merge_times' + plot_file_ext
+            produce_imq_bar_plot(merge_times_df, 'Merge time per sketch', "Num Sketches", 'Number of sketches',
+                                 'Time (microseconds)', m_plot_file_name)
 
     if 'kurtosis' in graphs_to_plot:
         f_kurtosis = report_folder + '/kurtosis.csv'
@@ -280,7 +310,7 @@ if __name__ == '__main__':
         if display_ci:
             a_plot_file_name = report_folder + '/plots/adaptability_avg_errors_ci' + plot_file_ext
             produce_imq_bar_plot_wt_error_bars(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
-                                 'Avg. Relative Error', a_plot_file_name)
+                                               'Avg. Relative Error', a_plot_file_name)
         else:
             a_plot_file_name = report_folder + '/plots/adaptability_avg_errors' + plot_file_ext
             produce_imq_bar_plot(adaptability_df, 'Adaptability', "Quantile", 'Quantiles',
