@@ -43,20 +43,24 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, 
     print(x_ci)
     print("=========== Avg. Acc ============ ")
     print(mean_data_df)
-    ax = mean_data_df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"],
-                           style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar")
+    fig, ax = plt.subplots(figsize=(4, 3))
+    mean_data_df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"],
+                      style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax)
     for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
         offset = -0.2 + i * 0.1
-        ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], label=alg, yerr=x_ci[alg], ecolor='k', capsize=3,
+        ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
     # plt.errorbar('Quantile range', ["Moments", "DDS", "UDDS", "KLL", "REQ"], yerr=x_ci, data=mean_data_df, linestyle="None", capsize=3)
 
-    plt.ylim(0, ylim_top)
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
-    # plt.legend(loc="lower right")
+    if plot_title == 'Power':
+        ax.legend(loc="upper center", bbox_to_anchor=(0.4, 1))
+    fig.tight_layout()
+    ax.autoscale(enable=True)
+    plt.ylim(0, ylim_top)
     plt.savefig(plot_filename)
     plt.clf()
     print("Finished generating plots.")
@@ -101,7 +105,7 @@ def calc_accuracy(approx_df, real_df):
 
 def plot_hist_dataset(data_df, col_of_interest, x_label, y_label, plot_title, plot_file_name):
     data = data_df[col_of_interest]
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(4, 3))
     if plot_title == 'Uniform':
         sns.histplot(data=data, stat='probability', ax=ax, color='k', binwidth=1)
     elif plot_title == 'Adaptability PDF':
@@ -113,8 +117,11 @@ def plot_hist_dataset(data_df, col_of_interest, x_label, y_label, plot_title, pl
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
+    fig.tight_layout()
+    ax.autoscale(enable=True)
     if plot_title == 'NYT':
-        plt.xlim(0, 100)
+        ax.set_xlim(0, 100)
+    # plt.show()
     plt.savefig(plot_file_name)
     plt.clf()
     print("Finished generating PDF plot for " + plot_title)
@@ -148,21 +155,20 @@ def plot_hist_bins_dataset(data_df, col_of_interest, x_label, y_label, plot_titl
 
 
 def plot_hist_pareto_dataset(data_df, col_of_interest, x_label, y_label, plot_title, plot_file_name):
-    # count_df = data_df.groupby('sampled_val')["index"].count().reset_index(name="count")
-    # print(count_df)
     data = data_df[col_of_interest]
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(4, 3))
     p = sns.histplot(data=data, stat='probability', ax=ax, bins=10000, log_scale=(False, True), color='k')
     # bins = np.histogram_bin_edges(data_df[col_of_interest], bins='fd')
-    # print(bins)
     ax.set_xlim(right=6000000)
     # ax.set_ylim(top=1e-3)
-    ax.ticklabel_format(useOffset=False, style='plain', axis='x')
+    # ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(plot_title)
     if plot_title == 'NYT':
-        plt.xlim(0, 100)
+        ax.set_xlim(0, 100)
+    fig.tight_layout()
+    ax.autoscale(enable=True)
     plt.savefig(plot_file_name)
     plt.clf()
     print("Finished generating PDF plot for " + plot_title)
@@ -171,7 +177,7 @@ def plot_hist_pareto_dataset(data_df, col_of_interest, x_label, y_label, plot_ti
 if __name__ == '__main__':
     report_folder = sys.argv[1]
     datasets = ['pareto', 'uniform', 'power', 'nyt']
-    ds_to_plot = ['pareto']
+    ds_to_plot = ['pareto', 'uniform', 'power', 'nyt', 'adaptability']
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
     num_windows = 10
     pd.set_option('display.max_columns', 12)
@@ -193,7 +199,8 @@ if __name__ == '__main__':
 
         if 'power' in ds_to_plot:
             power_file = '/home/m34ferna/flink-benchmarks/household_power_consumption.txt'
-            power_names = ["Date", "Time", "Global_active_power", "Global_reactive_power", "Voltage", "Global_intensity",
+            power_names = ["Date", "Time", "Global_active_power", "Global_reactive_power", "Voltage",
+                           "Global_intensity",
                            "Sub_metering_1", "Sub_metering_2", "Sub_metering_3"]
             power_ds = pd.read_csv(power_file, header=None, names=power_names, nrows=nrows_read, sep=';')
             plot_file_name_pow = report_folder + '/plots/power_dist_' + str(nrows_read) + ds_file_ext
@@ -279,7 +286,8 @@ if __name__ == '__main__':
             upper_q_dict[algo] = np.round(np.mean(upper_q_accuracy), 4)
             mid_q_all_dict[algo] = mid_q_all
             upper_q_all_dict[algo] = upper_q_all
-            algo_ds_acc_dict[algo] = algo_ds_accuracy.drop(['run_id','query_time','win_size','pct_01_acc','pct_99_acc'], axis=1).mean(axis=1)
+            algo_ds_acc_dict[algo] = algo_ds_accuracy.drop(
+                ['run_id', 'query_time', 'win_size', 'pct_01_acc', 'pct_99_acc'], axis=1).mean(axis=1)
             print("==================================================")
 
         if verbose:
@@ -292,7 +300,7 @@ if __name__ == '__main__':
         ddsc_upper_diff_pcts.append(
             round(abs(upper_q_dict["dds"] - upper_q_dict["ddsc"]) * 100.0 / upper_q_dict["dds"], 4))
         ddsc_mid_diff_pcts.append(round(abs(mid_q_dict["dds"] - mid_q_dict["ddsc"]) * 100.0 / mid_q_dict["dds"], 4))
-        file_ext = '.png'
+        file_ext = '.pdf'
         file_name_suffix = '_avg_errors'
         if display_ci:
             file_name_suffix = file_name_suffix + '_ci'
