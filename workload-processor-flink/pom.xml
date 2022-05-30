@@ -73,7 +73,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <program-class>WorkloadProcessorEntryPoint</program-class>
+                            <program-class>org.uwaterloo.streaming.benchmarks.workload.processor.WorkloadProcessorEntryPoint</program-class>
                         </manifestEntries>
                     </archive>
                 </configuration>

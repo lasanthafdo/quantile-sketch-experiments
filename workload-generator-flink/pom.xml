@@ -75,7 +75,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <program-class>WorkloadGeneratorEntryPoint</program-class>
+                            <program-class>org.uwaterloo.streaming.benchmarks.workload.generator.WorkloadGeneratorEntryPoint</program-class>
                         </manifestEntries>
                     </archive>
                 </configuration>
