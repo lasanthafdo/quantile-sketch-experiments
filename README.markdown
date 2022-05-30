@@ -4,8 +4,8 @@ If you compile flink (ie. get a new flink java file), you must run `./bin/setup 
 
 ### Compling Flink
 
-1. clone the Flink repo: https://github.com/ChasonPickles/flink.git
-2. run ./install_script. This script compiles only flink-streaming-java and flink-dist, and copies the build-target to ~/flink-binary  
+1. Clone the fork of the Apache Flink repository at https://github.com/ChasonPickles/flink.git and checkout the branch 'quantile'
+2. Run ./install_script. This script compiles only flink-streaming-java and flink-dist, and copies the build-target to ~/flink-binary  
 3. './bin/setup.sh syn' will copy the flink binary from ~/flink-binary to the flinkBenchmarks repository and setup other tools like kafka. 
 
 ### Setup
