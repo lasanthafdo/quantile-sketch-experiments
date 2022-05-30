@@ -1,5 +1,3 @@
-import org.apache.flink.api.java.utils.ParameterTool;
-
 import DDSketch.PowerQueryDDSketch;
 import DDSketch.SyntheticParetoQueryDDSketch;
 import DDSketch.SyntheticUniformQueryDDSketch;
@@ -12,7 +10,6 @@ import KLLSketch.PowerQueryKLLSketch;
 import KLLSketch.SyntheticParetoQueryKLLSketch;
 import KLLSketch.SyntheticUniformQueryKLLSketch;
 import KLLSketch.TaxiQueryKLLSketch;
-import LRB.LinearRoadQuery;
 import Moments.PowerQueryMomentsSketch;
 import Moments.SyntheticParetoQueryMomentsSketch;
 import Moments.SyntheticUniformQueryMomentsSketch;
@@ -25,7 +22,7 @@ import UDDSketch.PowerQueryUDDSketch;
 import UDDSketch.SyntheticParetoQueryUDDSketch;
 import UDDSketch.SyntheticUniformQueryUDDSketch;
 import UDDSketch.TaxiQueryUDDSketch;
-import YSB.AdvertisingQuery;
+import org.apache.flink.api.java.utils.ParameterTool;
 
 import java.util.Map;
 
@@ -43,11 +40,7 @@ public class WorkloadProcessorEntryPoint {
         Map experimentMap = Utils.findAndReadConfigFile(parameterTool.getRequired("experiment"));
 
         String workloadType = (String) experimentMap.get("workload_type");
-        if (workloadType.equalsIgnoreCase("ysb")) {
-            createYSBInstances(setupParams, experimentMap);
-        } else if (workloadType.equalsIgnoreCase("lrb")) {
-            createLRBInstances(setupParams, experimentMap);
-        } else if (workloadType.equalsIgnoreCase("nyt")) {
+        if (workloadType.equalsIgnoreCase("nyt")) {
             createNYTInstances(setupParams, experimentMap);
         } else if (workloadType.equalsIgnoreCase("synp")) {
             createSYNPInstances(setupParams, experimentMap);
@@ -60,67 +53,42 @@ public class WorkloadProcessorEntryPoint {
         }
     }
 
-    private static void createYSBInstances(ParameterTool setupParams, Map experimentMap) {
-        try {
-            // Number of queries
-            int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
-
-            // Window size
-            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
-
-            // Run YSB query
-            AdvertisingQuery ysbQuery = new AdvertisingQuery(setupParams, numQueries, windowSize);
-            ysbQuery.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void createLRBInstances(ParameterTool setupParams, Map experimentMap) {
-        try {
-            // Number of queries
-            int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
-
-            // Window size
-            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
-
-            // Run LRB query
-            LinearRoadQuery lrQuery = new LinearRoadQuery(setupParams, numQueries);
-            lrQuery.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private static void createNYTInstances(ParameterTool setupParams, Map experimentMap) {
         try {
             // Number of queries
             int numQueries = ((Number) experimentMap.getOrDefault("num_instances", 1)).intValue();
 
             // Window size
-            int windowSize = ((Integer) experimentMap.getOrDefault("window_size", 3)).intValue();
+            int windowSize = (Integer) experimentMap.getOrDefault("window_size", 3);
 
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
-            if (algorithm.equals("moments")) {
-                TaxiQueryMomentsSketch taxiQuery = new TaxiQueryMomentsSketch(setupParams, numQueries, windowSize);
-                taxiQuery.run();
-            } else if (algorithm.equals("ddsketch")) {
-                TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
-                taxiQueryDDSketch.run();
-            } else if (algorithm.equals("ddsketch_collapsing")) {
-                TaxiQueryDDSketchCollapsing taxiQueryDDSketchCollapsing =
-                    new TaxiQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
-                taxiQueryDDSketchCollapsing.run();
-            } else if (algorithm.equals("kllsketch")) {
-                TaxiQueryKLLSketch taxiQueryKLLSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
-                taxiQueryKLLSketch.run();
-            } else if (algorithm.equals("reqsketch")) {
-                TaxiQueryREQSketch taxiQueryREQSketch = new TaxiQueryREQSketch(setupParams, numQueries, windowSize);
-                taxiQueryREQSketch.run();
-            } else if (algorithm.equals("uddsketch")) {
-                TaxiQueryUDDSketch taxiQueryUDDSketch = new TaxiQueryUDDSketch(setupParams, numQueries, windowSize);
-                taxiQueryUDDSketch.run();
+            switch (algorithm) {
+                case "moments":
+                    TaxiQueryMomentsSketch taxiQuery = new TaxiQueryMomentsSketch(setupParams, numQueries, windowSize);
+                    taxiQuery.run();
+                    break;
+                case "ddsketch":
+                    TaxiQueryDDSketch taxiQueryDDSketch = new TaxiQueryDDSketch(setupParams, numQueries, windowSize);
+                    taxiQueryDDSketch.run();
+                    break;
+                case "ddsketch_collapsing":
+                    TaxiQueryDDSketchCollapsing taxiQueryDDSketchCollapsing =
+                        new TaxiQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
+                    taxiQueryDDSketchCollapsing.run();
+                    break;
+                case "kllsketch":
+                    TaxiQueryKLLSketch taxiQueryKLLSketch = new TaxiQueryKLLSketch(setupParams, numQueries, windowSize);
+                    taxiQueryKLLSketch.run();
+                    break;
+                case "reqsketch":
+                    TaxiQueryREQSketch taxiQueryREQSketch = new TaxiQueryREQSketch(setupParams, numQueries, windowSize);
+                    taxiQueryREQSketch.run();
+                    break;
+                case "uddsketch":
+                    TaxiQueryUDDSketch taxiQueryUDDSketch = new TaxiQueryUDDSketch(setupParams, numQueries, windowSize);
+                    taxiQueryUDDSketch.run();
+                    break;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,25 +105,39 @@ public class WorkloadProcessorEntryPoint {
 
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
-            if (algorithm.equals("moments")) {
-                PowerQueryMomentsSketch powerQuery = new PowerQueryMomentsSketch(setupParams, numQueries, windowSize);
-                powerQuery.run();
-            } else if (algorithm.equals("ddsketch")) {
-                PowerQueryDDSketch powerQuery = new PowerQueryDDSketch(setupParams, numQueries, windowSize);
-                powerQuery.run();
-            } else if (algorithm.equals("ddsketch_collapsing")) {
-                PowerQueryDDSketchCollapsing powerQuery =
-                    new PowerQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
-                powerQuery.run();
-            } else if (algorithm.equals("kllsketch")) {
-                PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
-                powerQuery.run();
-            } else if (algorithm.equals("reqsketch")) {
-                PowerQueryREQSketch powerQuery = new PowerQueryREQSketch(setupParams, numQueries, windowSize);
-                powerQuery.run();
-            } else if (algorithm.equals("uddsketch")) {
-                PowerQueryUDDSketch powerQuery = new PowerQueryUDDSketch(setupParams, numQueries, windowSize);
-                powerQuery.run();
+            switch (algorithm) {
+                case "moments": {
+                    PowerQueryMomentsSketch powerQuery =
+                        new PowerQueryMomentsSketch(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
+                case "ddsketch": {
+                    PowerQueryDDSketch powerQuery = new PowerQueryDDSketch(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
+                case "ddsketch_collapsing": {
+                    PowerQueryDDSketchCollapsing powerQuery =
+                        new PowerQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
+                case "kllsketch": {
+                    PowerQueryKLLSketch powerQuery = new PowerQueryKLLSketch(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
+                case "reqsketch": {
+                    PowerQueryREQSketch powerQuery = new PowerQueryREQSketch(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
+                case "uddsketch": {
+                    PowerQueryUDDSketch powerQuery = new PowerQueryUDDSketch(setupParams, numQueries, windowSize);
+                    powerQuery.run();
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -173,30 +155,43 @@ public class WorkloadProcessorEntryPoint {
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
             // Run YSB query
-            if (algorithm.equals("moments")) {
-                SyntheticParetoQueryMomentsSketch
-                    synQuery = new SyntheticParetoQueryMomentsSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("ddsketch")) {
-                SyntheticParetoQueryDDSketch
-                    synQuery = new SyntheticParetoQueryDDSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("ddsketch_collapsing")) {
-                SyntheticParetoQueryDDSketchCollapsing
-                    synQuery = new SyntheticParetoQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("kllsketch")) {
-                SyntheticParetoQueryKLLSketch
-                    synQuery = new SyntheticParetoQueryKLLSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("reqsketch")) {
-                SyntheticParetoQueryREQSketch
-                    synQuery = new SyntheticParetoQueryREQSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("uddsketch")) {
-                SyntheticParetoQueryUDDSketch
-                    synQuery = new SyntheticParetoQueryUDDSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
+            switch (algorithm) {
+                case "moments": {
+                    SyntheticParetoQueryMomentsSketch
+                        synQuery = new SyntheticParetoQueryMomentsSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "ddsketch": {
+                    SyntheticParetoQueryDDSketch
+                        synQuery = new SyntheticParetoQueryDDSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "ddsketch_collapsing": {
+                    SyntheticParetoQueryDDSketchCollapsing
+                        synQuery = new SyntheticParetoQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "kllsketch": {
+                    SyntheticParetoQueryKLLSketch
+                        synQuery = new SyntheticParetoQueryKLLSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "reqsketch": {
+                    SyntheticParetoQueryREQSketch
+                        synQuery = new SyntheticParetoQueryREQSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "uddsketch": {
+                    SyntheticParetoQueryUDDSketch
+                        synQuery = new SyntheticParetoQueryUDDSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,30 +209,43 @@ public class WorkloadProcessorEntryPoint {
             String algorithm = experimentMap.getOrDefault("algorithm", null).toString();
 
             // Run YSB query
-            if (algorithm.equals("moments")) {
-                SyntheticUniformQueryMomentsSketch
-                    synQuery = new SyntheticUniformQueryMomentsSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("ddsketch")) {
-                SyntheticUniformQueryDDSketch
-                    synQuery = new SyntheticUniformQueryDDSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("ddsketch_collapsing")) {
-                SyntheticUniformQueryDDSketchCollapsing
-                    synQuery = new SyntheticUniformQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("kllsketch")) {
-                SyntheticUniformQueryKLLSketch
-                    synQuery = new SyntheticUniformQueryKLLSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("reqsketch")) {
-                SyntheticUniformQueryREQSketch
-                    synQuery = new SyntheticUniformQueryREQSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
-            } else if (algorithm.equals("uddsketch")) {
-                SyntheticUniformQueryUDDSketch
-                    synQuery = new SyntheticUniformQueryUDDSketch(setupParams, numQueries, windowSize);
-                synQuery.run();
+            switch (algorithm) {
+                case "moments": {
+                    SyntheticUniformQueryMomentsSketch
+                        synQuery = new SyntheticUniformQueryMomentsSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "ddsketch": {
+                    SyntheticUniformQueryDDSketch
+                        synQuery = new SyntheticUniformQueryDDSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "ddsketch_collapsing": {
+                    SyntheticUniformQueryDDSketchCollapsing
+                        synQuery = new SyntheticUniformQueryDDSketchCollapsing(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "kllsketch": {
+                    SyntheticUniformQueryKLLSketch
+                        synQuery = new SyntheticUniformQueryKLLSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "reqsketch": {
+                    SyntheticUniformQueryREQSketch
+                        synQuery = new SyntheticUniformQueryREQSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
+                case "uddsketch": {
+                    SyntheticUniformQueryUDDSketch
+                        synQuery = new SyntheticUniformQueryUDDSketch(setupParams, numQueries, windowSize);
+                    synQuery.run();
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

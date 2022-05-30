@@ -1,4 +1,0 @@
-#!/bin/bash
-
-rsync -aP workload-processor-flink/target m34ferna@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-processor-flink
-rsync -aP workload-generator/target m34ferna@tembo.cs.uwaterloo.ca:~/flink-benchmarks/workload-generator

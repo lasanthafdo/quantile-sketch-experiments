@@ -1,35 +1,42 @@
-package Power;
+package Synthetic;
 
 import eventtime.generator.EventTimeGenerator;
 import eventtime.generator.ExponentialOffsetEventTimeGenerator;
 import eventtime.generator.NoOffsetEventTimeGenerator;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class PowerWorkloadGenerator implements Runnable {
+import static Synthetic.SyntheticConstants.HEADER_UNIFORM;
+
+public class SyntheticUniformWorkloadGenerator implements Runnable {
 
     // System parameters
     private final Producer<byte[], byte[]> kafkaProducer;
     private final String kafkaTopic;
-    private final String fileName;
     // Experiment parameters
     private final int throughput;
     private final EventTimeGenerator eventTimeGenerator;
 
-    public PowerWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName,
-                                  int throughput, boolean missingData) {
+    NormalDistribution uniformNormal = new NormalDistribution(100, 25);
+    NormalDistribution uniformNormal2 = new NormalDistribution(1000, 100);
+
+    // Values
+    UniformRealDistribution uD = new UniformRealDistribution(1, 1000);
+
+    public SyntheticUniformWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic,
+                                             int throughput, boolean missingData) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
-        this.fileName = fileName;
         // Experiment parameters
         this.throughput = throughput;
         if (missingData) {
@@ -39,8 +46,7 @@ public class PowerWorkloadGenerator implements Runnable {
         }
     }
 
-    boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws
-        IOException {
+    boolean emitThroughput(Random random, long currTimeInMsec, double numOfEventsPerMS) {
         // Transform timestamp to seconds
         long now = System.currentTimeMillis();
 
@@ -59,20 +65,16 @@ public class PowerWorkloadGenerator implements Runnable {
                 numOfEventsPerMS = 0;
             }
         }
-        //TODO inter-event generation delay here in Milliseconds
+
+        uD = new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
 
         int numOfEventsPerMsInt = (int) Math.ceil(numOfEventsPerMS);
         boolean ret = true;
         for (int i = 0; i < numOfEventsPerMsInt; i++) {
-            String line = br.readLine();
-            if (line == null) {
-                ret = false;
-                break;
-            }
-            String[] a = line.split(";");
+
             Map<String, String> eventMap = new HashMap<>();
 
-            eventMap.put(PowerConstants.HEADERS.get(2), a[2]); // "Global_active_power" is 3rd slot
+            eventMap.put(HEADER_UNIFORM, String.valueOf(round(uD.sample(), 4)));
             long eventTime = eventTimeGenerator.getEventTimeMillis(currTimeInMsec);
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();
@@ -82,20 +84,26 @@ public class PowerWorkloadGenerator implements Runnable {
         return ret;
     }
 
+    private double round(double value, int places) {
+        if (places < 0) {
+            throw new IllegalArgumentException();
+        }
+
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
     public void run() {
         System.out.println("Emitting " + throughput + " tuples per second to " + kafkaTopic);
 
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(fileName));
-            Random random = new Random();
-            double numOfEventsPerMS = throughput / 1000.0;
-            long originalTimestamp = System.currentTimeMillis(); // current time in milliseconds
+        Random random = new Random();
+        double numOfEventsPerMS = throughput / 1000.0;
+        long originalTimestamp = System.currentTimeMillis(); // current time in milliseconds
 
-            while (emitThroughput(br, random, originalTimestamp, numOfEventsPerMS)) {
-                originalTimestamp += 1;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        while (emitThroughput(random, originalTimestamp, numOfEventsPerMS)) {
+            originalTimestamp += 1;
         }
     }
 }
+

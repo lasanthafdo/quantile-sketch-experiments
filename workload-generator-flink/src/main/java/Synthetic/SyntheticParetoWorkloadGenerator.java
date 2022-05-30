@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import static Synthetic.SyntheticConstants.HEADER_PARETO;
+
 public class SyntheticParetoWorkloadGenerator implements Runnable {
 
     // System parameters
@@ -62,7 +64,6 @@ public class SyntheticParetoWorkloadGenerator implements Runnable {
                 numOfEventsPerMS = 0;
             }
         }
-        //TODO inter-event generation delay here in Milliseconds
 
         double shapeParam = paretoNormal.sample();
         while (shapeParam < 0.01) {
@@ -76,7 +77,7 @@ public class SyntheticParetoWorkloadGenerator implements Runnable {
 
             Map<String, String> eventMap = new HashMap<>();
 
-            eventMap.put("pareto_value", String.valueOf(round(ptoD.sample(), 4)));
+            eventMap.put(HEADER_PARETO, String.valueOf(round(ptoD.sample(), 4)));
             long eventTime = eventTimeGenerator.getEventTimeMillis(currTimeInMsec);
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();

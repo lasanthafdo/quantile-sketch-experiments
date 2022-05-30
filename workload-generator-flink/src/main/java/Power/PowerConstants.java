@@ -17,23 +17,3 @@ public class PowerConstants {
             "Sub_metering_3" // 8
     ));
 }
-
-/*
-medallion
-hack_lice
-pickup_da
-dropoff_d
-trip_time
-trip_dist
-pickup_lo
-pickup_la
-dropoff_l
-dropoff_l
-payment_t
-fare_amou
-surcharge
-mta_tax	t
-tip_amoun
-tolls_amo
-total_amo
- */

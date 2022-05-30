@@ -1,4 +1,4 @@
-package NYT;
+package Power;
 
 import eventtime.generator.EventTimeGenerator;
 import eventtime.generator.ExponentialOffsetEventTimeGenerator;
@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class NYTWorkloadGenerator implements Runnable {
+public class PowerWorkloadGenerator implements Runnable {
 
     // System parameters
     private final Producer<byte[], byte[]> kafkaProducer;
@@ -24,8 +24,8 @@ public class NYTWorkloadGenerator implements Runnable {
     private final int throughput;
     private final EventTimeGenerator eventTimeGenerator;
 
-    public NYTWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName,
-                                int throughput, boolean missingData) {
+    public PowerWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName,
+                                  int throughput, boolean missingData) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
@@ -59,7 +59,6 @@ public class NYTWorkloadGenerator implements Runnable {
                 numOfEventsPerMS = 0;
             }
         }
-        //TODO inter-event generation delay here in Milliseconds
 
         int numOfEventsPerMsInt = (int) Math.ceil(numOfEventsPerMS);
         boolean ret = true;
@@ -69,11 +68,10 @@ public class NYTWorkloadGenerator implements Runnable {
                 ret = false;
                 break;
             }
-            String[] a = line.split(",");
+            String[] a = line.split(";");
             Map<String, String> eventMap = new HashMap<>();
-            for (int j = 0; j < a.length; j++) {
-                eventMap.put(NYTConstants.HEADERS.get(j), a[j]);
-            }
+
+            eventMap.put(PowerConstants.HEADERS.get(2), a[2]); // "Global_active_power" is 3rd slot
             long eventTime = eventTimeGenerator.getEventTimeMillis(currTimeInMsec);
             eventMap.put("event_time", Long.toString(eventTime));
             String kafkaOutput = new JSONObject(eventMap).toString();

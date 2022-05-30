@@ -1,5 +1,8 @@
-package LRB;
+package NYT;
 
+import eventtime.generator.EventTimeGenerator;
+import eventtime.generator.ExponentialOffsetEventTimeGenerator;
+import eventtime.generator.NoOffsetEventTimeGenerator;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.JSONObject;
@@ -11,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class LRBWorkloadGenerator implements Runnable {
+public class NYTWorkloadGenerator implements Runnable {
 
     // System parameters
     private final Producer<byte[], byte[]> kafkaProducer;
@@ -19,17 +22,25 @@ public class LRBWorkloadGenerator implements Runnable {
     private final String fileName;
     // Experiment parameters
     private final int throughput;
+    private final EventTimeGenerator eventTimeGenerator;
 
-    public LRBWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName, int throughput) {
+    public NYTWorkloadGenerator(Producer<byte[], byte[]> kafkaProducer, String kafkaTopic, String fileName,
+                                int throughput, boolean missingData) {
         // System parameters
         this.kafkaProducer = kafkaProducer;
         this.kafkaTopic = kafkaTopic;
         this.fileName = fileName;
         // Experiment parameters
         this.throughput = throughput;
+        if (missingData) {
+            eventTimeGenerator = new ExponentialOffsetEventTimeGenerator();
+        } else {
+            eventTimeGenerator = new NoOffsetEventTimeGenerator();
+        }
     }
 
-    boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws IOException {
+    boolean emitThroughput(BufferedReader br, Random random, long currTimeInMsec, double numOfEventsPerMS) throws
+        IOException {
         // Transform timestamp to seconds
         long now = System.currentTimeMillis();
 
@@ -57,7 +68,15 @@ public class LRBWorkloadGenerator implements Runnable {
                 ret = false;
                 break;
             }
-            kafkaProducer.send(new ProducerRecord<>(kafkaTopic, line.getBytes(), line.getBytes()));
+            String[] a = line.split(",");
+            Map<String, String> eventMap = new HashMap<>();
+            for (int j = 0; j < a.length; j++) {
+                eventMap.put(NYTConstants.HEADERS.get(j), a[j]);
+            }
+            long eventTime = eventTimeGenerator.getEventTimeMillis(currTimeInMsec);
+            eventMap.put("event_time", Long.toString(eventTime));
+            String kafkaOutput = new JSONObject(eventMap).toString();
+            kafkaProducer.send(new ProducerRecord<>(kafkaTopic, kafkaOutput.getBytes(), kafkaOutput.getBytes()));
         }
 
         return ret;

@@ -1,7 +1,7 @@
 # Flink Streaming Benchmarks 
 
 ### Setup
-./bin/setup.sh [watslack|flink]
+./bin/setup.sh flink
 
 ### Generate Experiments
 ./bin/gen-exp.sh <configurations>

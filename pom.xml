@@ -6,11 +6,11 @@ Licensed under the terms of the Apache License 2.0. Please see LICENSE file in t
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.harshbindra.flink.benchmarks</groupId>
-    <artifactId>flink-benchmarks</artifactId>
+    <groupId>org.uwaterloo.streaming.benchmarks</groupId>
+    <artifactId>quantile-sketching</artifactId>
     <packaging>pom</packaging>
 
-    <name>flink-benchmarks</name>
+    <name>quantile-sketching</name>
     <version>0.5.0</version>
 
     <properties>
@@ -125,7 +125,7 @@ Licensed under the terms of the Apache License 2.0. Please see LICENSE file in t
     </dependencyManagement>
 
     <modules>
-        <module>workload-generator</module>
+        <module>workload-generator-flink</module>
         <module>workload-processor-flink</module>
     </modules>
 

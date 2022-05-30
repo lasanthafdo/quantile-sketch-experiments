@@ -1,24 +1,20 @@
-import LRB.LRBWorkloadGenerator;
 import NYT.NYTWorkloadGenerator;
 import Power.PowerWorkloadGenerator;
 import Synthetic.SyntheticParetoWorkloadGenerator;
 import Synthetic.SyntheticUniformWorkloadGenerator;
-import YSB.YSBWorkloadGenerator;
-import YSB.YSBWorkloadSetup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import redis.clients.jedis.Jedis;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
-import static LRB.LRBConstants.LRB_KAFKA_TOPIC_PREFIX;
 import static NYT.NYTConstants.NYT_KAFKA_TOPIC_PREFIX;
 import static Power.PowerConstants.POWER_KAFKA_TOPIC_PREFIX;
-import static YSB.YSBConstants.KAFKA_TOPIC_PREFIX;
+import static Synthetic.SyntheticConstants.SYN_PARETO_KAFKA_TOPIC_PREFIX;
+import static Synthetic.SyntheticConstants.SYN_UNIFORM_KAFKA_TOPIC_PREFIX;
 
 public class WorkloadGeneratorEntryPoint {
 
@@ -56,29 +52,11 @@ public class WorkloadGeneratorEntryPoint {
             System.exit(-1);
         }
 
-        /* Identify execution mode */
-        boolean setupExecution = false;
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("-n")) {
-                setupExecution = true;
-            } else if (arg.equalsIgnoreCase("-r")) {
-                setupExecution = false;
-            }
-        }
-
         /* Identify workload type */
         String workloadType = (String) benchMap.get("workload_type");
 
         /* Execute! */
-        if (workloadType.equalsIgnoreCase("ysb")) {
-            if (setupExecution) {
-                runYSBWorkloadSetup(setupMap);
-            } else {
-                runYSBWorkloadGenerator(setupMap, benchMap);
-            }
-        } else if (workloadType.equalsIgnoreCase("lrb")) {
-            runLRBWorkloadGenerator(setupMap, benchMap);
-        } else if (workloadType.equalsIgnoreCase("nyt")) {
+        if (workloadType.equalsIgnoreCase("nyt")) {
             runNYTWorkloadGenerator(setupMap, benchMap);
         } else if (workloadType.equalsIgnoreCase("syn") || workloadType.equalsIgnoreCase("synp")) {
             runSyntheticParetoWorkloadGenerator(setupMap, benchMap);
@@ -86,42 +64,6 @@ public class WorkloadGeneratorEntryPoint {
             runSyntheticUniformWorkloadGenerator(setupMap, benchMap);
         } else if (workloadType.equalsIgnoreCase("power")) {
             runPowerWorkloadGenerator(setupMap, benchMap);
-        }
-    }
-
-    private static void runYSBWorkloadSetup(Map setupMap) {
-        String jedisServerName = (String) setupMap.get("redis.host");
-        new YSBWorkloadSetup(new Jedis(jedisServerName)).run();
-    }
-
-    private static void runYSBWorkloadGenerator(Map setupMap, Map benchMap) {
-        /* Create Kafka Producer */
-        Properties props = new Properties();
-        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
-
-        Producer<byte[], byte[]> kafkaProducer =
-            new KafkaProducer<>(props,
-                new ByteArraySerializer(),
-                new ByteArraySerializer());
-
-        /* Create Redis instance */
-        String jedisServerName = (String) setupMap.get("redis.host");
-        Jedis jedis = new Jedis(jedisServerName);
-
-        /* Get Benchmark properties */
-        int numOfInstances = (Integer) benchMap.get("num_instances");
-        int throughput = (Integer) benchMap.get("throughput");
-
-        for (int i = 1; i <= numOfInstances; i++) {
-            try {
-                new Thread(
-                    new YSBWorkloadGenerator(
-                        kafkaProducer, KAFKA_TOPIC_PREFIX + "-" + i, jedis, throughput))
-                    .start();
-                Thread.sleep(2000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -182,7 +124,7 @@ public class WorkloadGeneratorEntryPoint {
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
         boolean missingData = (boolean) benchMap.get("missing_data");
-        new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, "synp-events", throughput, missingData))
+        new Thread(new SyntheticParetoWorkloadGenerator(kafkaProducer, SYN_PARETO_KAFKA_TOPIC_PREFIX, throughput, missingData))
             .start();
     }
 
@@ -199,37 +141,8 @@ public class WorkloadGeneratorEntryPoint {
         /* Get Benchmark properties */
         int throughput = (Integer) benchMap.get("throughput");
         boolean missingData = (boolean) benchMap.get("missing_data");
-        new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, "synu-events", throughput, missingData))
+        new Thread(new SyntheticUniformWorkloadGenerator(kafkaProducer, SYN_UNIFORM_KAFKA_TOPIC_PREFIX, throughput, missingData))
             .start();
     }
 
-    private static void runLRBWorkloadGenerator(Map setupMap, Map benchMap) {
-        /* Create Kafka Producer */
-        Properties props = new Properties();
-        props.put("bootstrap.servers", Utils.getKafkaBrokers(setupMap));
-
-        Producer<byte[], byte[]> kafkaProducer =
-            new KafkaProducer<>(props,
-                new ByteArraySerializer(),
-                new ByteArraySerializer());
-
-        /* Create Redis instance */
-        String jedisServerName = (String) setupMap.get("redis.host");
-        Jedis jedis = new Jedis(jedisServerName);
-
-        /* Get Benchmark properties */
-        int numOfInstances = (Integer) benchMap.get("num_instances");
-        int throughput = (Integer) benchMap.get("throughput");
-        int watermarkFrequency = (Integer) benchMap.get("watermark_frequency");
-
-        try {
-            new Thread(
-                new LRBWorkloadGenerator(
-                    kafkaProducer, LRB_KAFKA_TOPIC_PREFIX + "-" + 1, "car.dat", throughput))
-                .start();
-            Thread.sleep(2000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

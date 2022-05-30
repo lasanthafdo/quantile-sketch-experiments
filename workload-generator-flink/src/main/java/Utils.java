@@ -15,7 +15,7 @@ import static java.util.UUID.randomUUID;
 public class Utils {
 
     static Map yamlToMap(String fileName) throws IOException {
-        InputStreamReader in = new InputStreamReader(new FileInputStream(new File(fileName)));
+        InputStreamReader in = new InputStreamReader(new FileInputStream(fileName));
         Yaml yaml = new Yaml(new SafeConstructor());
 
         Map ret = yaml.load(in);
