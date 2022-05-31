@@ -10,6 +10,9 @@ In order to use this implementation, you need to build and install the jar file 
 
 ## Flink Streaming Benchmarks 
 
+You need to introduce some modifications to Flink in order to get metrics of actual quantile values.
+Follow the instructions below to obtain our fork of Apache Flink that provides these changes.
+
 If you compile Flink (ie. get a new Flink binary), you must run `./bin/setup syn` for changes to be integrated with flink-benchmarks. 
 
 ### Compling Flink
