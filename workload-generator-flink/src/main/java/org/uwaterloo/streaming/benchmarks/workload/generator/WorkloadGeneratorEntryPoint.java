@@ -1,13 +1,12 @@
 package org.uwaterloo.streaming.benchmarks.workload.generator;
 
-import org.uwaterloo.streaming.benchmarks.workload.generator.Utils;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.uwaterloo.streaming.benchmarks.workload.generator.nyt.NYTWorkloadGenerator;
 import org.uwaterloo.streaming.benchmarks.workload.generator.power.PowerWorkloadGenerator;
 import org.uwaterloo.streaming.benchmarks.workload.generator.synthetic.SyntheticParetoWorkloadGenerator;
 import org.uwaterloo.streaming.benchmarks.workload.generator.synthetic.SyntheticUniformWorkloadGenerator;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import java.io.File;
 import java.io.IOException;

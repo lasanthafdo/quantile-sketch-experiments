@@ -127,6 +127,7 @@ Licensed under the terms of the Apache License 2.0. Please see LICENSE file in t
     <modules>
         <module>workload-generator-flink</module>
         <module>workload-processor-flink</module>
+        <module>standalone-benchmarks</module>
     </modules>
 
     <build>
