@@ -20,7 +20,7 @@ start_redis() {
     start_if_needed redis-server Redis 1 "$REDIS_DIR/src/redis-server" "--protected-mode no"
     cd "$WORKLOAD_GENERATOR_DIR" || exit
     #sudo mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -n"
-    java -classpath target/workload-generator-0.5.0.jar WorkloadGeneratorEntryPoint -s "$SETUP_FILE" -e "$1" -n
+    java -classpath target/workload-generator-0.5.0.jar org.uwaterloo.streaming.benchmarks.workload.generator.WorkloadGeneratorEntryPoint -s "$SETUP_FILE" -e "$1" -n
     cd "$PROJECT_DIR" || exit
   fi
 }
@@ -30,16 +30,16 @@ start_load() {
   echo "Start Workload Generator"
   cd "$WORKLOAD_GENERATOR_DIR" || exit
   #mvn exec:java -Dexec.mainClass="WorkloadGeneratorEntryPoint" -Dexec.args="-s $SETUP_FILE -e $1 -r" &
-  java -classpath target/workload-generator-0.5.0.jar WorkloadGeneratorEntryPoint -s $SETUP_FILE -e "$1" &
+  java -classpath target/workload-generator-0.5.0.jar org.uwaterloo.streaming.benchmarks.workload.generator.WorkloadGeneratorEntryPoint -s $SETUP_FILE -e "$1" &
   cd "$PROJECT_DIR" || exit
 }
 
 start() {
   hname=$(hostname)
   if [[ "$hname" == *"scslt"*  ]]; then
-    maven_clean_install_no_tests $PROJECT_DIR/workload-generator
+    maven_clean_install_no_tests $WORKLOAD_GENERATOR_DIR
   else
-    cd $PROJECT_DIR/workload-generator || exit
+    cd $WORKLOAD_GENERATOR_DIR || exit
     mvn -Dmaven.repo.local=/hdd2/.m2/ clean install
     cd $PROJECT_DIR
   fi

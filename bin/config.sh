@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 ## Projects Directories
-SRC_ROOT_DIR="$HOME/src/quantiles_streaming"
-PROJECT_DIR="$SRC_ROOT_DIR/flinkBenchmarks"
+SRC_ROOT_DIR="$HOME/src/quantile-sketch-experiments"
+PROJECT_DIR="$SRC_ROOT_DIR"
 
 ## flink-benchmarks directories
 BIN_DIR="$PROJECT_DIR/bin"
 BENCHMARK_DIR="$PROJECT_DIR/benchmark"
-WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator"
+WORKLOAD_GENERATOR_DIR="$PROJECT_DIR/workload-generator-flink"
 WORKLOAD_PROCESSOR_DIR="$PROJECT_DIR/workload-processor-flink"
 WORKLOAD_ANALYZER_DIR="$PROJECT_DIR/workload-analyzer"
 

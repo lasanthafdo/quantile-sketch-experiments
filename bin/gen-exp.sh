@@ -25,15 +25,17 @@ gen_exp(){
     echo 'throughput:' $4 >> $exp_file
     echo 'watermark_frequency:' $5 >> $exp_file
     echo 'window_size:' $6 >> $exp_file
+    echo 'algorithm:' $7 >> $exp_file
+    echo 'missing_data: false' >> $exp_file
 }
 
-if [[ $# -lt 6 ]];
+if [[ $# -lt 7 ]];
 then
-  echo "Less than 6 number of arguments"
-  echo "Using defaults: gen-exp.sh experiment_name: ysb_default workload_type: ysb num_instances: 1 throughput: 2000events/s watermark_freq: 600ms window_size_in_seconds: 3"
-  gen_exp ysb_default ysb 1 2000 600 3
+  echo "Less than 7 number of arguments"
+  echo "Using defaults: gen-exp.sh experiment_name: synu_default workload_type: synu num_instances: 1 throughput: 50000 events/s watermark_freq: 5s window_size_in_seconds: 20 algorithm: ddsketch"
+  gen_exp synu_default synu 1 50000 5000 20 ddsketch
 else
   echo "Using supplied arguments"
-  echo "gen-exp.sh <experiment_name>  <workload_type> <num_instances> <throughput>  <watermark_freq>  <window_size_in_seconds>"
-  gen_exp $1 $2 $3 $4 $5 $6
+  echo "gen-exp.sh <experiment_name>  <workload_type> <num_instances> <throughput>  <watermark_freq>  <window_size_in_seconds> <algorithm>"
+  gen_exp $1 $2 $3 $4 $5 $6 $7
 fi
