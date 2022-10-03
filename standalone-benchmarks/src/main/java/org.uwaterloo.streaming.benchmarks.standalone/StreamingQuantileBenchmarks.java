@@ -40,7 +40,6 @@ public class StreamingQuantileBenchmarks {
     public static final boolean RUN_WARM_UP_FOR_MERGE = false;
     public static final boolean SAVE_PARETO_SAMPLE = false;
     public static final boolean SAVE_UNIFORM_SAMPLE = false;
-    public static final boolean MEASURE_SKETCH_SIZES = false;
     public static final boolean PREPROCESS_INSERT_MERGE_RESULTS = false;
     public static final boolean PREPROCESS_INSERT_TIMES = false;
     public static final boolean PREPROCESS_MERGE_TIMES = true;
@@ -96,7 +95,7 @@ public class StreamingQuantileBenchmarks {
 
 
             int dataSizeAdaptability = 1_000_000;
-            int dataSizeKurtosis = 1_000_000;
+            int defaultDataSize = 1_000_000;
             ArrayList<Double> all_data = new ArrayList<>();
 
             // Synthetic Workloads
@@ -251,7 +250,7 @@ public class StreamingQuantileBenchmarks {
             // Kurtosis test
             if (runMode == 5) {
                 System.out.println(
-                    "======= Running kurtosis tests with data size : " + dataSizeKurtosis + " =========");
+                    "======= Running kurtosis tests with data size : " + defaultDataSize + " =========");
 
                 ArrayList<Double> actualKurtosisData = new ArrayList<>();
                 double percentileOfInterest = 0.98;
@@ -265,7 +264,7 @@ public class StreamingQuantileBenchmarks {
                 NormalDistribution uniformNormal2 = new NormalDistribution(1000, 100);
                 UniformRealDistribution uDKurt =
                     new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
-                for (int i = 0; i < dataSizeKurtosis; i++) {
+                for (int i = 0; i < defaultDataSize; i++) {
                     if (i % 50 == 0) {
                         uDKurt = new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
                     }
@@ -295,7 +294,7 @@ public class StreamingQuantileBenchmarks {
                         ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
                             .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
 
-                    for (int i = 0; i < dataSizeKurtosis; i++) {
+                    for (int i = 0; i < defaultDataSize; i++) {
                         double sampledValue = actualKurtosisData.get(i);
                         momentSketch.add(sampledValue);
                         ddsketch.accept(sampledValue);
@@ -329,7 +328,7 @@ public class StreamingQuantileBenchmarks {
                     shapeParam = paretoNormal.sample();
                 }
                 ParetoDistribution ptoDKurt = new ParetoDistribution(shapeParam, shapeParam);
-                for (int i = 0; i < dataSizeKurtosis; i++) {
+                for (int i = 0; i < defaultDataSize; i++) {
                     if (i % 50 == 0) {
                         shapeParam = paretoNormal.sample();
                         while (shapeParam < 0.01) {
@@ -363,7 +362,7 @@ public class StreamingQuantileBenchmarks {
                         ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
                             .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
 
-                    for (int i = 0; i < dataSizeKurtosis; i++) {
+                    for (int i = 0; i < defaultDataSize; i++) {
                         double sampledValue = actualKurtosisData.get(i);
                         momentSketch.add(Math.log(sampledValue));
                         ddsketch.accept(sampledValue);
@@ -381,24 +380,6 @@ public class StreamingQuantileBenchmarks {
                     kllQ = round(kllsketch.getQuantile(percentileOfInterest), 4);
                     reqQ = round(reqSketch.getQuantile(percentileOfInterest), 4);
                     uddsQ = round(uddsketch.getValueAtQuantile(percentileOfInterest), 4);
-
-                    if (MEASURE_SKETCH_SIZES) {
-                        long momentBytes = ObjectSizeFetcher.getObjectSize(momentSketch) +
-                            (long) (momentSketch.getK() + 2) * Double.BYTES;
-                        long ddsBytes =
-                            ObjectSizeFetcher.getObjectSize(ddsketch) +
-                                ddsketch.getPositiveValueStore().serializedSize();
-                        long ddscBytes = ObjectSizeFetcher.getObjectSize(ddSketchCollapsing) +
-                            ddSketchCollapsing.getPositiveValueStore().serializedSize();
-                        long uddsBytes =
-                            ObjectSizeFetcher.getObjectSize(uddsketch) + uddsketch.getSerializedStoreSize();
-                        System.out.println("Moments:" + momentBytes +
-                            ", DDS:" + ddsBytes
-                            + ", DDSC:" + ddscBytes
-                            + ", KLL:" + kllsketch.getSerializedSizeBytes()
-                            + ", REQ:" + reqSketch.getSerializationBytes()
-                            + ", UDDS:" + uddsBytes);
-                    }
                     resultString =
                         "Pareto," + kurtosisVal + "," + realQ + "," + momentsQ + "," + ddsQ + "," + ddscQ + "," + kllQ +
                             "," + reqQ + "," + uddsQ;
@@ -415,7 +396,7 @@ public class StreamingQuantileBenchmarks {
                     BufferedReader brPower =
                         new BufferedReader(
                             new FileReader("/home/m34ferna/flink-benchmarks/household_power_consumption.txt"));
-                    while ((line = brPower.readLine()) != null && actualKurtosisData.size() <= dataSizeKurtosis) {
+                    while ((line = brPower.readLine()) != null && actualKurtosisData.size() <= defaultDataSize) {
                         String[] line_array = line.split(delimiterPowerDataset);    // use comma as separator
                         double globalActivePower = Double.parseDouble(line_array[2]);
                         actualKurtosisData.add(globalActivePower);
@@ -476,7 +457,7 @@ public class StreamingQuantileBenchmarks {
                     String splitBy = ",";
                     BufferedReader brNYT =
                         new BufferedReader(new FileReader("/home/m34ferna/flink-benchmarks/nyt-data.csv"));
-                    while ((line = brNYT.readLine()) != null && actualKurtosisData.size() <= dataSizeKurtosis) {
+                    while ((line = brNYT.readLine()) != null && actualKurtosisData.size() <= defaultDataSize) {
                         String[] line_array = line.split(splitBy);    // use comma as separator
                         double totalAmount = Double.parseDouble(line_array[10]);
                         actualKurtosisData.add(totalAmount);
@@ -539,28 +520,22 @@ public class StreamingQuantileBenchmarks {
                 System.out.println("=========== Starting insert time tests ==============");
 
                 ArrayList<Integer> dataSizes = new ArrayList<>(4);
+                int numIters = 11;
+                for (int i = 0; i < numIters + 3; i++) {
+                    dataSizes.add(10_000_000);
+                }
 
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
+                for (int i = 0; i < numIters; i++) {
+                    dataSizes.add(100_000_000);
+                }
 
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
-                dataSizes.add(10_000_000);
-
-                dataSizes.add(100_000_000);
-                dataSizes.add(100_000_000);
-                dataSizes.add(100_000_000);
-                dataSizes.add(100_000_000);
-                dataSizes.add(100_000_000);
+                for (int i = 0; i < numIters; i++) {
+                    dataSizes.add(1_000_000_000);
+                }
 
                 FileWriter insertWriter = new FileWriter("insert_times.txt");
 
-                int insertIter = 0;
                 for (Integer dataSize : dataSizes) {
-                    insertIter++;
                     System.out.println("======================================================");
                     long startInsertOp, elapsedTimeOp;
                     long[] insertResults = new long[5];
@@ -573,8 +548,7 @@ public class StreamingQuantileBenchmarks {
                         ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
                             .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
 
-                    FileWriter momentsInsertWriter =
-                        new FileWriter("moments_insert_times_" + dataSize + "_" + insertIter + ".txt");
+                    long momentInsertTot = 0L;
                     long startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -582,7 +556,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         momentSketch.add(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        momentsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
+                        momentInsertTot += elapsedTimeOp;
                     }
 
                     long endInsert = System.nanoTime();
@@ -593,12 +567,12 @@ public class StreamingQuantileBenchmarks {
                         "MomentSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println(
                         "MomentSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    insertResults[0] = elapsedTimeInsertMicros;
-                    momentsInsertWriter.close();
+                    System.out.println(
+                        "MomentSketch - Real Insert time [" + dataSize + "] (nanos): " + momentInsertTot);
+                    insertResults[0] = TimeUnit.NANOSECONDS.toMicros(momentInsertTot);
 
                     // DDSketch
-                    FileWriter ddsInsertWriter =
-                        new FileWriter("dds_insert_times_" + dataSize + "_" + insertIter + ".txt");
+                    long ddsInsertTot = 0L;
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -606,7 +580,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         ddsketch.accept(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        ddsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
+                        ddsInsertTot += elapsedTimeOp;
                     }
 
                     endInsert = System.nanoTime();
@@ -616,12 +590,11 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "DDSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("DDSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    insertResults[1] = elapsedTimeInsertMicros;
-                    ddsInsertWriter.close();
+                    System.out.println("DDSketch - Real Insert time [" + dataSize + "] (nanos): " + ddsInsertTot);
+                    insertResults[1] = TimeUnit.NANOSECONDS.toMicros(ddsInsertTot);
 
                     //KLL Sketch
-                    FileWriter kllInsertWriter =
-                        new FileWriter("kll_insert_times_" + dataSize + "_" + insertIter + ".txt");
+                    long kllInsertTot = 0L;
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -629,7 +602,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         kllsketch.update((float) sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        kllInsertWriter.write(i + "," + elapsedTimeOp + "\n");
+                        kllInsertTot += elapsedTimeOp;
                     }
 
                     endInsert = System.nanoTime();
@@ -639,12 +612,11 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "KLLSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("KLLSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    insertResults[2] = elapsedTimeInsertMicros;
-                    kllInsertWriter.close();
+                    System.out.println("KLLSketch - Real Insert time [" + dataSize + "] (nanos): " + kllInsertTot);
+                    insertResults[2] = TimeUnit.NANOSECONDS.toMicros(kllInsertTot);
 
                     // REQ
-                    FileWriter reqInsertWriter =
-                        new FileWriter("req_insert_times_" + dataSize + "_" + insertIter + ".txt");
+                    long reqInsertTot = 0L;
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -652,7 +624,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         reqSketch.update((float) sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        reqInsertWriter.write(i + "," + elapsedTimeOp + "\n");
+                        reqInsertTot += elapsedTimeOp;
                     }
 
                     endInsert = System.nanoTime();
@@ -662,12 +634,11 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "REQSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("REQSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    insertResults[3] = elapsedTimeInsertMicros;
-                    reqInsertWriter.close();
+                    System.out.println("REQSketch - Real Insert time [" + dataSize + "] (nanos): " + reqInsertTot);
+                    insertResults[3] = TimeUnit.NANOSECONDS.toMicros(reqInsertTot);
 
                     // UDDS
-                    FileWriter uddsInsertWriter =
-                        new FileWriter("udds_insert_times_" + dataSize + "_" + insertIter + ".txt");
+                    long uddsInsertTot = 0L;
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -675,7 +646,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         uddsketch.accept(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        uddsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
+                        uddsInsertTot += elapsedTimeOp;
                     }
 
                     endInsert = System.nanoTime();
@@ -685,8 +656,8 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "UDDSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("UDDSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    insertResults[4] = elapsedTimeInsertMicros;
-                    uddsInsertWriter.close();
+                    System.out.println("UDDSketch - Real Insert time [" + dataSize + "] (nanos): " + uddsInsertTot);
+                    insertResults[4] = TimeUnit.NANOSECONDS.toMicros(uddsInsertTot);
 
                     insertWriter.write(dataSize + "," + Arrays.toString(insertResults) + "\n");
                 }
@@ -872,6 +843,266 @@ public class StreamingQuantileBenchmarks {
                 }
                 queryWriter.close();
             }
+
+            // Memory test
+            if (runMode == 7) {
+                System.out.println(
+                    "======= Running memory tests with data size : " + defaultDataSize + " =========");
+
+                ArrayList<Double> dataSetArray = new ArrayList<>();
+                int numIters = 12;
+                String resultString;
+                FileWriter memDataWriter = new FileWriter("memory_data.txt");
+
+                // Uniform
+                NormalDistribution uniformNormal = new NormalDistribution(100, 25);
+                NormalDistribution uniformNormal2 = new NormalDistribution(1000, 100);
+                UniformRealDistribution uDMem =
+                    new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
+                for (int i = 0; i < defaultDataSize; i++) {
+                    if (i % 50 == 0) {
+                        uDMem = new UniformRealDistribution(uniformNormal.sample(), uniformNormal2.sample());
+                    }
+                    double sampled_value = uDMem.sample();
+                    dataSetArray.add(sampled_value);
+                }
+
+                for (int iter = 0; iter < numIters; iter++) {
+                    ddsketch = new DDSketch(DDS_PARAM_RELATIVE_ACCURACY);
+                    ddSketchCollapsing = new DDSketch(new LogarithmicMapping(DDS_PARAM_RELATIVE_ACCURACY),
+                        () -> new CollapsingLowestDenseStore(UDDS_PARAM_MAX_NUM_BUCKETS));
+                    uddsketch = new UniformDDSketch(UDDS_PARAM_MAX_NUM_BUCKETS, alphaZero);
+                    kllsketch = new KllFloatsSketch(KLL_PARAM_K);
+                    momentSketch = new SimpleMomentSketch(MOMEMNTS_PARAM_K);
+                    momentSketch.setCompressed(MOMENTS_PARAM_COMPRESSED);
+                    reqSketch =
+                        ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
+                            .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
+
+                    for (int i = 0; i < defaultDataSize; i++) {
+                        double sampledValue = dataSetArray.get(i);
+                        momentSketch.add(sampledValue);
+                        ddsketch.accept(sampledValue);
+                        ddSketchCollapsing.accept(sampledValue);
+                        kllsketch.update((float) sampledValue);
+                        reqSketch.update((float) sampledValue);
+                        uddsketch.accept(sampledValue);
+                    }
+
+                    System.out.println("=== Measuring sketch sizes in memory ===");
+                    long momentBytes = ObjectSizeFetcher.getObjectSize(momentSketch) +
+                        (long) (momentSketch.getK() + 2) * Double.BYTES;
+                    long ddsBytes =
+                        ObjectSizeFetcher.getObjectSize(ddsketch) +
+                            ddsketch.getPositiveValueStore().serializedSize();
+                    long ddscBytes = ObjectSizeFetcher.getObjectSize(ddSketchCollapsing) +
+                        ddSketchCollapsing.getPositiveValueStore().serializedSize();
+                    long uddsBytes =
+                        ObjectSizeFetcher.getObjectSize(uddsketch) + uddsketch.getSerializedStoreSize();
+                    long kllBytes = kllsketch.getSerializedSizeBytes();
+                    long reqBytes = reqSketch.getSerializationBytes();
+                    System.out.println("Moments:" + momentBytes +
+                        ", DDS:" + ddsBytes
+                        + ", DDSC:" + ddscBytes
+                        + ", KLL:" + kllBytes
+                        + ", REQ:" + reqBytes
+                        + ", UDDS:" + uddsBytes);
+                    resultString =
+                        "Uniform," + momentBytes + "," + ddsBytes + "," + ddscBytes + "," + kllBytes +
+                            "," + reqBytes + "," + uddsBytes;
+                    System.out.println(resultString);
+                    memDataWriter.write(resultString + "\n");
+                }
+
+                // Pareto
+                dataSetArray.clear();
+                NormalDistribution paretoNormal = new NormalDistribution(1, 0.05);
+                double shapeParam = paretoNormal.sample();
+                while (shapeParam < 0.01) {
+                    shapeParam = paretoNormal.sample();
+                }
+                ParetoDistribution ptoDMem = new ParetoDistribution(shapeParam, shapeParam);
+                for (int i = 0; i < defaultDataSize; i++) {
+                    if (i % 50 == 0) {
+                        shapeParam = paretoNormal.sample();
+                        while (shapeParam < 0.01) {
+                            shapeParam = paretoNormal.sample();
+                        }
+                        ptoDMem = new ParetoDistribution(shapeParam, shapeParam);
+                    }
+                    double sampled_value = ptoDMem.sample();
+                    dataSetArray.add(sampled_value);
+                }
+
+                for (int iter = 0; iter < numIters; iter++) {
+                    ddsketch = new DDSketch(DDS_PARAM_RELATIVE_ACCURACY);
+                    ddSketchCollapsing = new DDSketch(new LogarithmicMapping(DDS_PARAM_RELATIVE_ACCURACY),
+                        () -> new CollapsingLowestDenseStore(UDDS_PARAM_MAX_NUM_BUCKETS));
+                    uddsketch = new UniformDDSketch(UDDS_PARAM_MAX_NUM_BUCKETS, alphaZero);
+                    kllsketch = new KllFloatsSketch(KLL_PARAM_K);
+                    momentSketch = new SimpleMomentSketch(MOMEMNTS_PARAM_K);
+                    momentSketch.setCompressed(MOMENTS_PARAM_COMPRESSED);
+                    reqSketch =
+                        ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
+                            .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
+
+                    for (int i = 0; i < defaultDataSize; i++) {
+                        double sampledValue = dataSetArray.get(i);
+                        momentSketch.add(Math.log(sampledValue));
+                        ddsketch.accept(sampledValue);
+                        ddSketchCollapsing.accept(sampledValue);
+                        kllsketch.update((float) sampledValue);
+                        reqSketch.update((float) sampledValue);
+                        uddsketch.accept(sampledValue);
+                    }
+
+                    System.out.println("=== Measuring sketch sizes in memory ===");
+                    long momentBytes = ObjectSizeFetcher.getObjectSize(momentSketch) +
+                        (long) (momentSketch.getK() + 2) * Double.BYTES;
+                    long ddsBytes =
+                        ObjectSizeFetcher.getObjectSize(ddsketch) +
+                            ddsketch.getPositiveValueStore().serializedSize();
+                    long ddscBytes = ObjectSizeFetcher.getObjectSize(ddSketchCollapsing) +
+                        ddSketchCollapsing.getPositiveValueStore().serializedSize();
+                    long uddsBytes =
+                        ObjectSizeFetcher.getObjectSize(uddsketch) + uddsketch.getSerializedStoreSize();
+                    long kllBytes = kllsketch.getSerializedSizeBytes();
+                    long reqBytes = reqSketch.getSerializationBytes();
+                    System.out.println("Moments:" + momentBytes +
+                        ", DDS:" + ddsBytes
+                        + ", DDSC:" + ddscBytes
+                        + ", KLL:" + kllBytes
+                        + ", REQ:" + reqBytes
+                        + ", UDDS:" + uddsBytes);
+                    resultString =
+                        "Pareto," + momentBytes + "," + ddsBytes + "," + ddscBytes + "," + kllBytes +
+                            "," + reqBytes + "," + uddsBytes;
+                    System.out.println(resultString);
+                    memDataWriter.write(resultString + "\n");
+                }
+
+                // Power dataset
+                String line;
+                dataSetArray.clear();
+
+                String delimiterPowerDataset = ";";
+                BufferedReader brPower =
+                    new BufferedReader(
+                        new FileReader("/home/m34ferna/flink-benchmarks/household_power_consumption.txt"));
+                while ((line = brPower.readLine()) != null && dataSetArray.size() <= defaultDataSize) {
+                    String[] line_array = line.split(delimiterPowerDataset);    // use comma as separator
+                    double globalActivePower = Double.parseDouble(line_array[2]);
+                    dataSetArray.add(globalActivePower);
+                }
+
+                for (int iter = 0; iter < numIters; iter++) {
+                    ddsketch = new DDSketch(DDS_PARAM_RELATIVE_ACCURACY);
+                    ddSketchCollapsing = new DDSketch(new LogarithmicMapping(DDS_PARAM_RELATIVE_ACCURACY),
+                        () -> new CollapsingLowestDenseStore(UDDS_PARAM_MAX_NUM_BUCKETS));
+                    uddsketch = new UniformDDSketch(UDDS_PARAM_MAX_NUM_BUCKETS, alphaZero);
+                    kllsketch = new KllFloatsSketch(KLL_PARAM_K);
+                    momentSketch = new SimpleMomentSketch(MOMEMNTS_PARAM_K);
+                    momentSketch.setCompressed(MOMENTS_PARAM_COMPRESSED);
+                    reqSketch =
+                        ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
+                            .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
+
+                    for (double globalActivePower : dataSetArray) {
+                        momentSketch.add(Math.log(globalActivePower));
+                        ddsketch.accept(globalActivePower);
+                        ddSketchCollapsing.accept(globalActivePower);
+                        kllsketch.update((float) globalActivePower);
+                        reqSketch.update((float) globalActivePower);
+                        uddsketch.accept(globalActivePower);
+                    }
+
+                    System.out.println("=== Measuring sketch sizes in memory ===");
+                    long momentBytes = ObjectSizeFetcher.getObjectSize(momentSketch) +
+                        (long) (momentSketch.getK() + 2) * Double.BYTES;
+                    long ddsBytes =
+                        ObjectSizeFetcher.getObjectSize(ddsketch) +
+                            ddsketch.getPositiveValueStore().serializedSize();
+                    long ddscBytes = ObjectSizeFetcher.getObjectSize(ddSketchCollapsing) +
+                        ddSketchCollapsing.getPositiveValueStore().serializedSize();
+                    long uddsBytes =
+                        ObjectSizeFetcher.getObjectSize(uddsketch) + uddsketch.getSerializedStoreSize();
+                    long kllBytes = kllsketch.getSerializedSizeBytes();
+                    long reqBytes = reqSketch.getSerializationBytes();
+                    System.out.println("Moments:" + momentBytes +
+                        ", DDS:" + ddsBytes
+                        + ", DDSC:" + ddscBytes
+                        + ", KLL:" + kllBytes
+                        + ", REQ:" + reqBytes
+                        + ", UDDS:" + uddsBytes);
+                    resultString =
+                        "Power," + momentBytes + "," + ddsBytes + "," + ddscBytes + "," + kllBytes +
+                            "," + reqBytes + "," + uddsBytes;
+                    System.out.println(resultString);
+                    memDataWriter.write(resultString + "\n");
+                }
+
+                // NYT dataset
+                dataSetArray.clear();
+
+                String splitBy = ",";
+                BufferedReader brNYT =
+                    new BufferedReader(new FileReader("/home/m34ferna/flink-benchmarks/nyt-data.csv"));
+                while ((line = brNYT.readLine()) != null && dataSetArray.size() <= defaultDataSize) {
+                    String[] line_array = line.split(splitBy);    // use comma as separator
+                    double totalAmount = Double.parseDouble(line_array[10]);
+                    dataSetArray.add(totalAmount);
+                }
+
+                for (int iter = 0; iter < numIters; iter++) {
+
+                    ddsketch = new DDSketch(DDS_PARAM_RELATIVE_ACCURACY);
+                    ddSketchCollapsing = new DDSketch(new LogarithmicMapping(DDS_PARAM_RELATIVE_ACCURACY),
+                        () -> new CollapsingLowestDenseStore(UDDS_PARAM_MAX_NUM_BUCKETS));
+                    uddsketch = new UniformDDSketch(UDDS_PARAM_MAX_NUM_BUCKETS, alphaZero);
+                    kllsketch = new KllFloatsSketch(KLL_PARAM_K);
+                    momentSketch = new SimpleMomentSketch(MOMEMNTS_PARAM_K);
+                    momentSketch.setCompressed(MOMENTS_PARAM_COMPRESSED);
+                    reqSketch =
+                        ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
+                            .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
+
+                    for (double totalAmount : dataSetArray) {
+                        momentSketch.add(totalAmount);
+                        ddsketch.accept(totalAmount);
+                        ddSketchCollapsing.accept(totalAmount);
+                        kllsketch.update((float) totalAmount);
+                        reqSketch.update((float) totalAmount);
+                        uddsketch.accept(totalAmount);
+                    }
+
+                    System.out.println("=== Measuring sketch sizes in memory ===");
+                    long momentBytes = ObjectSizeFetcher.getObjectSize(momentSketch) +
+                        (long) (momentSketch.getK() + 2) * Double.BYTES;
+                    long ddsBytes =
+                        ObjectSizeFetcher.getObjectSize(ddsketch) +
+                            ddsketch.getPositiveValueStore().serializedSize();
+                    long ddscBytes = ObjectSizeFetcher.getObjectSize(ddSketchCollapsing) +
+                        ddSketchCollapsing.getPositiveValueStore().serializedSize();
+                    long uddsBytes =
+                        ObjectSizeFetcher.getObjectSize(uddsketch) + uddsketch.getSerializedStoreSize();
+                    long kllBytes = kllsketch.getSerializedSizeBytes();
+                    long reqBytes = reqSketch.getSerializationBytes();
+                    System.out.println("Moments:" + momentBytes +
+                        ", DDS:" + ddsBytes
+                        + ", DDSC:" + ddscBytes
+                        + ", KLL:" + kllBytes
+                        + ", REQ:" + reqBytes
+                        + ", UDDS:" + uddsBytes);
+                    resultString =
+                        "NYT," + momentBytes + "," + ddsBytes + "," + ddscBytes + "," + kllBytes +
+                            "," + reqBytes + "," + uddsBytes;
+                    System.out.println(resultString);
+                    memDataWriter.write(resultString + "\n");
+                }
+
+                memDataWriter.close();
+            }
+
         } catch (FileNotFoundException e) {
             System.out.println("File not found exception occurred.");
             e.printStackTrace();
@@ -970,11 +1201,13 @@ public class StreamingQuantileBenchmarks {
 
     private static void runKTests() {
         System.out.println("Get K");
-        System.out.println(KllFloatsSketch.getKFromEpsilon(0.01, true));
-        System.out.println(KllFloatsSketch.getKFromEpsilon(0.01, false));
-        System.out.println(KllFloatsSketch.getNormalizedRankError(200, true));
+        System.out.println("K for epsilon=0.01 and PMF=true :" + KllFloatsSketch.getKFromEpsilon(0.01, true));
+        System.out.println("K for epsilon=0.01 and PMF=false :" + KllFloatsSketch.getKFromEpsilon(0.01, false));
+        System.out.println(
+            "Normalized rank error for k=350 and PMF=true :" + KllFloatsSketch.getNormalizedRankError(350, true));
         System.out.println("End K");
-        System.out.println("RSE: " + ReqSketch.builder().build().getRSE(30, 0.5, true, 1_000_000));
+        System.out.println("Relative standard error (RSE) for ReqSketch: " +
+            ReqSketch.builder().build().getRSE(30, 0.5, true, 1_000_000));
     }
 
     private static void calcPowerDatasetStats() throws IOException {
@@ -1017,6 +1250,7 @@ public class StreamingQuantileBenchmarks {
         System.out.println(Collections.max(valuesRead));
     }
 
+    @Deprecated
     private static void preprocessInsertMergeResults() throws IOException {
         String line;
         String splitBy = ",";
