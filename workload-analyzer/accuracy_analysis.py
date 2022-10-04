@@ -1,11 +1,13 @@
 import sys
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.ticker import LinearLocator, AutoLocator
-
+from matplotlib.ticker import AutoLocator
+import matplotlib.style as style
+style.use('seaborn-colorblind')
 
 def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, ylim_top, plot_filename):
     plot_data = [
@@ -45,11 +47,18 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, 
     print(mean_data_df)
     fig, ax = plt.subplots(figsize=(4, 3))
     mean_data_df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"],
-                      style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax)
+                      style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax)  # , "x", "o", "O", ".", "*" ])
     for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
         offset = -0.2 + i * 0.1
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
+    bars = ax.patches
+
+    hatches = ["....", '....', '\\\\\\\\', '\\\\\\\\', '////', '////', '||||', '||||', 'xxxx', 'xxxx']
+    #hatches = ["/", "/", "\\", "\\", "|", "|", "-", "-", "+", "+"]
+
+    for bar, hatch in zip(bars, hatches):
+        bar.set_hatch(hatch)
     # plt.errorbar('Quantile range', ["Moments", "DDS", "UDDS", "KLL", "REQ"], yerr=x_ci, data=mean_data_df, linestyle="None", capsize=3)
 
     plt.xticks(rotation=0)
@@ -58,6 +67,8 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, 
     plt.title(plot_title)
     if plot_title == 'Power':
         ax.legend(loc="upper center", bbox_to_anchor=(0.4, 1))
+    else:
+        ax.legend()
     fig.tight_layout()
     ax.autoscale(enable=True)
     plt.ylim(0, ylim_top)
@@ -181,7 +192,8 @@ if __name__ == '__main__':
     ds_label_names = {'pareto': 'Pareto', 'uniform': 'Uniform', 'nyt': 'NYT', 'power': 'Power'}
     num_windows = 10
     pd.set_option('display.max_columns', 12)
-    data_set_analysis = True
+    mpl.rcParams['hatch.linewidth'] = 0.5
+    data_set_analysis = False
     calc_missing_pct = False
     display_ci = True
     verbose = False
