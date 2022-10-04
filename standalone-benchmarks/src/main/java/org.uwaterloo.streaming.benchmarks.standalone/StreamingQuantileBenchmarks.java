@@ -535,7 +535,9 @@ public class StreamingQuantileBenchmarks {
 
                 FileWriter insertWriter = new FileWriter("insert_times.txt");
 
+                int insertIter = 0;
                 for (Integer dataSize : dataSizes) {
+                    insertIter++;
                     System.out.println("======================================================");
                     long startInsertOp, elapsedTimeOp;
                     long[] insertResults = new long[5];
@@ -548,7 +550,8 @@ public class StreamingQuantileBenchmarks {
                         ReqSketch.builder().setK(REQ_PARAM_K).setHighRankAccuracy(REQ_PARAM_HIGH_RANK_ACCURACY)
                             .setLessThanOrEqual(REQ_PARAM_LT_EQ).build();
 
-                    long momentInsertTot = 0L;
+                    FileWriter momentsInsertWriter =
+                        new FileWriter("moments_insert_times_" + dataSize + "_" + insertIter + ".txt");
                     long startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -556,7 +559,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         momentSketch.add(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        momentInsertTot += elapsedTimeOp;
+                        momentsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
                     }
 
                     long endInsert = System.nanoTime();
@@ -567,12 +570,12 @@ public class StreamingQuantileBenchmarks {
                         "MomentSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println(
                         "MomentSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    System.out.println(
-                        "MomentSketch - Real Insert time [" + dataSize + "] (nanos): " + momentInsertTot);
-                    insertResults[0] = TimeUnit.NANOSECONDS.toMicros(momentInsertTot);
+                    insertResults[0] = elapsedTimeInsertMicros;
+                    momentsInsertWriter.close();
 
                     // DDSketch
-                    long ddsInsertTot = 0L;
+                    FileWriter ddsInsertWriter =
+                        new FileWriter("dds_insert_times_" + dataSize + "_" + insertIter + ".txt");
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -580,7 +583,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         ddsketch.accept(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        ddsInsertTot += elapsedTimeOp;
+                        ddsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
                     }
 
                     endInsert = System.nanoTime();
@@ -590,11 +593,12 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "DDSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("DDSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    System.out.println("DDSketch - Real Insert time [" + dataSize + "] (nanos): " + ddsInsertTot);
-                    insertResults[1] = TimeUnit.NANOSECONDS.toMicros(ddsInsertTot);
+                    insertResults[1] = elapsedTimeInsertMicros;
+                    ddsInsertWriter.close();
 
                     //KLL Sketch
-                    long kllInsertTot = 0L;
+                    FileWriter kllInsertWriter =
+                        new FileWriter("kll_insert_times_" + dataSize + "_" + insertIter + ".txt");
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -602,7 +606,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         kllsketch.update((float) sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        kllInsertTot += elapsedTimeOp;
+                        kllInsertWriter.write(i + "," + elapsedTimeOp + "\n");
                     }
 
                     endInsert = System.nanoTime();
@@ -612,11 +616,12 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "KLLSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("KLLSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    System.out.println("KLLSketch - Real Insert time [" + dataSize + "] (nanos): " + kllInsertTot);
-                    insertResults[2] = TimeUnit.NANOSECONDS.toMicros(kllInsertTot);
+                    insertResults[2] = elapsedTimeInsertMicros;
+                    kllInsertWriter.close();
 
                     // REQ
-                    long reqInsertTot = 0L;
+                    FileWriter reqInsertWriter =
+                        new FileWriter("req_insert_times_" + dataSize + "_" + insertIter + ".txt");
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -624,7 +629,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         reqSketch.update((float) sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        reqInsertTot += elapsedTimeOp;
+                        reqInsertWriter.write(i + "," + elapsedTimeOp + "\n");
                     }
 
                     endInsert = System.nanoTime();
@@ -634,11 +639,12 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "REQSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("REQSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    System.out.println("REQSketch - Real Insert time [" + dataSize + "] (nanos): " + reqInsertTot);
-                    insertResults[3] = TimeUnit.NANOSECONDS.toMicros(reqInsertTot);
+                    insertResults[3] = elapsedTimeInsertMicros;
+                    reqInsertWriter.close();
 
                     // UDDS
-                    long uddsInsertTot = 0L;
+                    FileWriter uddsInsertWriter =
+                        new FileWriter("udds_insert_times_" + dataSize + "_" + insertIter + ".txt");
                     startInsert = System.nanoTime();
 
                     for (int i = 0; i < dataSize; i++) {
@@ -646,7 +652,7 @@ public class StreamingQuantileBenchmarks {
                         startInsertOp = System.nanoTime();
                         uddsketch.accept(sampled_value);
                         elapsedTimeOp = System.nanoTime() - startInsertOp;
-                        uddsInsertTot += elapsedTimeOp;
+                        uddsInsertWriter.write(i + "," + elapsedTimeOp + "\n");
                     }
 
                     endInsert = System.nanoTime();
@@ -656,8 +662,8 @@ public class StreamingQuantileBenchmarks {
                     System.out.println(
                         "UDDSketch - Insert time [" + dataSize + "] (micros): " + elapsedTimeInsertMicros);
                     System.out.println("UDDSketch - Insert time [" + dataSize + "] (nanos): " + elapsedTimeInsertNanos);
-                    System.out.println("UDDSketch - Real Insert time [" + dataSize + "] (nanos): " + uddsInsertTot);
-                    insertResults[4] = TimeUnit.NANOSECONDS.toMicros(uddsInsertTot);
+                    insertResults[4] = elapsedTimeInsertMicros;
+                    uddsInsertWriter.close();
 
                     insertWriter.write(dataSize + "," + Arrays.toString(insertResults) + "\n");
                 }
