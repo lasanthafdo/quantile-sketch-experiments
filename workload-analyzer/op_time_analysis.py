@@ -3,6 +3,10 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.style as style
+from matplotlib.ticker import ScalarFormatter
+
+style.use('tableau-colorblind10')
 
 
 def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
@@ -80,13 +84,14 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
         ax.set_xticklabels(["Other quantiles", "50th quantile"])
         plt.legend(loc="upper left")
 
+    if plot_title == "Insertion time for each data point":
+        ax.legend(loc="upper left", bbox_to_anchor = (0.23, 0.55))
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(plot_title)
+    #plt.title(plot_title)
     fig.tight_layout()
     ax.autoscale(enable=True)
-    plt.savefig(plot_filename)
     plt.savefig(plot_filename)
     plt.clf()
     print("Finished generating plots.")
@@ -100,12 +105,14 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
         plt.xlim(-2, 1000000)
     elif x_axis == "Data Size":
         ax.set_xscale('log')
+        ax.xaxis.set_major_formatter(ScalarFormatter())
+        ax.ticklabel_format(style='plain')
 
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(plot_title)
+    #plt.title(plot_title)
     fig.tight_layout()
-    ax.autoscale(enable=True)
+    #ax.autoscale(enable=True)
     plt.savefig(plot_filename.replace(".png", "_wo_moments.png"))
     plt.clf()
     print("Finished generating plots.")
@@ -256,7 +263,7 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', 12)
 
     # graphs_to_plot = ['query', 'insert', 'merge', 'query_time_ci', 'kurtosis', 'adaptability']
-    graphs_to_plot = ['query', 'insert', 'merge']
+    graphs_to_plot = ['query', 'insert', 'merge', 'kurtosis', 'adaptability']
     plot_file_ext = '.pdf'
     display_ci = True
 
@@ -264,9 +271,10 @@ if __name__ == '__main__':
         f_query_times = report_folder + '/query_times.csv'
         query_times_df = pd.read_csv(f_query_times)
         query_times_df = query_times_df.groupby('Data Size', as_index=False).mean().round(4)
+        query_times_df['Data Size'] = query_times_df['Data Size'] // 1000000
         print(query_times_df)
         q_plot_file_name = report_folder + '/plots/query_times' + plot_file_ext
-        produce_imq_line_plot(query_times_df, 'Query time', "Data Size", 'Data size', 'Time (microseconds)',
+        produce_imq_line_plot(query_times_df, 'Query time', "Data Size", '#Entries (millions)', 'Time (microseconds)',
                               q_plot_file_name)
 
     if 'insert' in graphs_to_plot:
@@ -278,12 +286,12 @@ if __name__ == '__main__':
         if display_ci:
             i_plot_file_name = report_folder + '/plots/insert_times_ci' + plot_file_ext
             produce_imq_bar_plot_wt_error_bars(insert_times_df, 'Insertion time for each data point', "Data Size",
-                                               'Data size (millions)',
+                                               '#Entries (millions)',
                                                'Time (microseconds)', i_plot_file_name)
         else:
             i_plot_file_name = report_folder + '/plots/insert_times' + plot_file_ext
             produce_imq_bar_plot(insert_times_df, 'Insertion time for each data point', "Data Size",
-                                 'Data size (millions)',
+                                 '#Entries (millions)',
                                  'Time (microseconds)', i_plot_file_name)
 
     if 'merge' in graphs_to_plot:

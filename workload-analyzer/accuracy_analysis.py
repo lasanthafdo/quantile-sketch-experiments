@@ -7,7 +7,9 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import AutoLocator
 import matplotlib.style as style
-style.use('seaborn-colorblind')
+
+style.use('tableau-colorblind10')
+
 
 def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, ylim_top, plot_filename):
     plot_data = [
@@ -31,21 +33,28 @@ def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, yli
     print("Finished generating plots for " + plot_title)
 
 
-def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, ylim_top, plot_filename):
+def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_title, x_label, y_label, ylim_top,
+                                 plot_filename):
     plot_data = [
         ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['udds'], mid_q_dict['kll'], mid_q_dict['req']],
         ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['udds'], upper_q_dict['kll'],
-         upper_q_dict['req']]]
+         upper_q_dict['req']],
+        ["0.99", p99_q_dict['moments'], p99_q_dict['dds'], p99_q_dict['udds'], p99_q_dict['kll'], p99_q_dict['req']]]
+    order = ["Mid", "Upper", "0.99"]
     data_df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "UDDS", "KLL", "REQ"])
     data_df = data_df.explode(list(["Moments", "DDS", "UDDS", "KLL", "REQ"]))
-    mean_data_df = data_df.groupby('Quantile range', as_index=False).mean().round(4)
-    x_ci = data_df.groupby('Quantile range', as_index=False).agg(
+    # data_df =  data_df.set_index("Quantile range").loc[order]
+    mean_data_df = data_df.groupby('Quantile range').mean().round(4)
+    mean_data_df = mean_data_df.reindex(order).reset_index()
+    x_ci = data_df.groupby('Quantile range').agg(
         lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    x_ci = x_ci.reindex(order).reset_index()
     print("=========== CI values ============ ")
     print(x_ci)
     print("=========== Avg. Acc ============ ")
     print(mean_data_df)
     fig, ax = plt.subplots(figsize=(4, 3))
+    print(mean_data_df)
     mean_data_df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"],
                       style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax)  # , "x", "o", "O", ".", "*" ])
     for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
@@ -54,19 +63,27 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, plot_title, x_label, 
                     linestyle="None")
     bars = ax.patches
 
-    hatches = ["....", '....', '\\\\\\\\', '\\\\\\\\', '////', '////', '||||', '||||', 'xxxx', 'xxxx']
-    #hatches = ["/", "/", "\\", "\\", "|", "|", "-", "-", "+", "+"]
-
-    for bar, hatch in zip(bars, hatches):
+    hatches = ["....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////", "", "",
+               "", "xxxx", "xxxx", "xxxx"]
+    # hatches = ["/", "/", "\\", "\\", "|", "|", "-", "-", "+", "+"]
+    alg_dict = {0: "Moments", 1: "DDS", 2: "UDDS", 3: "KLL", 4: "REQ"}
+    for i, (bar, hatch) in enumerate(zip(bars, hatches)):
         bar.set_hatch(hatch)
+        if bar.get_height() > 0.05:
+            err_bar = round(x_ci.iloc[i % 3][alg_dict[i // 3]], 4)
+            ax.annotate(str(bar.get_height()) + "(" + str(err_bar) + ")", (bar.get_x() + 0.01, 0.01), rotation=90,
+                        fontsize=7)
+
     # plt.errorbar('Quantile range', ["Moments", "DDS", "UDDS", "KLL", "REQ"], yerr=x_ci, data=mean_data_df, linestyle="None", capsize=3)
 
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(plot_title)
+    # plt.title(plot_title)
     if plot_title == 'Power':
-        ax.legend(loc="upper center", bbox_to_anchor=(0.4, 1))
+        ax.legend(loc="upper center", bbox_to_anchor=(0.67, 1))
+    elif plot_title == 'Pareto':
+        ax.legend(loc="upper left")
     else:
         ax.legend()
     fig.tight_layout()
@@ -107,11 +124,13 @@ def calc_accuracy(approx_df, real_df):
                                acc_calc_df['pct_50_acc'], acc_calc_df['pct_75_acc'],
                                acc_calc_df['pct_90_acc']]).mean(axis=0)
     upper_q_all_accs = np.array([acc_calc_df['pct_95_acc'], acc_calc_df['pct_98_acc']]).mean(axis=0)
+    point_99_q_all_accs = np.array([acc_calc_df['pct_99_acc']]).mean(axis=0)
     mid_quantile_accs = [acc_calc_df['pct_05_acc'].mean(), acc_calc_df['pct_25_acc'].mean(),
                          acc_calc_df['pct_50_acc'].mean(), acc_calc_df['pct_75_acc'].mean(),
                          acc_calc_df['pct_90_acc'].mean()]
     upper_quantile_accs = [acc_calc_df['pct_95_acc'].mean(), acc_calc_df['pct_98_acc'].mean()]
-    return acc_calc_df, mid_quantile_accs, upper_quantile_accs, mid_q_all_accs, upper_q_all_accs
+    point_99_quantile_accs = [acc_calc_df['pct_99_acc'].mean()]
+    return acc_calc_df, mid_quantile_accs, upper_quantile_accs, point_99_quantile_accs, mid_q_all_accs, upper_q_all_accs, point_99_q_all_accs
 
 
 def plot_hist_dataset(data_df, col_of_interest, x_label, y_label, plot_title, plot_file_name):
@@ -196,7 +215,7 @@ if __name__ == '__main__':
     data_set_analysis = False
     calc_missing_pct = False
     display_ci = True
-    verbose = False
+    verbose = True
 
     if data_set_analysis:
         ds_file_ext = '.pdf'
@@ -267,8 +286,10 @@ if __name__ == '__main__':
                                 'pct_99', 'query_time', 'num_retained']
         mid_q_dict = {}
         upper_q_dict = {}
+        p99_q_dict = {}
         mid_q_all_dict = {}
         upper_q_all_dict = {}
+        p99_q_all_dict = {}
         algo_ds_acc_dict = {}
         for algo in algos:
             print("Algorithm: " + algo)
@@ -290,16 +311,18 @@ if __name__ == '__main__':
             algo_ds_sketch = algo_ds_sketch.groupby('run_id', as_index=False).apply(
                 lambda x: x.iloc[:-1] if len(x) > num_windows else x)
 
-            algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy, mid_q_all, upper_q_all = calc_accuracy(algo_ds_sketch,
-                                                                                                       algo_ds_real)
+            algo_ds_accuracy, mid_q_accuracy, upper_q_accuracy, point99_q_accuracy, mid_q_all, upper_q_all, point99_q_all = calc_accuracy(
+                algo_ds_sketch, algo_ds_real)
             if verbose:
                 print(algo_ds_accuracy)
             mid_q_dict[algo] = np.round(np.mean(mid_q_accuracy), 4)
             upper_q_dict[algo] = np.round(np.mean(upper_q_accuracy), 4)
+            p99_q_dict[algo] = np.round(np.mean(point99_q_accuracy), 4)
             mid_q_all_dict[algo] = mid_q_all
             upper_q_all_dict[algo] = upper_q_all
+            p99_q_all_dict[algo] = point99_q_all
             algo_ds_acc_dict[algo] = algo_ds_accuracy.drop(
-                ['run_id', 'query_time', 'win_size', 'pct_01_acc', 'pct_99_acc'], axis=1).mean(axis=1)
+                ['run_id', 'query_time', 'win_size', 'pct_01_acc'], axis=1).mean(axis=1)
             print("==================================================")
 
         if verbose:
@@ -307,6 +330,8 @@ if __name__ == '__main__':
             print(mid_q_all_dict)
             print(">>>>>>>>>>>>> Upper quantile accuracy for " + dataset)
             print(upper_q_all_dict)
+            print(">>>>>>>>>>>>> 0.99 quantile accuracy for " + dataset)
+            print(p99_q_all_dict)
         ddsc_mid_diff.append(round(abs(mid_q_dict["dds"] - mid_q_dict["ddsc"]), 4))
         ddsc_upper_diff.append(round(abs(upper_q_dict["dds"] - upper_q_dict["ddsc"]), 4))
         ddsc_upper_diff_pcts.append(
@@ -319,8 +344,10 @@ if __name__ == '__main__':
         plot_file_path = report_folder + '/plots/' + dataset + file_name_suffix + file_ext
         y_axis_top = 0.05
         if display_ci:
-            produce_bar_plot_wt_err_bars(mid_q_all_dict, upper_q_all_dict, ds_label_names[dataset], 'Quantiles',
+            produce_bar_plot_wt_err_bars(mid_q_all_dict, upper_q_all_dict, p99_q_all_dict, ds_label_names[dataset],
+                                         'Quantiles',
                                          'Avg. Relative Error', y_axis_top, plot_file_path)
+            # print('hello')
         else:
             produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantiles',
                              'Avg. Relative Error', y_axis_top, plot_file_path)
