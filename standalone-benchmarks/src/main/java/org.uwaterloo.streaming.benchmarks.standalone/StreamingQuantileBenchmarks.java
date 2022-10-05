@@ -519,23 +519,27 @@ public class StreamingQuantileBenchmarks {
             if (runMode == 2) {
                 System.out.println("=========== Starting insert time tests ==============");
 
-                ArrayList<Integer> dataSizes = new ArrayList<>(4);
+                ArrayList<Long> dataSizes = new ArrayList<>(4);
                 int numIters = 11;
                 for (int i = 0; i < numIters + 3; i++) {
-                    dataSizes.add(10_000_000);
+                    dataSizes.add(10_000_000L);
                 }
 
                 for (int i = 0; i < numIters; i++) {
-                    dataSizes.add(100_000_000);
+                    dataSizes.add(100_000_000L);
                 }
 
                 for (int i = 0; i < numIters; i++) {
-                    dataSizes.add(1_000_000_000);
+                    dataSizes.add(1_000_000_000L);
+                }
+
+                for (int i = 0; i < numIters; i++) {
+                    dataSizes.add(10_000_000_000L);
                 }
 
                 FileWriter insertWriter = new FileWriter("insert_times.txt");
 
-                for (Integer dataSize : dataSizes) {
+                for (Long dataSize : dataSizes) {
                     System.out.println("======================================================");
                     long startInsertOp, elapsedTimeOp;
                     long[] insertResults = new long[5];
@@ -551,7 +555,7 @@ public class StreamingQuantileBenchmarks {
                     long momentInsertTot = 0L;
                     long startInsert = System.nanoTime();
 
-                    for (int i = 0; i < dataSize; i++) {
+                    for (long i = 0; i < dataSize; i++) {
                         double sampled_value = ptoD.sample();
                         startInsertOp = System.nanoTime();
                         momentSketch.add(sampled_value);
@@ -575,7 +579,7 @@ public class StreamingQuantileBenchmarks {
                     long ddsInsertTot = 0L;
                     startInsert = System.nanoTime();
 
-                    for (int i = 0; i < dataSize; i++) {
+                    for (long i = 0; i < dataSize; i++) {
                         double sampled_value = ptoD.sample();
                         startInsertOp = System.nanoTime();
                         ddsketch.accept(sampled_value);
@@ -597,7 +601,7 @@ public class StreamingQuantileBenchmarks {
                     long kllInsertTot = 0L;
                     startInsert = System.nanoTime();
 
-                    for (int i = 0; i < dataSize; i++) {
+                    for (long i = 0; i < dataSize; i++) {
                         double sampled_value = ptoD.sample();
                         startInsertOp = System.nanoTime();
                         kllsketch.update((float) sampled_value);
@@ -619,7 +623,7 @@ public class StreamingQuantileBenchmarks {
                     long reqInsertTot = 0L;
                     startInsert = System.nanoTime();
 
-                    for (int i = 0; i < dataSize; i++) {
+                    for (long i = 0; i < dataSize; i++) {
                         double sampled_value = ptoD.sample();
                         startInsertOp = System.nanoTime();
                         reqSketch.update((float) sampled_value);
@@ -641,7 +645,7 @@ public class StreamingQuantileBenchmarks {
                     long uddsInsertTot = 0L;
                     startInsert = System.nanoTime();
 
-                    for (int i = 0; i < dataSize; i++) {
+                    for (long i = 0; i < dataSize; i++) {
                         double sampled_value = ptoD.sample();
                         startInsertOp = System.nanoTime();
                         uddsketch.accept(sampled_value);
