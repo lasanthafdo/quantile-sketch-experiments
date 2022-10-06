@@ -62,10 +62,8 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_titl
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
     bars = ax.patches
-
     hatches = ["....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////", "", "",
                "", "xxxx", "xxxx", "xxxx"]
-    # hatches = ["/", "/", "\\", "\\", "|", "|", "-", "-", "+", "+"]
     alg_dict = {0: "Moments", 1: "DDS", 2: "UDDS", 3: "KLL", 4: "REQ"}
     for i, (bar, hatch) in enumerate(zip(bars, hatches)):
         bar.set_hatch(hatch)
@@ -74,12 +72,9 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_titl
             ax.annotate(str(bar.get_height()) + "(" + str(err_bar) + ")", (bar.get_x() + 0.01, 0.01), rotation=90,
                         fontsize=7)
 
-    # plt.errorbar('Quantile range', ["Moments", "DDS", "UDDS", "KLL", "REQ"], yerr=x_ci, data=mean_data_df, linestyle="None", capsize=3)
-
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    # plt.title(plot_title)
     if plot_title == 'Power':
         ax.legend(loc="upper center", bbox_to_anchor=(0.67, 1))
     elif plot_title == 'Pareto':
@@ -146,7 +141,7 @@ def plot_hist_dataset(data_df, col_of_interest, x_label, y_label, plot_title, pl
     print(bins)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(plot_title)
+    # plt.title(plot_title)
     fig.tight_layout()
     ax.autoscale(enable=True)
     if plot_title == 'NYT':
@@ -194,7 +189,7 @@ def plot_hist_pareto_dataset(data_df, col_of_interest, x_label, y_label, plot_ti
     # ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(plot_title)
+    # plt.title(plot_title)
     if plot_title == 'NYT':
         ax.set_xlim(0, 100)
     fig.tight_layout()
@@ -212,7 +207,7 @@ if __name__ == '__main__':
     num_windows = 10
     pd.set_option('display.max_columns', 12)
     mpl.rcParams['hatch.linewidth'] = 0.5
-    data_set_analysis = False
+    data_set_analysis = True
     calc_missing_pct = False
     display_ci = True
     verbose = True

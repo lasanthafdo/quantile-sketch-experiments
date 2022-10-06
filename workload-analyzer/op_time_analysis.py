@@ -1,6 +1,7 @@
 import sys
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import matplotlib.style as style
@@ -72,6 +73,17 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
         offset = -0.2 + i * 0.1
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
+
+    bars = ax.patches
+    if plot_title == "Insertion time for each data point":
+        hatches = ["....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////", "", "",
+                   "", "xxxx", "xxxx", "xxxx"]
+    else:
+        hatches = ["....", "....", "\\\\\\\\", "\\\\\\\\", "////", "////", "", "", "xxxx", "xxxx"]
+
+    for i, (bar, hatch) in enumerate(zip(bars, hatches)):
+        bar.set_hatch(hatch)
+
     if y_limit > 0:
         plt.yscale('log')
         plt.ylim(top=y_limit)
@@ -85,11 +97,11 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
         plt.legend(loc="upper left")
 
     if plot_title == "Insertion time for each data point":
-        ax.legend(loc="upper left", bbox_to_anchor = (0.23, 0.55))
+        ax.legend(loc="upper left", bbox_to_anchor=(0.23, 0.55))
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    #plt.title(plot_title)
+    # plt.title(plot_title)
     fig.tight_layout()
     ax.autoscale(enable=True)
     plt.savefig(plot_filename)
@@ -110,9 +122,9 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
 
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    #plt.title(plot_title)
+    # plt.title(plot_title)
     fig.tight_layout()
-    #ax.autoscale(enable=True)
+    # ax.autoscale(enable=True)
     plt.savefig(plot_filename.replace(".png", "_wo_moments.png"))
     plt.clf()
     print("Finished generating plots.")
@@ -134,17 +146,12 @@ def produce_imq_single_kurt_line_plot(data_df, plot_title, x_axis, x_label, y_la
 
 def produce_imq_bar_plot_kurtosis(data_df, plot_title, x_axis, x_label, y_label, plot_filename, y_limit=0.0):
     prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
 
     mean_data_df = data_df.groupby(['Data Set', 'Kurtosis', 'Actual'], as_index=False).mean().round(6)
     mean_data_df = mean_data_df.sort_values(by=['Kurtosis']).reset_index(drop=True).round({'Kurtosis': 2})
     mean_data_df['xtick_label'] = mean_data_df['Kurtosis'].astype("string") + '\n(' + mean_data_df['Data Set'] + ')'
     print(mean_data_df)
 
-    # test = data_df.groupby(['Data Set', 'Kurtosis', 'Actual'], as_index=False).agg(
-    #     lambda x: 0 if (x.unique().size == 1) else (np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size)))
-    # print(test)
-    # exit(0)
     x_ci = data_df.groupby(['Data Set', 'Kurtosis', 'Actual'], as_index=False).agg(
         lambda x: 0.0 if (x.unique().size == 1) else (
                 np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size)))
@@ -152,19 +159,25 @@ def produce_imq_bar_plot_kurtosis(data_df, plot_title, x_axis, x_label, y_label,
     print(x_ci)
 
     fig, ax = plt.subplots(figsize=(6, 3))
-    mean_data_df.plot(x=x_axis, y=["REQ", "KLL", "UDDS", "DDS", "Moments"], ax=ax, kind="bar",
-                      color=[colors[4], colors[3], colors[2], colors[1], colors[0]])
+    mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], ax=ax, kind="bar")
     ax.set_xticklabels(mean_data_df['xtick_label'])
-    for i, alg in enumerate(["REQ", "KLL", "UDDS", "DDS", "Moments"]):
+    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
         offset = -0.2 + i * 0.1
         print(x_ci[alg])
-        # print(mean_data_df)
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
+
+    bars = ax.patches
+    hatches = ["....", "....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////",
+               "////", "", "", "", "", "xxxx", "xxxx", "xxxx", "xxxx"]
+
+    for i, (bar, hatch) in enumerate(zip(bars, hatches)):
+        bar.set_hatch(hatch)
+
     plt.xticks(rotation=0)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    plt.title(plot_title)
+    ax.legend()
     fig.tight_layout()
     ax.autoscale(enable=True)
     plt.savefig(plot_filename)
@@ -201,66 +214,10 @@ def produce_imq_line_err_plot(data_df, plot_title, x_axis, x_label, y_label, plo
     print("Finished generating plots.")
 
 
-def produce_imq_scatter_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
-    size = 20
-    fig, ax = plt.subplots()
-    for i, alg in enumerate(["DDS", "UDDS", "KLL", "REQ", "Moments"]):
-        offset = 0.7 + i * 0.2
-        ax.scatter(data_df[x_axis] * offset, data_df[alg], s=size, label=alg)
-
-    ax.legend()
-
-    if x_axis == "Kurtosis":
-        plt.xscale('symlog')
-        plt.xlim(-2, 1000000)
-        plt.ylim(0, 0.08)
-    elif x_axis == "Data Size":
-        plt.xscale('log')
-
-    # plt.xticks(rotation=0)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(plot_title)
-    # plt.legend()
-    plt.savefig(plot_filename)
-    plt.clf()
-    print("Finished generating plots.")
-
-
-def produce_imq_scatter_err_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
-    mean_data_df = data_df.groupby('Data Size', as_index=False).mean().round(4)
-    x_ci = data_df.groupby('Data Size', as_index=False).agg(
-        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
-    fmt_style = {'Moments': 'o-', 'DDS': 'v-', 'UDDS': '^-', 'KLL': '|--', 'REQ': 'x--'}
-    print(x_ci)
-    fig, ax = plt.subplots()
-    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
-        ax.errorbar(mean_data_df[x_axis], mean_data_df[alg], label=alg, yerr=x_ci[alg], fmt=fmt_style[alg],
-                    ecolor='k', capsize=3)
-
-    ax.legend(loc="upper left")
-
-    if x_axis == "Kurtosis":
-        plt.xscale('symlog')
-        plt.xlim(-2, 1000000)
-        plt.ylim(0, 0.08)
-    elif x_axis == "Data Size":
-        plt.xscale('log')
-        # plt.yscale('log')
-
-    # plt.xticks(rotation=0)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(plot_title)
-    # plt.legend()
-    plt.savefig(plot_filename)
-    plt.clf()
-    print("Finished generating plots.")
-
-
 if __name__ == '__main__':
     report_folder = sys.argv[1]
     pd.set_option('display.max_columns', 12)
+    mpl.rcParams['hatch.linewidth'] = 0.5
 
     # graphs_to_plot = ['query', 'insert', 'merge', 'query_time_ci', 'kurtosis', 'adaptability']
     graphs_to_plot = ['query', 'insert', 'merge', 'kurtosis', 'adaptability']
@@ -319,7 +276,7 @@ if __name__ == '__main__':
         print(kurtosis_df.round(6))
         k_plot_file_name = report_folder + '/plots/kurtosis_accuracy' + plot_file_ext
         produce_imq_bar_plot_kurtosis(kurtosis_df, 'Kurtosis vs Accuracy', "Kurtosis", 'Kurtosis',
-                                      'Avg. Relative Error (98th percentile)', k_plot_file_name)
+                                      'Avg. Relative Error', k_plot_file_name)
 
     if 'adaptability' in graphs_to_plot:
         f_adaptability = report_folder + '/adaptability.csv'
