@@ -75,20 +75,19 @@ public class StreamingQuantileBenchmarks {
             int dataSizeMerge = 1_000_000;
             if (runMode == 3) {
                 ArrayList<Integer> numSketchesList = new ArrayList<>();
-                numSketchesList.add(10);
-                numSketchesList.add(10);
-                numSketchesList.add(10);
 
-                numSketchesList.add(100);
-                numSketchesList.add(100);
+                int numIters = 11;
+                for (int i = 0; i < numIters + 3; i++) {
+                    numSketchesList.add(10);
+                }
 
-                numSketchesList.add(100);
-                numSketchesList.add(100);
-                numSketchesList.add(100);
+                for (int i = 0; i < numIters; i++) {
+                    numSketchesList.add(100);
+                }
 
-                numSketchesList.add(1000);
-                numSketchesList.add(1000);
-                numSketchesList.add(1000);
+                for (int i = 0; i < numIters; i++) {
+                    numSketchesList.add(1000);
+                }
 
                 runMergeTests(dataSizeMerge, numSketchesList);
             }
