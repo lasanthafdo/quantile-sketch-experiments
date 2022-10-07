@@ -76,13 +76,17 @@ public class StreamingQuantileBenchmarks {
             if (runMode == 3) {
                 ArrayList<Integer> numSketchesList = new ArrayList<>();
 
-                int numIters = 11;
-                for (int i = 0; i < numIters + 3; i++) {
+                int numIters = 12;
+                for (int i = 0; i < numIters + 5; i++) {
                     numSketchesList.add(10);
                 }
 
                 for (int i = 0; i < numIters; i++) {
                     numSketchesList.add(100);
+                }
+
+                for (int i = 0; i < numIters; i++) {
+                    numSketchesList.add(1000);
                 }
 
                 for (int i = 0; i < numIters; i++) {
