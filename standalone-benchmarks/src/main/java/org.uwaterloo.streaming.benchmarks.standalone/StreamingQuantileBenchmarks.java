@@ -78,7 +78,7 @@ public class StreamingQuantileBenchmarks {
 
                 int numIters = 12;
                 for (int i = 0; i < numIters + 5; i++) {
-                    numSketchesList.add(10);
+                    numSketchesList.add(1000);
                 }
 
                 for (int i = 0; i < numIters; i++) {
@@ -86,11 +86,7 @@ public class StreamingQuantileBenchmarks {
                 }
 
                 for (int i = 0; i < numIters; i++) {
-                    numSketchesList.add(1000);
-                }
-
-                for (int i = 0; i < numIters; i++) {
-                    numSketchesList.add(1000);
+                    numSketchesList.add(10);
                 }
 
                 runMergeTests(dataSizeMerge, numSketchesList);
