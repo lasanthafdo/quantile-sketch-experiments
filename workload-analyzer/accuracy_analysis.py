@@ -5,8 +5,9 @@ import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.ticker import AutoLocator
 import matplotlib.style as style
+from matplotlib.ticker import AutoLocator
+from matplotlib.pyplot import GridSpec
 
 style.use('tableau-colorblind10')
 
@@ -16,8 +17,8 @@ def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, yli
         ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['udds'], mid_q_dict['kll'], mid_q_dict['req']],
         ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['udds'], upper_q_dict['kll'],
          upper_q_dict['req']]]
-    df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "UDDS", "KLL", "REQ"])
-    ax = df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
+    df = pd.DataFrame(plot_data, columns=["Quantile range", "KLL", "Moments", "DDS", "UDDS", "REQ"])
+    ax = df.plot(x="Quantile range", y=["KLL", "Moments", "DDS", "UDDS", "REQ"], kind="bar")
     for p in ax.patches:
         if p.get_height() > ylim_top:
             ax.annotate(str(p.get_height()), (p.get_x() + 0.03, 0.04), rotation=90)
@@ -33,6 +34,103 @@ def produce_bar_plot(mid_q_dict, upper_q_dict, plot_title, x_label, y_label, yli
     print("Finished generating plots for " + plot_title)
 
 
+def produce_bar_plot_wt_err_bars_broken_axes(mid_q_dict, upper_q_dict, p99_q_dict, plot_title, x_label, y_label,
+                                             ylim_top,
+                                             plot_filename):
+    plot_data = [
+        ["Mid", mid_q_dict['moments'], mid_q_dict['dds'], mid_q_dict['udds'], mid_q_dict['kll'], mid_q_dict['req']],
+        ["Upper", upper_q_dict['moments'], upper_q_dict['dds'], upper_q_dict['udds'], upper_q_dict['kll'],
+         upper_q_dict['req']],
+        ["0.99", p99_q_dict['moments'], p99_q_dict['dds'], p99_q_dict['udds'], p99_q_dict['kll'], p99_q_dict['req']]]
+    order = ["Mid", "Upper", "0.99"]
+    data_df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "UDDS", "KLL", "REQ"])
+    data_df = data_df.explode(list(["KLL", "Moments", "DDS", "UDDS", "REQ"]))
+    # data_df =  data_df.set_index("Quantile range").loc[order]
+    mean_data_df = data_df.groupby('Quantile range').mean().round(4)
+    mean_data_df = mean_data_df.reindex(order).reset_index()
+    x_ci = data_df.groupby('Quantile range').agg(
+        lambda x: np.sqrt(x.pow(2).mean() - pow(x.mean(), 2)) * 1.96 / np.sqrt(x.size))
+    x_ci = x_ci.reindex(order).reset_index()
+    print("=========== CI values ============ ")
+    print(x_ci)
+    print("=========== Avg. Acc ============ ")
+    print(mean_data_df)
+
+    # fig, (ax_large, ax_normal) = plt.subplots(2, 1, figsize=(4,3), sharex=True)
+
+    fig = plt.figure()
+
+    gs = GridSpec(2, 1, height_ratios=[1, 5])
+    ax_large = fig.add_subplot(gs[0])
+    ax_normal = fig.add_subplot(gs[1])
+
+    ax_large.set_ylim(.12, 0.13)  # outliers only
+    ax_normal.set_ylim(0, .05)  # most of the data
+
+    # hide the spines between ax and ax2
+    ax_large.spines['bottom'].set_visible(False)
+    ax_normal.spines['top'].set_visible(False)
+    ax_large.xaxis.tick_top()
+    ax_large.tick_params(labeltop=False)  # don't put tick labels at the top
+    ax_normal.xaxis.tick_bottom()
+
+    # This looks pretty good, and was fairly painless, but you can get that
+    # cut-out diagonal lines look with just a bit more work. The important
+    # thing to know here is that in axes coordinates, which are always
+    # between 0-1, spine endpoints are at these locations (0,0), (0,1),
+    # (1,0), and (1,1).  Thus, we just need to put the diagonals in the
+    # appropriate corners of each of our axes, and so long as we use the
+    # right transform and disable clipping.
+
+    d = .015  # how big to make the diagonal lines in axes coordinates
+    # arguments to pass to plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax_large.transAxes, color='k', clip_on=False)
+    ax_large.plot((-d, +d), (-d, +d), **kwargs)  # top-left diagonal
+    ax_large.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+    kwargs.update(transform=ax_normal.transAxes)  # switch to the bottom axes
+    ax_normal.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax_normal.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+    mean_data_df.plot(x="Quantile range", y=["KLL", "Moments", "DDS", "UDDS", "REQ"],
+                      style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax_normal)
+    mean_data_df.plot(x="Quantile range", y=["KLL", "Moments", "DDS", "UDDS", "REQ"],
+                      style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax_large)
+    for i, alg in enumerate(["KLL", "Moments", "DDS", "UDDS", "REQ"]):
+        offset = -0.2 + i * 0.1
+        ax_normal.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
+                           linestyle="None")
+        ax_large.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
+                          linestyle="None")
+    bars_normal = ax_normal.patches
+    bars_large = ax_large.patches
+    hatches = ["....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////", "", "",
+               "", "xxxx", "xxxx", "xxxx"]
+    for i, (bar, hatch) in enumerate(zip(bars_normal, hatches)):
+        bar.set_hatch(hatch)
+    for i, (bar, hatch) in enumerate(zip(bars_large, hatches)):
+        bar.set_hatch(hatch)
+
+    plt.xticks(rotation=0)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    ax_normal.get_legend().remove()
+    if plot_title == 'Power':
+        ax_large.legend(loc="upper center", bbox_to_anchor=(0.67, 1))
+    elif plot_title == 'Pareto':
+        ax_large.legend(loc="upper left")
+    else:
+        ax_large.legend()
+    fig.tight_layout()
+    # ax_normal.autoscale(enable=True)
+    # ax_large.autoscale(enable=True)
+    plt.ylim(0, ylim_top)
+    plt.show()
+    plt.savefig(plot_filename)
+    plt.clf()
+    print("Finished generating plots.")
+
+
 def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_title, x_label, y_label, ylim_top,
                                  plot_filename):
     plot_data = [
@@ -42,7 +140,7 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_titl
         ["0.99", p99_q_dict['moments'], p99_q_dict['dds'], p99_q_dict['udds'], p99_q_dict['kll'], p99_q_dict['req']]]
     order = ["Mid", "Upper", "0.99"]
     data_df = pd.DataFrame(plot_data, columns=["Quantile range", "Moments", "DDS", "UDDS", "KLL", "REQ"])
-    data_df = data_df.explode(list(["Moments", "DDS", "UDDS", "KLL", "REQ"]))
+    data_df = data_df.explode(list(["KLL", "Moments", "DDS", "UDDS", "REQ"]))
     # data_df =  data_df.set_index("Quantile range").loc[order]
     mean_data_df = data_df.groupby('Quantile range').mean().round(4)
     mean_data_df = mean_data_df.reindex(order).reset_index()
@@ -54,29 +152,28 @@ def produce_bar_plot_wt_err_bars(mid_q_dict, upper_q_dict, p99_q_dict, plot_titl
     print("=========== Avg. Acc ============ ")
     print(mean_data_df)
     fig, ax = plt.subplots(figsize=(4, 3))
-    print(mean_data_df)
-    mean_data_df.plot(x="Quantile range", y=["Moments", "DDS", "UDDS", "KLL", "REQ"],
+    mean_data_df.plot(x="Quantile range", y=["KLL", "Moments", "DDS", "UDDS", "REQ"],
                       style=['o-', 'v-', '^-', '|--', 'x--'], kind="bar", ax=ax)  # , "x", "o", "O", ".", "*" ])
-    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+    for i, alg in enumerate(["KLL", "Moments", "DDS", "UDDS", "REQ"]):
         offset = -0.2 + i * 0.1
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
     bars = ax.patches
     hatches = ["....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "////", "////", "////", "", "",
                "", "xxxx", "xxxx", "xxxx"]
-    alg_dict = {0: "Moments", 1: "DDS", 2: "UDDS", 3: "KLL", 4: "REQ"}
+    alg_dict = {0: "KLL", 1: "Moments", 2: "DDS", 3: "UDDS", 4: "REQ"}
     for i, (bar, hatch) in enumerate(zip(bars, hatches)):
         bar.set_hatch(hatch)
         if bar.get_height() > 0.05:
             err_bar = round(x_ci.iloc[i % 3][alg_dict[i // 3]], 4)
-            ax.annotate(str(bar.get_height()) + "(" + str(err_bar) + ")", (bar.get_x() + 0.01, 0.01), rotation=90,
-                        fontsize=7)
+            ax.annotate("    " + str(round(bar.get_height(), 3)) + "\n(err: " + str(round(err_bar, 3)) + ")",
+                        (bar.get_x() - 0.5, 0.044), rotation=0, fontsize=7)
 
     plt.xticks(rotation=0)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     if plot_title == 'Power':
-        ax.legend(loc="upper center", bbox_to_anchor=(0.67, 1))
+        ax.legend(loc="upper left", bbox_to_anchor=(0.25, 1.02))
     elif plot_title == 'Pareto':
         ax.legend(loc="upper left")
     else:
@@ -207,7 +304,7 @@ if __name__ == '__main__':
     num_windows = 10
     pd.set_option('display.max_columns', 12)
     mpl.rcParams['hatch.linewidth'] = 0.5
-    data_set_analysis = True
+    data_set_analysis = False
     calc_missing_pct = False
     display_ci = True
     verbose = True
@@ -342,7 +439,6 @@ if __name__ == '__main__':
             produce_bar_plot_wt_err_bars(mid_q_all_dict, upper_q_all_dict, p99_q_all_dict, ds_label_names[dataset],
                                          'Quantiles',
                                          'Avg. Relative Error', y_axis_top, plot_file_path)
-            # print('hello')
         else:
             produce_bar_plot(mid_q_dict, upper_q_dict, ds_label_names[dataset], 'Quantiles',
                              'Avg. Relative Error', y_axis_top, plot_file_path)

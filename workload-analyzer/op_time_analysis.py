@@ -20,7 +20,7 @@ def produce_imq_bar_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fil
 
     print(data_df)
 
-    ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar")
+    ax = data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], kind="bar")
     if y_limit > 0:
         plt.yscale('log')
         plt.ylim(top=y_limit)
@@ -68,8 +68,8 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
         fig, ax = plt.subplots(figsize=(4, 3))
     else:
         fig, ax = plt.subplots(figsize=(5, 3))
-    mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], kind="bar", ax=ax)
-    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+    mean_data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], kind="bar", ax=ax)
+    for i, alg in enumerate(["KLL", "Moments", "DDS", "UDDS", "REQ"]):
         offset = -0.2 + i * 0.1
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
                     linestyle="None")
@@ -91,10 +91,10 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
     if x_axis == "Num Sketches":
         plt.yscale('log')
         plt.ylim(top=5000)
-        # plt.legend(loc="upper right")
+        ax.legend()
     elif x_axis == "Quantile":
         ax.set_xticklabels(["Other quantiles", "50th quantile"])
-        plt.legend(loc="upper left")
+        ax.legend(loc="upper left")
 
     if plot_title == "Insertion time for each data point":
         ax.legend(loc="upper left", bbox_to_anchor=(0.23, 0.55))
@@ -111,7 +111,7 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
 
 def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
     fig, ax = plt.subplots(figsize=(5, 3))
-    data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'], ax=ax)
+    data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'], ax=ax)
     if x_axis == "Kurtosis":
         ax.set_xscale('symlog')
         plt.xlim(-2, 1000000)
@@ -131,7 +131,7 @@ def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_fi
 
 
 def produce_imq_single_kurt_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
-    ax = data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
+    ax = data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'])
     ax.set_xscale('symlog', linthresh=10)
     plt.xlim(-4, 500000)
     # plt.ylim(0, 0.04)
@@ -159,9 +159,9 @@ def produce_imq_bar_plot_kurtosis(data_df, plot_title, x_axis, x_label, y_label,
     print(x_ci)
 
     fig, ax = plt.subplots(figsize=(6, 3))
-    mean_data_df.plot(x=x_axis, y=["Moments", "DDS", "UDDS", "KLL", "REQ"], ax=ax, kind="bar")
+    mean_data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], ax=ax, kind="bar")
     ax.set_xticklabels(mean_data_df['xtick_label'])
-    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+    for i, alg in enumerate(["KLL", "Moments", "DDS", "UDDS", "REQ"]):
         offset = -0.2 + i * 0.1
         print(x_ci[alg])
         ax.errorbar(mean_data_df.index + offset, mean_data_df[alg], yerr=x_ci[alg], ecolor='k', capsize=3,
@@ -194,7 +194,7 @@ def produce_imq_line_err_plot(data_df, plot_title, x_axis, x_label, y_label, plo
     fmt_style = {'Moments': 'o-', 'DDS': 'v-', 'UDDS': '^-', 'KLL': '|--', 'REQ': 'x--'}
     print(x_ci)
     fig, ax = plt.subplots()
-    for i, alg in enumerate(["Moments", "DDS", "UDDS", "KLL", "REQ"]):
+    for i, alg in enumerate(["KLL", "Moments", "DDS", "UDDS", "REQ"]):
         # if alg == "Moments" or alg == "REQ":
         #     continue
         ax.plot(mean_data_df[x_axis], mean_data_df[alg], fmt_style[alg], label=alg, color=colors[i])
