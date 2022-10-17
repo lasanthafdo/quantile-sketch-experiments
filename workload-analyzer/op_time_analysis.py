@@ -109,6 +109,113 @@ def produce_imq_bar_plot_wt_error_bars(data_df, plot_title, x_axis, x_label, y_l
     print("Finished generating plots.")
 
 
+def produce_long_legend(data_df, plot_filename):
+    fig, ax = plt.subplots(figsize=(12, 0.5))
+    mean_data_df = data_df.groupby("Data Size", as_index=False).mean()
+
+    print(mean_data_df)
+
+    mean_data_df.plot(y=["KLL", "Moments", "DDS", "UDDS", "REQ"], kind="bar", ax=ax)
+
+    bars = ax.patches
+    hatches = ["....", "....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\",
+               "////", "////", "////", "////", "", "", "", "", "xxxx", "xxxx", "xxxx", "xxxx"]
+
+    for i, (bar, hatch) in enumerate(zip(bars, hatches)):
+        bar.set_hatch(hatch)
+
+    data_df.plot(y=["KLL", "Moments", "DDS", "UDDS", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'], ax=ax)
+    plt.ylim(top=5000)
+
+    ax.plot(np.NaN, np.NaN, '-', color='w', label=' ')
+    ax.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    order = [6, 7, 8, 9, 10, 5, 0, 1, 2, 3, 4]
+    ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
+              ncol=11, fancybox=True, loc="center")
+
+    for bar in bars:
+        bar.set_visible(False)
+
+    lines = ax.get_lines()
+    for line in lines:
+        line.set_visible(False)
+    ax.grid(False)
+
+    # Hide axes ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    fig.tight_layout()
+    ax.autoscale(enable=True)
+    plt.savefig(plot_filename)
+    plt.show()
+    plt.clf()
+    print("Finished generating plots.")
+
+
+def produce_short_legend(data_df, plot_filename):
+    fig, ax = plt.subplots(figsize=(9, 0.5))
+    mean_data_df = data_df.groupby("Data Size", as_index=False).mean()
+
+    print(mean_data_df)
+
+    mean_data_df.plot(y=["KLL", "Moments", "DDS", "UDDS", "REQ"], kind="bar", ax=ax)
+
+    bars = ax.patches
+    hatches = ["....", "....", "....", "....", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\", "\\\\\\\\",
+               "////", "////", "////", "////", "", "", "", "", "xxxx", "xxxx", "xxxx", "xxxx"]
+
+    for i, (bar, hatch) in enumerate(zip(bars, hatches)):
+        bar.set_hatch(hatch)
+
+    data_df.plot(y=["KLL", "Moments", "DDS", "UDDS", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'], ax=ax)
+    plt.ylim(top=5000)
+
+    ax.plot(np.NaN, np.NaN, '-', color='w', label=' ')
+    ax.plot(np.NaN, np.NaN, '-', color='w', label=' ')
+    ax.plot(np.NaN, np.NaN, '-', color='w', label=' ')
+    ax.plot(np.NaN, np.NaN, '-', color='w', label=' ')
+    # ax.legend(ncol=14)
+    handles, labels = ax.get_legend_handles_labels()
+    mod_labels = []
+    for i, label in enumerate(labels):
+        if i > 8:
+            mod_labels.append("")
+        else:
+            mod_labels.append(label)
+    order = [9, 0, 5, 10, 1, 6, 11, 2, 7, 12, 3, 8, 13, 4]
+    print(mod_labels)
+    ax.legend([handles[idx] for idx in order], [mod_labels[idx] for idx in order],
+              ncol=14, fancybox=True, loc="center", handletextpad=0.5, columnspacing=0.5,
+              frameon=False)
+
+    for bar in bars:
+        bar.set_visible(False)
+
+    lines = ax.get_lines()
+    for line in lines:
+        line.set_visible(False)
+    ax.grid(False)
+
+    # Hide axes ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    fig.tight_layout()
+    ax.autoscale(enable=True)
+    plt.savefig(plot_filename)
+    plt.show()
+    plt.clf()
+    print("Finished generating plots.")
+
+
 def produce_imq_line_plot(data_df, plot_title, x_axis, x_label, y_label, plot_filename):
     fig, ax = plt.subplots(figsize=(5, 3))
     data_df.plot(x=x_axis, y=["KLL", "Moments", "DDS", "UDDS", "REQ"], style=['o-', 'v-', '^-', '|--', 'x--'], ax=ax)
@@ -220,9 +327,23 @@ if __name__ == '__main__':
     mpl.rcParams['hatch.linewidth'] = 0.5
 
     # graphs_to_plot = ['query', 'insert', 'merge', 'query_time_ci', 'kurtosis', 'adaptability']
-    graphs_to_plot = ['query', 'insert', 'merge', 'kurtosis', 'adaptability']
+    graphs_to_plot = ['query', 'insert', 'merge', 'legend']
     plot_file_ext = '.pdf'
     display_ci = True
+    short_legend = True
+
+    if 'legend' in graphs_to_plot:
+        f_query_times = report_folder + '/query_times.csv'
+        query_times_df = pd.read_csv(f_query_times)
+        query_times_df = query_times_df.groupby('Data Size', as_index=False).mean().round(4)
+        query_times_df['Data Size'] = query_times_df['Data Size'] // 1000000
+        print(query_times_df)
+        if short_legend:
+            legend_plot_file_name = report_folder + '/plots/legend_a' + plot_file_ext
+            produce_short_legend(query_times_df, legend_plot_file_name)
+        else:
+            legend_plot_file_name = report_folder + '/plots/legend_b' + plot_file_ext
+            produce_long_legend(query_times_df, legend_plot_file_name)
 
     if 'query' in graphs_to_plot:
         f_query_times = report_folder + '/query_times.csv'
@@ -231,7 +352,8 @@ if __name__ == '__main__':
         query_times_df['Data Size'] = query_times_df['Data Size'] // 1000000
         print(query_times_df)
         q_plot_file_name = report_folder + '/plots/query_times' + plot_file_ext
-        produce_imq_line_plot(query_times_df, 'Query time', "Data Size", '#Entries (millions)', 'Time (microseconds)',
+        produce_imq_line_plot(query_times_df, 'Query time', "Data Size", 'Number of entries (millions)',
+                              'Time (microseconds)',
                               q_plot_file_name)
 
     if 'insert' in graphs_to_plot:
@@ -243,7 +365,7 @@ if __name__ == '__main__':
         if display_ci:
             i_plot_file_name = report_folder + '/plots/insert_times_ci' + plot_file_ext
             produce_imq_bar_plot_wt_error_bars(insert_times_df, 'Insertion time for each data point', "Data Size",
-                                               '#Entries (millions)',
+                                               'Number of entries (millions)',
                                                'Time (microseconds)', i_plot_file_name)
         else:
             i_plot_file_name = report_folder + '/plots/insert_times' + plot_file_ext

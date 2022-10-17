@@ -307,7 +307,7 @@ if __name__ == '__main__':
     data_set_analysis = False
     calc_missing_pct = False
     display_ci = True
-    verbose = True
+    verbose = False
 
     if data_set_analysis:
         ds_file_ext = '.pdf'
@@ -362,8 +362,10 @@ if __name__ == '__main__':
         exit(0)
 
     missing_pcts = []
+    ddsc_p99_diff_pcts = []
     ddsc_upper_diff_pcts = []
     ddsc_mid_diff_pcts = []
+    ddsc_p99_diff = []
     ddsc_upper_diff = []
     ddsc_mid_diff = []
     for dataset in datasets:
@@ -426,9 +428,11 @@ if __name__ == '__main__':
             print(p99_q_all_dict)
         ddsc_mid_diff.append(round(abs(mid_q_dict["dds"] - mid_q_dict["ddsc"]), 4))
         ddsc_upper_diff.append(round(abs(upper_q_dict["dds"] - upper_q_dict["ddsc"]), 4))
+        ddsc_p99_diff.append(round(abs(p99_q_dict["dds"] - p99_q_dict["ddsc"]), 4))
         ddsc_upper_diff_pcts.append(
             round(abs(upper_q_dict["dds"] - upper_q_dict["ddsc"]) * 100.0 / upper_q_dict["dds"], 4))
         ddsc_mid_diff_pcts.append(round(abs(mid_q_dict["dds"] - mid_q_dict["ddsc"]) * 100.0 / mid_q_dict["dds"], 4))
+        ddsc_p99_diff_pcts.append(round(abs(p99_q_dict["dds"] - p99_q_dict["ddsc"]) * 100.0 / p99_q_dict["dds"], 4))
         file_ext = '.pdf'
         file_name_suffix = '_avg_errors'
         if display_ci:
@@ -449,7 +453,9 @@ if __name__ == '__main__':
     if calc_missing_pct:
         print(missing_pcts)
         print(np.mean(missing_pcts))
+    print("DDSC - P99 diff pcts:" + str(ddsc_p99_diff_pcts))
     print("DDSC - Upper diff pcts:" + str(ddsc_upper_diff_pcts))
     print("DDSC - Mid diff pcts:" + str(ddsc_mid_diff_pcts))
+    print("DDSC - P99 diffs:" + str(ddsc_p99_diff))
     print("DDSC - Upper diffs:" + str(ddsc_upper_diff))
     print("DDSC - Mid diffs:" + str(ddsc_mid_diff))
