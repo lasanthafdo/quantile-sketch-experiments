@@ -15,7 +15,7 @@ Follow the instructions below to obtain our fork of Apache Flink that provides t
 
 If you compile Flink (ie. get a new Flink binary), you must run `./bin/setup syn` for changes to be integrated with flink-benchmarks. 
 
-### Compling Flink
+### Compiling Flink
 
 1. Clone the fork of the Apache Flink repository at https://github.com/ChasonPickles/flink.git and checkout the branch 'quantile'
 2. Run `./install_script`. This script compiles only flink-streaming-java and flink-dist, and copies the build-target to ~/flink-binary  
